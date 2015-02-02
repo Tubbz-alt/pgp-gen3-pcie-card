@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wave_config>
+   <wave_state>
+   </wave_state>
+   <db_ref_list>
+      <db_ref path="PciRxDmaTb_behav.wdb" id="1">
+         <top_modules>
+            <top_module name="PciRxDmaTb" />
+            <top_module name="axistreampkg" />
+            <top_module name="glbl" />
+            <top_module name="pcipkg" />
+            <top_module name="ssipkg" />
+            <top_module name="stdrtlpkg" />
+         </top_modules>
+      </db_ref>
+   </db_ref_list>
+   <WVObjectSize size="16" />
+   <wvobject db_ref_id="1" type="logic" fp_name="/PciRxDmaTb/clk">
+      <obj_property name="ElementShortName">clk</obj_property>
+      <obj_property name="ObjectShortName">clk</obj_property>
+   </wvobject>
+   <wvobject db_ref_id="1" type="logic" fp_name="/PciRxDmaTb/rst">
+      <obj_property name="ElementShortName">rst</obj_property>
+      <obj_property name="ObjectShortName">rst</obj_property>
+   </wvobject>
+   <wvobject db_ref_id="1" type="array" fp_name="/PciRxDmaTb/r">
+      <obj_property name="ElementShortName">r</obj_property>
+      <obj_property name="ObjectShortName">r</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+      <wvobject db_ref_id="1" type="array" fp_name="/PciRxDmaTb/r.dmaDescFromPci">
+         <obj_property name="ElementShortName">.dmaDescFromPci</obj_property>
+         <obj_property name="ObjectShortName">r.dmaDescFromPci</obj_property>
+         <obj_property name="Radix">HEXRADIX</obj_property>
+      </wvobject>
+      <wvobject db_ref_id="1" type="array" fp_name="/PciRxDmaTb/r.dmaTranFromPci">
+         <obj_property name="ElementShortName">.dmaTranFromPci</obj_property>
+         <obj_property name="ObjectShortName">r.dmaTranFromPci</obj_property>
+         <obj_property name="Radix">HEXRADIX</obj_property>
+      </wvobject>
+      <wvobject db_ref_id="1" type="array" fp_name="/PciRxDmaTb/r.mAxisSlave">
+         <obj_property name="ElementShortName">.mAxisSlave</obj_property>
+         <obj_property name="ObjectShortName">r.mAxisSlave</obj_property>
+         <obj_property name="Radix">HEXRADIX</obj_property>
+      </wvobject>
+      <wvobject db_ref_id="1" type="array" fp_name="/PciRxDmaTb/r.cnt">
+         <obj_property name="ElementShortName">.cnt[31:0]</obj_property>
+         <obj_property name="ObjectShortName">r.cnt[31:0]</obj_property>
+         <obj_property name="Radix">HEXRADIX</obj_property>
+      </wvobject>
+      <wvobject db_ref_id="1" type="array" fp_name="/PciRxDmaTb/r.sAxisMaster">
+         <obj_property name="ElementShortName">.sAxisMaster</obj_property>
+         <obj_property name="ObjectShortName">r.sAxisMaster</obj_property>
+         <obj_property name="Radix">HEXRADIX</obj_property>
+      </wvobject>
+   </wvobject>
+   <wvobject db_ref_id="1" type="logic" fp_name="/PciRxDmaTb/dmaDescToPci.newReq">
+      <obj_property name="ElementShortName">.newReq</obj_property>
+      <obj_property name="ObjectShortName">dmaDescToPci.newReq</obj_property>
+   </wvobject>
+   <wvobject db_ref_id="1" type="array" fp_name="/PciRxDmaTb/dmaDescToPci.doneLength">
+      <obj_property name="ElementShortName">.doneLength[23:0]</obj_property>
+      <obj_property name="ObjectShortName">dmaDescToPci.doneLength[23:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject db_ref_id="1" type="logic" fp_name="/PciRxDmaTb/dmaDescToPci.doneReq">
+      <obj_property name="ElementShortName">.doneReq</obj_property>
+      <obj_property name="ObjectShortName">dmaDescToPci.doneReq</obj_property>
+   </wvobject>
+   <wvobject db_ref_id="1" type="logic" fp_name="/PciRxDmaTb/mAxisMaster.tValid">
+      <obj_property name="ElementShortName">.tValid</obj_property>
+      <obj_property name="ObjectShortName">mAxisMaster.tValid</obj_property>
+   </wvobject>
+   <wvobject db_ref_id="1" type="logic" fp_name="/PciRxDmaTb/mAxisMaster.tLast">
+      <obj_property name="ElementShortName">.tLast</obj_property>
+      <obj_property name="ObjectShortName">mAxisMaster.tLast</obj_property>
+   </wvobject>
+   <wvobject db_ref_id="1" type="array" fp_name="/PciRxDmaTb/mAxisMaster.tData">
+      <obj_property name="ElementShortName">.tData[127:0]</obj_property>
+      <obj_property name="ObjectShortName">mAxisMaster.tData[127:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject db_ref_id="1" type="array" fp_name="/PciRxDmaTb/mAxisMaster.tUser">
+      <obj_property name="ElementShortName">.tUser[127:0]</obj_property>
+      <obj_property name="ObjectShortName">mAxisMaster.tUser[127:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject db_ref_id="1" type="array" fp_name="/PciRxDmaTb/mAxisMaster.tKeep">
+      <obj_property name="ElementShortName">.tKeep[15:0]</obj_property>
+      <obj_property name="ObjectShortName">mAxisMaster.tKeep[15:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject db_ref_id="1" type="logic" fp_name="/PciRxDmaTb/PciRxDma_Inst/r.frameErr">
+      <obj_property name="ElementShortName">.frameErr</obj_property>
+      <obj_property name="ObjectShortName">r.frameErr</obj_property>
+   </wvobject>
+   <wvobject db_ref_id="1" type="logic" fp_name="/PciRxDmaTb/PciRxDma_Inst/SsiFifo_RX/tranValid">
+      <obj_property name="ElementShortName">tranValid</obj_property>
+      <obj_property name="ObjectShortName">tranValid</obj_property>
+   </wvobject>
+   <wvobject db_ref_id="1" type="array" fp_name="/PciRxDmaTb/PciRxDma_Inst/SsiFifo_RX/tranLength">
+      <obj_property name="ElementShortName">tranLength[8:0]</obj_property>
+      <obj_property name="ObjectShortName">tranLength[8:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject db_ref_id="1" type="array" fp_name="/PciRxDmaTb/PciRxDma_Inst/SsiFifo_RX/tranCnt">
+      <obj_property name="ElementShortName">tranCnt[8:0]</obj_property>
+      <obj_property name="ObjectShortName">tranCnt[8:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject db_ref_id="1" type="array" fp_name="/PciRxDmaTb/PciRxDma_Inst/r">
+      <obj_property name="ElementShortName">r</obj_property>
+      <obj_property name="ObjectShortName">r</obj_property>
+   </wvobject>
+</wave_config>
