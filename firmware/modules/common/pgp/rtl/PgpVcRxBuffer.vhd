@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-08-29
--- Last update: 2014-07-31
+-- Last update: 2015-02-18
 -- Platform   : Vivado 2014.1
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -59,6 +59,7 @@ architecture rtl of PgpVcRxBuffer is
       RD_HDR1_S,
       LUT_WAIT0_S,
       LUT_WAIT1_S,
+      LUT_WAIT2_S,
       CHECK_ACCEPT_S,
       WR_HDR0_S,
       WR_HDR1_S,
@@ -79,13 +80,13 @@ architecture rtl of PgpVcRxBuffer is
    end record RegType;
    
    constant REG_INIT_C : RegType := (
-      (others => '0'),
-      (others => (others => '0')),
-      TRIG_LUT_IN_INIT_C,
-      TRIG_LUT_OUT_INIT_C,
-      AXI_STREAM_SLAVE_INIT_C,
-      AXI_STREAM_MASTER_INIT_C,
-      IDLE_S);
+      timer      => (others => '0'),
+      hrdData    => (others => (others => '0')),
+      trigLutIn  => TRIG_LUT_IN_INIT_C,
+      trigLutOut => TRIG_LUT_OUT_INIT_C,
+      rxSlave    => AXI_STREAM_SLAVE_INIT_C,
+      txMaster   => AXI_STREAM_MASTER_INIT_C,
+      state      => IDLE_S);
 
    signal r   : RegType := REG_INIT_C;
    signal rin : RegType;
@@ -213,7 +214,7 @@ begin
                -- Store the header locally
                v.hrdData(1)      := rxMaster.tData(31 downto 0);
                -- Latch the OpCode, which is used to address the trigger LUT
-               v.trigLutIn.raddr := rxMaster.tData(7 downto 0);
+               v.trigLutIn.raddr := rxMaster.tData(23 downto 16);
                -- Check for EOF
                if rxMaster.tLast = '1' then
                   -- Next state
@@ -234,27 +235,27 @@ begin
          ----------------------------------------------------------------------
          when LUT_WAIT1_S =>
             -- Next state
+            v.state := LUT_WAIT2_S;
+         ----------------------------------------------------------------------
+         when LUT_WAIT2_S =>
+            -- Next state
             v.state := CHECK_ACCEPT_S;
          ----------------------------------------------------------------------
          when CHECK_ACCEPT_S =>
             -- Check for a valid trigger address
             if trigLutOut.accept = '1' then
                -- Latch the trigger LUT values
-               v.trigLutOut     := trigLutOut;
-               -- Ready to readout the FIFO
-               v.rxSlave.tReady := not(txCtrl.pause);
+               v.trigLutOut := trigLutOut;
                -- Next state
-               v.state          := WR_HDR0_S;
+               v.state      := WR_HDR0_S;
             else
                -- Next state
                v.state := IDLE_S;
             end if;
          ----------------------------------------------------------------------
          when WR_HDR0_S =>
-            -- Ready to readout the FIFO
-            v.rxSlave.tReady := not(txCtrl.pause);
-            -- Check for valid data 
-            if (r.rxSlave.tReady = '1') and (rxMaster.tValid = '1') then
+            -- Check if FIFO is ready
+            if (txCtrl.pause = '0') then
                -- Write to the FIFO
                v.txMaster.tValid             := '1';
                v.txMaster.tData(31 downto 0) := r.hrdData(0);
@@ -264,13 +265,13 @@ begin
             end if;
          ----------------------------------------------------------------------
          when WR_HDR1_S =>
-            -- Ready to readout the FIFO
-            v.rxSlave.tReady := not(txCtrl.pause);
-            -- Check for valid data 
-            if (r.rxSlave.tReady = '1') and (rxMaster.tValid = '1') then
+            -- Check if FIFO is ready
+            if (txCtrl.pause = '0') then
                -- Write to the FIFO
                v.txMaster.tValid             := '1';
                v.txMaster.tData(31 downto 0) := r.hrdData(1);
+               -- Ready to readout the FIFO
+               v.rxSlave.tReady              := not(txCtrl.pause);
                -- Next state
                v.state                       := RD_WR_HDR2_S;
             end if;
