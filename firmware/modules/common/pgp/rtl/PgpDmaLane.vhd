@@ -187,6 +187,8 @@ begin
       PgpVcRxBuffer_Inst : entity work.PgpVcRxBuffer
          generic map (
             TPD_G      => TPD_G,
+            LANE_G     => LANE_G,
+            VC_G       => vc,
             PGP_RATE_G => PGP_RATE_G)
          port map (
             -- EVR Trigger Interface

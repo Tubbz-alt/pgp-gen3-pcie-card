@@ -19,18 +19,20 @@ USE ieee.std_logic_1164.ALL;
 
 package Version is
 
-constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CEC83001"; -- MAKE_VERSION
+constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CEC83002"; -- MAKE_VERSION
 
-constant BUILD_STAMP_C : string := "PgpCardG3_4p760Gbps: Built Fri Jan 30 12:51:09 PST 2015 by ruckman";
+constant BUILD_STAMP_C : string := "PgpCardG3_4p760Gbps: Vivado v2014.1 (x86_64) Built Thu Feb 19 14:13:06 PST 2015 by ruckman";
 
 end Version;
 
 -------------------------------------------------------------------------------
 -- Revision History:
 --
--- 01/06/2014 (0xCEC83000): Initial Build
+-- 01/06/2015 (0xCEC83000): Initial Build
 --
--- 01/30/2014 (0xCEC83001): Fixed the MGT RX reset forcing the whole QUAD to reset
+-- 01/30/2015 (0xCEC83001): Fixed the MGT RX reset forcing the whole QUAD to reset
+--
+-- 02/19/2015 (0xCEC83002): Fixed a bug in the EVR mask triggering 
 --
 -------------------------------------------------------------------------------
 

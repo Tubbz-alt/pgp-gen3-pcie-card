@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-08-29
--- Last update: 2015-02-18
+-- Last update: 2015-02-19
 -- Platform   : Vivado 2014.1
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -28,6 +28,8 @@ use work.Pgp2bPkg.all;
 entity PgpVcRxBuffer is
    generic (
       TPD_G      : time := 1 ns;
+      LANE_G     : natural;
+      VC_G       : natural;
       PGP_RATE_G : real); 
    port (
       -- EVR Trigger Interface
@@ -258,8 +260,11 @@ begin
             if (txCtrl.pause = '0') then
                -- Write to the FIFO
                v.txMaster.tValid             := '1';
-               v.txMaster.tData(31 downto 0) := r.hrdData(0);
                ssiSetUserSof(AXIS_CONFIG_C, v.txMaster, '1');
+               v.txMaster.tData(31 downto 8) := r.hrdData(0)(31 downto 8);
+               v.txMaster.tData(7 downto 5)  := toSlv(LANE_G, 3);
+               v.txMaster.tData(4 downto 2)  := r.hrdData(0)(4 downto 2);
+               v.txMaster.tData(1 downto 0)  := toSlv(VC_G, 2);
                -- Next state
                v.state                       := WR_HDR1_S;
             end if;
