@@ -50,6 +50,12 @@
 // Set EVR Run Code
 // int pgpcard_setEvrAcceptCode(int fd, uint acceptCode)
 
+// Set EVR Run Delay
+// int pgpcard_setEvrRunDelay(int fd, uint runDelay)
+
+// Set EVR Run Delay
+// int pgpcard_setEvrAcceptDelay(int fd, uint acceptDelay)
+
 // Enable/Disable EVR 
 // int pgpcard_enableEvr(int fd)
 // int pgpcard_disableEvr(int fd)
@@ -204,6 +210,26 @@ inline int pgpcard_setEvrAcceptCode(int fd, uint acceptCode) {
    t.model = sizeof(PgpCardTx*);
    t.cmd   = IOCTL_Evr_AcceptCode;
    t.data  = (__u32*) acceptCode;
+   return(write(fd, &t, sizeof(PgpCardTx)));
+}
+
+// Set EVR Run Delay
+inline int pgpcard_setEvrRunDelay(int fd, uint runDelay) {
+   PgpCardTx  t;
+
+   t.model = sizeof(PgpCardTx*);
+   t.cmd   = IOCTL_Evr_RunDelay;
+   t.data  = (__u32*) runDelay;
+   return(write(fd, &t, sizeof(PgpCardTx)));
+}
+
+// Set EVR Accept Delay
+inline int pgpcard_setEvrAcceptDelay(int fd, uint acceptDelay) {
+   PgpCardTx  t;
+
+   t.model = sizeof(PgpCardTx*);
+   t.cmd   = IOCTL_Evr_AcceptDelay;
+   t.data  = (__u32*) acceptDelay;
    return(write(fd, &t, sizeof(PgpCardTx)));
 }
 

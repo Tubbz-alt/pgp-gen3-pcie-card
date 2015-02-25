@@ -132,13 +132,15 @@ int main (int argc, char **argv) {
    } 
    cout << endl;     
    
-   cout << "             EvrRunCode: 0x" <<  setw(2) << setfill('0') << status.EvrRunCode << endl;   
-   cout << "          EvrAcceptCode: 0x" <<  setw(2) << setfill('0') << status.EvrAcceptCode << endl;   
-   cout << "              EvrEnable: 0x" <<  setw(1) << setfill('0') << status.EvrEnable << endl;   
-   cout << "               EvrReady: 0x" <<  setw(1) << setfill('0') << status.EvrReady << endl;   
-   cout << "               EvrReset: 0x" <<  setw(1) << setfill('0') << status.EvrReset << endl;   
-   cout << "              EvrPllRst: 0x" <<  setw(1) << setfill('0') << status.EvrPllRst << endl;   
-   cout << "              EvrErrCnt: 0x" <<  setw(1) << setfill('0') << status.EvrErrCnt << endl;   
+   cout << "             EvrRunCode: 0x" << setw(2) << setfill('0') << status.EvrRunCode << endl;   
+   cout << "          EvrAcceptCode: 0x" << setw(2) << setfill('0') << status.EvrAcceptCode << endl;   
+   cout << "            EvrRunDelay: 0x" << setw(8) << setfill('0') << status.EvrRunDelay << endl;
+   cout << "         EvrAcceptDelay: 0x" << setw(8) << setfill('0') << status.EvrAcceptDelay << endl;   
+   cout << "              EvrEnable: 0x" << setw(1) << setfill('0') << status.EvrEnable << endl;   
+   cout << "               EvrReady: 0x" << setw(1) << setfill('0') << status.EvrReady << endl;   
+   cout << "               EvrReset: 0x" << setw(1) << setfill('0') << status.EvrReset << endl;   
+   cout << "              EvrPllRst: 0x" << setw(1) << setfill('0') << status.EvrPllRst << endl;   
+   cout << "              EvrErrCnt: 0x" << setw(1) << setfill('0') << status.EvrErrCnt << endl;   
    for(x=0;x<8;x++){ 
       cout << "  EvrEnHdrCheck["<<  setw(1) << setfill('0') << 7-x <<"][3:0]: ";        
       for(y=0;y<4;y++){   

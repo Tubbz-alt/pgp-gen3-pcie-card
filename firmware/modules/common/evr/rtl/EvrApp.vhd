@@ -5,13 +5,13 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2014-07-09
+-- Last update: 2015-02-24
 -- Platform   : Vivado 2014.1
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
 -- Description: 
 -------------------------------------------------------------------------------
--- Copyright (c) 2014 SLAC National Accelerator Laboratory
+-- Copyright (c) 2015 SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
 
 library ieee;
@@ -53,31 +53,28 @@ architecture rtl of EvrApp is
       offset      : slv(31 downto 0);
       secondsTmp  : slv(31 downto 0);
       seconds     : slv(31 downto 0);
-      acceptShift : slv(DELAY_C downto 0);
       toPgp       : EvrToPgpType;
       toPci       : EvrToPciType;
    end record;
    constant REG_INIT_C : RegType := (
-      (others => '0'),
-      (others => '0'),
-      (others => '0'),
-      (others => '0'),
-      (others => '0'),
-      (others => '0'),
-      EVR_TO_PGP_INIT_C,
-      EVR_TO_PCI_INIT_C);   
+      eventStream => (others => '0'),
+      dataStream  => (others => '0'),
+      offset      => (others => '0'),
+      secondsTmp  => (others => '0'),
+      seconds     => (others => '0'),
+      toPgp       => EVR_TO_PGP_INIT_C,
+      toPci       => EVR_TO_PCI_INIT_C);   
    signal r       : RegType      := REG_INIT_C;
    signal fromPci : PciToEvrType := PCI_TO_EVR_INIT_C;
-   
+
    attribute dont_touch : string;
    attribute dont_touch of
       r,
-      fromPci : signal is "TRUE";   
+      fromPci : signal is "TRUE";
 
 begin
 
    evrToPci <= r.toPci;
-   evrToPgp <= r.toPgp;
 
    evrRst <= fromPci.evrReset;
    pllRst <= fromPci.pllRst;
@@ -89,15 +86,15 @@ begin
          syncRst  => fromPci.countRst); 
 
    -- RstSync_1 : entity work.RstSync
-      -- port map (
-         -- clk      => evrClk,
-         -- asyncRst => pciToEvr.pllRst,
-         -- syncRst  => fromPci.pllRst);          
-   
+   -- port map (
+   -- clk      => evrClk,
+   -- asyncRst => pciToEvr.pllRst,
+   -- syncRst  => fromPci.pllRst);          
+
    -- Don't using a RstSync Synchronizer 
    -- because a recovered clock will never be generated.  
    fromPci.pllRst <= pciToEvr.pllRst;
-         
+
    RstSync_2 : entity work.RstSync
       port map (
          clk      => evrClk,
@@ -110,7 +107,7 @@ begin
          dataIn  => pciToEvr.enable,
          dataOut => fromPci.enable);       
 
-   SynchronizerFifo_Inst : entity work.SynchronizerFifo
+   SynchronizerFifo_0 : entity work.SynchronizerFifo
       generic map(
          DATA_WIDTH_G => 16)
       port map(
@@ -121,7 +118,29 @@ begin
          -- Read Ports (rd_clk domain)
          rd_clk            => evrClk,
          dout(7 downto 0)  => fromPci.runCode,
-         dout(15 downto 8) => fromPci.acceptCode);        
+         dout(15 downto 8) => fromPci.acceptCode);  
+
+   SynchronizerFifo_1 : entity work.SynchronizerFifo
+      generic map(
+         DATA_WIDTH_G => 32)
+      port map(
+         -- Write Ports (wr_clk domain)
+         wr_clk => pciClk,
+         din    => pciToEvr.runDelay,
+         -- Read Ports (rd_clk domain)
+         rd_clk => evrClk,
+         dout   => fromPci.runDelay);           
+
+   SynchronizerFifo_2 : entity work.SynchronizerFifo
+      generic map(
+         DATA_WIDTH_G => 32)
+      port map(
+         -- Write Ports (wr_clk domain)
+         wr_clk => pciClk,
+         din    => pciToEvr.acceptDelay,
+         -- Read Ports (rd_clk domain)
+         rd_clk => evrClk,
+         dout   => fromPci.acceptDelay);  
 
    process (evrClk)
    begin
@@ -130,6 +149,7 @@ begin
             r <= REG_INIT_C;
          else
             r.toPgp.run    <= '0';
+            r.toPgp.accept <= '0';
             r.toPci.linkUp <= rxLinkUp;
 
             -- Error Counting
@@ -170,15 +190,35 @@ begin
             end if;
 
             -- Check for accept code event 
-            r.toPgp.accept <= r.acceptShift(DELAY_C);
             if (fromPci.enable = '1') and (r.eventStream = fromPci.acceptCode) then
-               r.acceptShift <= r.acceptShift(DELAY_C-1 downto 0) & '1';
-            else
-               r.acceptShift <= r.acceptShift(DELAY_C-1 downto 0) & '0';
+               r.toPgp.accept <= '1';
             end if;
             
          end if;
       end if;
    end process;
 
+   EvrOpCodeDelay_0 : entity work.EvrOpCodeDelay
+      port map(
+         evrClk             => evrClk,
+         evrRst             => fromPci.evrReset,
+         delayConfig        => fromPci.runDelay,
+         din(64)            => r.toPgp.run,
+         din(63 downto 32)  => r.toPgp.seconds,
+         din(31 downto 0)   => r.toPgp.offset,
+         dout(64)           => evrToPgp.run,
+         dout(63 downto 32) => evrToPgp.seconds,
+         dout(31 downto 0)  => evrToPgp.offset); 
+
+   EvrOpCodeDelay_1 : entity work.EvrOpCodeDelay
+      port map(
+         evrClk             => evrClk,
+         evrRst             => fromPci.evrReset,
+         delayConfig        => fromPci.acceptDelay,
+         din(64)            => r.toPgp.accept,
+         din(63 downto 32)  => (others => '0'),
+         din(31 downto 0)   => (others => '0'),
+         dout(64)           => evrToPgp.accept,
+         dout(63 downto 32) => open,
+         dout(31 downto 0)  => open);          
 end rtl;

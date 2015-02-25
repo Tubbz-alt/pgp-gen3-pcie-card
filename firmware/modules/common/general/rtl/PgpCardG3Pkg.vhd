@@ -5,13 +5,13 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2014-07-09
+-- Last update: 2015-02-24
 -- Platform   : Vivado 2014.1
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
 -- Description:
 -------------------------------------------------------------------------------
--- Copyright (c) 2014 SLAC National Accelerator Laboratory
+-- Copyright (c) 2015 SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
 
 library ieee;
@@ -46,20 +46,20 @@ package PgpCardG3Pkg is
       dmaRxDescToPci : DescToPciArray(0 to 7);
    end record;
    constant PGP_TO_PCI_INIT_C : PgpToPciType := (
-      (others => '0'),
-      (others => '0'),
-      (others => '0'),
-      (others => '0'),
-      (others => (others => '0')),
-      (others => (others => '0')),
-      (others => (others => '0')),
-      (others => (others => '0')),
-      (others => (others => (others => '0'))),
-      (others => AXI_STREAM_MASTER_INIT_C),
-      (others => AXI_STREAM_SLAVE_INIT_C),
-      (others => DESC_TO_PCI_INIT_C),
-      (others => AXI_STREAM_MASTER_INIT_C),
-      (others => DESC_TO_PCI_INIT_C));
+      pllTxReady     => (others => '0'),
+      pllRxReady     => (others => '0'),
+      locLinkReady   => (others => '0'),
+      remLinkReady   => (others => '0'),
+      cellErrorCnt   => (others => (others => '0')),
+      linkDownCnt    => (others => (others => '0')),
+      linkErrorCnt   => (others => (others => '0')),
+      fifoErrorCnt   => (others => (others => '0')),
+      rxCount        => (others => (others => (others => '0'))),
+      dmaTxIbMaster  => (others => AXI_STREAM_MASTER_INIT_C),
+      dmaTxObSlave   => (others => AXI_STREAM_SLAVE_INIT_C),
+      dmaTxDescToPci => (others => DESC_TO_PCI_INIT_C),
+      dmaRxIbMaster  => (others => AXI_STREAM_MASTER_INIT_C),
+      dmaRxDescToPci => (others => DESC_TO_PCI_INIT_C));
 
    -- PCIe -> PGP Parallel Interface
    type PciToPgpType is record          -- pciClk Domain
@@ -87,10 +87,10 @@ package PgpCardG3Pkg is
       offset  : slv(31 downto 0);
    end record;
    constant EVR_TO_PGP_INIT_C : EvrToPgpType := (
-      '0',
-      '0',
-      (others => '0'),
-      (others => '0'));       
+      run     => '0',
+      accept  => '0',
+      seconds => (others => '0'),
+      offset  => (others => '0'));       
 
    -- EVR -> PCIe Parallel Interface
    type EvrToPciType is record          --evrClk Domain
@@ -98,25 +98,29 @@ package PgpCardG3Pkg is
       errorCnt : slv(3 downto 0);
    end record;
    constant EVR_TO_PCI_INIT_C : EvrToPciType := (
-      '0',
-      (others => '0'));    
+      linkUp   => '0',
+      errorCnt => (others => '0'));    
 
    -- PCIe -> EVR Parallel Interface
    type PciToEvrType is record          -- pciClk Domain
-      countRst   : sl;
-      pllRst     : sl;
-      evrReset   : sl;
-      enable     : sl;
-      runCode    : slv(7 downto 0);
-      acceptCode : slv(7 downto 0);
+      countRst    : sl;
+      pllRst      : sl;
+      evrReset    : sl;
+      enable      : sl;
+      runCode     : slv(7 downto 0);
+      acceptCode  : slv(7 downto 0);
+      runDelay    : slv(31 downto 0);
+      acceptDelay : slv(31 downto 0);
    end record;
    constant PCI_TO_EVR_INIT_C : PciToEvrType := (
-      '0',
-      '0',
-      '0',
-      '0',
-      (others => '0'),
-      (others => '0'));    
+      countRst    => '0',
+      pllRst      => '0',
+      evrReset    => '0',
+      enable      => '0',
+      runCode     => (others => '0'),
+      acceptCode  => (others => '0'),
+      runDelay    => (others => '0'),
+      acceptDelay => (others => '0'));    
 
    type TrigLutInType is record         --pgpClk Domain
       raddr : slv(7 downto 0);
@@ -124,7 +128,7 @@ package PgpCardG3Pkg is
    type TrigLutInArray is array (integer range<>) of TrigLutInType;
    type TrigLutInVectorArray is array (integer range<>, integer range<>) of TrigLutInType;
    constant TRIG_LUT_IN_INIT_C : TrigLutInType := (
-      (others => (others => '0')));        
+      raddr => (others => '0'));        
 
    type TrigLutOutType is record        --pgpClk Domain
       accept    : sl;
@@ -135,9 +139,9 @@ package PgpCardG3Pkg is
    type TrigLutOutArray is array (integer range<>) of TrigLutOutType;
    type TrigLutOutVectorArray is array (integer range<>, integer range<>) of TrigLutOutType;
    constant TRIG_LUT_OUT_INIT_C : TrigLutOutType := (
-      '0',
-      (others => '0'),
-      (others => '0'),
-      (others => '0'));       
+      accept    => '0',
+      seconds   => (others => '0'),
+      offset    => (others => '0'),
+      acceptCnt => (others => '0'));       
 
 end package PgpCardG3Pkg;

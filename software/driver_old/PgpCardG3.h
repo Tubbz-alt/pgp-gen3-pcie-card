@@ -60,8 +60,8 @@ struct PgpCardReg {
    __u32 pciStat[4];    // Software_Addr = 0x038:0x02C,  Firmware_Addr(13 downto 2) = 0x00E:0x00B
    __u32 sysSpare1;     // Software_Addr = 0x03C,        Firmware_Addr(13 downto 2) = 0x00F 
    
-   __u32 evrCardStat[3];// Software_Addr = 0x048:0x040,  Firmware_Addr(13 downto 2) = 0x012:0x010  
-   __u32 evrSpare0[13]; // Software_Addr = 0x07C:0x04C,  Firmware_Addr(13 downto 2) = 0x01F:0x013
+   __u32 evrCardStat[5];// Software_Addr = 0x050:0x040,  Firmware_Addr(13 downto 2) = 0x014:0x010  
+   __u32 evrSpare0[11]; // Software_Addr = 0x07C:0x054,  Firmware_Addr(13 downto 2) = 0x01F:0x015
    
    __u32 pgpCardStat[2];// Software_Addr = 0x084:0x080,  Firmware_Addr(13 downto 2) = 0x021:0x020       
    __u32 pgpSpare0[94]; // Software_Addr = 0x1FC:0x088,  Firmware_Addr(13 downto 2) = 0x07F:0x022

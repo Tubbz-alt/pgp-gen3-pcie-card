@@ -400,6 +400,9 @@ int my_Ioctl(struct file *filp, __u32 cmd, __u64 argument) {
             }
          }
          
+         stat->EvrRunDelay    = pgpDevice->reg->evrCardStat[3];
+         stat->EvrAcceptDelay = pgpDevice->reg->evrCardStat[4];
+         
          tmp = pgpDevice->reg->pgpCardStat[0];
          for (x=0; x < 8; x++) {
             if ( x<2 ) {
@@ -590,6 +593,20 @@ int my_Ioctl(struct file *filp, __u32 cmd, __u64 argument) {
       case IOCTL_Evr_Mask:
          pgpDevice->reg->evrCardStat[2] = arg;  
          if (pgpDevice->debug > 0) printk(KERN_DEBUG "%s: Set EVR Virtual channel masking for %u\n", MOD_NAME, arg);
+         return(SUCCESS);
+         break;      
+
+      // Set EVR's Run Delay
+      case IOCTL_Evr_RunDelay:      
+         pgpDevice->reg->evrCardStat[3] = arg;
+         if (pgpDevice->debug > 0) printk(KERN_DEBUG "%s: Set EVR Run Delay for %u\n", MOD_NAME, arg);
+         return(SUCCESS);
+         break;
+         
+      // Set EVR's Accept Delay
+      case IOCTL_Evr_AcceptDelay:
+         pgpDevice->reg->evrCardStat[4] = arg;  
+         if (pgpDevice->debug > 0) printk(KERN_DEBUG "%s: Set EVR Accept Delay for %u\n", MOD_NAME, arg);
          return(SUCCESS);
          break;          
          

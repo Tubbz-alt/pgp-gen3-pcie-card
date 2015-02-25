@@ -2,3 +2,4 @@ vhdl work rtl/EvrApp.vhd
 vhdl work rtl/EvrClk.vhd
 vhdl work rtl/EvrCore.vhd
 vhdl work rtl/EvrGtp7.vhd
+vhdl work rtl/EvrOpCodeDelay.vhd

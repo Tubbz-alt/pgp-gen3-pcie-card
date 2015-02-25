@@ -5,13 +5,13 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2014-07-31
+-- Last update: 2015-02-24
 -- Platform   : Vivado 2014.1
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
 -- Description:
 -------------------------------------------------------------------------------
--- Copyright (c) 2014 SLAC National Accelerator Laboratory
+-- Copyright (c) 2015 SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
 
 library ieee;
@@ -119,6 +119,8 @@ architecture rtl of PciApp is
       regTxRdData,
       regLocRdData,
       regFlashRdData,
+      runDelay,
+      acceptDelay,
       rebootTimer,
       scratchPad : slv(31 downto 0);
 
@@ -187,12 +189,14 @@ begin
          PciToPgp.loopBack      <= loopBack;
          PciToPgp.enHeaderCheck <= enHeaderCheck;
 
-         PciToEvr.countRst   <= countRst or cardRst;
-         PciToEvr.pllRst     <= evrPllRst or cardRst;
-         PciToEvr.evrReset   <= evrReset or cardRst;
-         PciToEvr.enable     <= evrEnable;
-         PciToEvr.runCode    <= runCode;
-         PciToEvr.acceptCode <= acceptCode;
+         PciToEvr.countRst    <= countRst or cardRst;
+         PciToEvr.pllRst      <= evrPllRst or cardRst;
+         PciToEvr.evrReset    <= evrReset or cardRst;
+         PciToEvr.enable      <= evrEnable;
+         PciToEvr.runCode     <= runCode;
+         PciToEvr.acceptCode  <= acceptCode;
+         PciToEvr.runDelay    <= runDelay;
+         PciToEvr.acceptDelay <= acceptDelay;
 
          for i in 0 to DMA_SIZE_C-1 loop
             PciToPgp.pgpRxRst(i) <= pgpRxRst(i) or cardRst;
@@ -470,6 +474,8 @@ begin
             pllTxRst      <= (others => '0');
             runCode       <= (others => '0');
             acceptCode    <= (others => '0');
+            runDelay      <= (others => '0');
+            acceptDelay   <= (others => '0');
             evrEnable     <= '0';
             evrReset      <= '0';
             evrPllRst     <= '0';
@@ -578,6 +584,16 @@ begin
                            end if;
                         end loop;
                      end loop;
+                  when x"13" =>
+                     regLocRdData  <= runDelay;
+                     if regWrEn = '1' then
+                        runDelay  <= regWrData;
+                     end if; 
+                  when x"14" =>
+                     regLocRdData  <= acceptDelay;
+                     if regWrEn = '1' then
+                        acceptDelay  <= regWrData;
+                     end if;                      
                   -------------------------------
                   -- PGP Registers
                   -------------------------------   
