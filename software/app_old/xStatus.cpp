@@ -132,10 +132,24 @@ int main (int argc, char **argv) {
    } 
    cout << endl;     
    
-   cout << "             EvrRunCode: 0x" << setw(2) << setfill('0') << status.EvrRunCode << endl;   
-   cout << "          EvrAcceptCode: 0x" << setw(2) << setfill('0') << status.EvrAcceptCode << endl;   
-   cout << "            EvrRunDelay: 0x" << setw(8) << setfill('0') << status.EvrRunDelay << endl;
-   cout << "         EvrAcceptDelay: 0x" << setw(8) << setfill('0') << status.EvrAcceptDelay << endl;   
+   cout << "             EvrRunCode: 0x" << setw(2) << setfill('0') << status.EvrRunCode << endl;
+   cout << "          EvrAcceptCode: 0x" << setw(2) << setfill('0') << status.EvrAcceptCode << endl;  
+   cout << "         EvrRunDelay[0]: 0x" << setw(8) << setfill('0') << status.EvrRunDelay[0] << endl;
+   cout << "         EvrRunDelay[1]: 0x" << setw(8) << setfill('0') << status.EvrRunDelay[1] << endl;
+   cout << "         EvrRunDelay[2]: 0x" << setw(8) << setfill('0') << status.EvrRunDelay[2] << endl;
+   cout << "         EvrRunDelay[3]: 0x" << setw(8) << setfill('0') << status.EvrRunDelay[3] << endl;
+   cout << "         EvrRunDelay[4]: 0x" << setw(8) << setfill('0') << status.EvrRunDelay[4] << endl;
+   cout << "         EvrRunDelay[5]: 0x" << setw(8) << setfill('0') << status.EvrRunDelay[5] << endl;
+   cout << "         EvrRunDelay[6]: 0x" << setw(8) << setfill('0') << status.EvrRunDelay[6] << endl;
+   cout << "         EvrRunDelay[7]: 0x" << setw(8) << setfill('0') << status.EvrRunDelay[7] << endl;
+   cout << "      EvrAcceptDelay[0]: 0x" << setw(8) << setfill('0') << status.EvrAcceptDelay[0] << endl;   
+   cout << "      EvrAcceptDelay[1]: 0x" << setw(8) << setfill('0') << status.EvrAcceptDelay[1] << endl;   
+   cout << "      EvrAcceptDelay[2]: 0x" << setw(8) << setfill('0') << status.EvrAcceptDelay[2] << endl;   
+   cout << "      EvrAcceptDelay[3]: 0x" << setw(8) << setfill('0') << status.EvrAcceptDelay[3] << endl;   
+   cout << "      EvrAcceptDelay[4]: 0x" << setw(8) << setfill('0') << status.EvrAcceptDelay[4] << endl;   
+   cout << "      EvrAcceptDelay[5]: 0x" << setw(8) << setfill('0') << status.EvrAcceptDelay[5] << endl;   
+   cout << "      EvrAcceptDelay[6]: 0x" << setw(8) << setfill('0') << status.EvrAcceptDelay[6] << endl;   
+   cout << "      EvrAcceptDelay[7]: 0x" << setw(8) << setfill('0') << status.EvrAcceptDelay[7] << endl;   
    cout << "              EvrEnable: 0x" << setw(1) << setfill('0') << status.EvrEnable << endl;   
    cout << "               EvrReady: 0x" << setw(1) << setfill('0') << status.EvrReady << endl;   
    cout << "               EvrReset: 0x" << setw(1) << setfill('0') << status.EvrReset << endl;   

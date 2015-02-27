@@ -112,8 +112,8 @@ typedef struct {
    __u32 EvrReset;   
    __u32 EvrPllRst;   
    __u32 EvrErrCnt;   
-   __u32 EvrRunDelay;   
-   __u32 EvrAcceptDelay;   
+   __u32 EvrRunDelay[8];   
+   __u32 EvrAcceptDelay[8];   
    
    // RX Descriptor Status
    __u32 RxFreeFull[8];
@@ -148,6 +148,9 @@ typedef struct {
 // Reset counters
 #define IOCTL_Count_Reset 0x02
 
+// No Operation
+#define IOCTL_NOP 0x03
+
 // Set Loopback, Pass PGP Channel As Arg
 #define IOCTL_Set_Loop 0x10
 #define IOCTL_Clr_Loop 0x11
@@ -170,8 +173,24 @@ typedef struct {
 #define IOCTL_Evr_Set_PLL_RST 0x26
 #define IOCTL_Evr_Clr_PLL_RST 0x27
 #define IOCTL_Evr_Mask        0x28
-#define IOCTL_Evr_RunDelay    0x29
-#define IOCTL_Evr_AcceptDelay 0x2A
+
+#define IOCTL_Evr_RunDelay0    0x30
+#define IOCTL_Evr_RunDelay1    0x31
+#define IOCTL_Evr_RunDelay2    0x32
+#define IOCTL_Evr_RunDelay3    0x33
+#define IOCTL_Evr_RunDelay4    0x34
+#define IOCTL_Evr_RunDelay5    0x35
+#define IOCTL_Evr_RunDelay6    0x36
+#define IOCTL_Evr_RunDelay7    0x37
+
+#define IOCTL_Evr_AcceptDelay0 0x40
+#define IOCTL_Evr_AcceptDelay1 0x41
+#define IOCTL_Evr_AcceptDelay2 0x42
+#define IOCTL_Evr_AcceptDelay3 0x43
+#define IOCTL_Evr_AcceptDelay4 0x44
+#define IOCTL_Evr_AcceptDelay5 0x45
+#define IOCTL_Evr_AcceptDelay6 0x46
+#define IOCTL_Evr_AcceptDelay7 0x47
 
 // Set Debug, Pass Debug Value As Arg
 #define IOCTL_Set_Debug 0xFE

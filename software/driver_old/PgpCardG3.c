@@ -398,10 +398,10 @@ int my_Ioctl(struct file *filp, __u32 cmd, __u64 argument) {
             for (y=0; y < 4; y++) {
                stat->EvrEnHdrCheck[x][y] = (tmp >> ((4*x)+y)) & 0x1;
             }
+            stat->EvrRunDelay[x]    = pgpDevice->reg->runDelay[x];
+            stat->EvrAcceptDelay[x] = pgpDevice->reg->acceptDelay[x];
          }
          
-         stat->EvrRunDelay    = pgpDevice->reg->evrCardStat[3];
-         stat->EvrAcceptDelay = pgpDevice->reg->evrCardStat[4];
          
          tmp = pgpDevice->reg->pgpCardStat[0];
          for (x=0; x < 8; x++) {
@@ -596,17 +596,122 @@ int my_Ioctl(struct file *filp, __u32 cmd, __u64 argument) {
          return(SUCCESS);
          break;      
 
-      // Set EVR's Run Delay
-      case IOCTL_Evr_RunDelay:      
-         pgpDevice->reg->evrCardStat[3] = arg;
-         if (pgpDevice->debug > 0) printk(KERN_DEBUG "%s: Set EVR Run Delay for %u\n", MOD_NAME, arg);
+      // Set EVR's Run Delay[0]
+      case IOCTL_Evr_RunDelay0:      
+         pgpDevice->reg->runDelay[0] = arg;
+         if (pgpDevice->debug > 0) printk(KERN_DEBUG "%s: Set EVR Run Delay[0] for %u\n", MOD_NAME, arg);
          return(SUCCESS);
          break;
          
-      // Set EVR's Accept Delay
-      case IOCTL_Evr_AcceptDelay:
-         pgpDevice->reg->evrCardStat[4] = arg;  
-         if (pgpDevice->debug > 0) printk(KERN_DEBUG "%s: Set EVR Accept Delay for %u\n", MOD_NAME, arg);
+      // Set EVR's Run Delay[1]
+      case IOCTL_Evr_RunDelay1:      
+         pgpDevice->reg->runDelay[1] = arg;
+         if (pgpDevice->debug > 0) printk(KERN_DEBUG "%s: Set EVR Run Delay[1] for %u\n", MOD_NAME, arg);
+         return(SUCCESS);
+         break;    
+
+      // Set EVR's Run Delay[2]
+      case IOCTL_Evr_RunDelay2:      
+         pgpDevice->reg->runDelay[2] = arg;
+         if (pgpDevice->debug > 0) printk(KERN_DEBUG "%s: Set EVR Run Delay[2] for %u\n", MOD_NAME, arg);
+         return(SUCCESS);
+         break;
+         
+      // Set EVR's Run Delay[3]
+      case IOCTL_Evr_RunDelay3:      
+         pgpDevice->reg->runDelay[3] = arg;
+         if (pgpDevice->debug > 0) printk(KERN_DEBUG "%s: Set EVR Run Delay[3] for %u\n", MOD_NAME, arg);
+         return(SUCCESS);
+         break;    
+
+      // Set EVR's Run Delay[4]
+      case IOCTL_Evr_RunDelay4:      
+         pgpDevice->reg->runDelay[4] = arg;
+         if (pgpDevice->debug > 0) printk(KERN_DEBUG "%s: Set EVR Run Delay[4] for %u\n", MOD_NAME, arg);
+         return(SUCCESS);
+         break;
+         
+      // Set EVR's Run Delay[5]
+      case IOCTL_Evr_RunDelay5:      
+         pgpDevice->reg->runDelay[5] = arg;
+         if (pgpDevice->debug > 0) printk(KERN_DEBUG "%s: Set EVR Run Delay[5] for %u\n", MOD_NAME, arg);
+         return(SUCCESS);
+         break;    
+
+      // Set EVR's Run Delay[6]
+      case IOCTL_Evr_RunDelay6:      
+         pgpDevice->reg->runDelay[6] = arg;
+         if (pgpDevice->debug > 0) printk(KERN_DEBUG "%s: Set EVR Run Delay[6] for %u\n", MOD_NAME, arg);
+         return(SUCCESS);
+         break;
+         
+      // Set EVR's Run Delay[7]
+      case IOCTL_Evr_RunDelay7:      
+         pgpDevice->reg->runDelay[7] = arg;
+         if (pgpDevice->debug > 0) printk(KERN_DEBUG "%s: Set EVR Run Delay[7] for %u\n", MOD_NAME, arg);
+         return(SUCCESS);
+         break;             
+         
+      // Set EVR's Accept Delay[0]
+      case IOCTL_Evr_AcceptDelay0:
+         pgpDevice->reg->acceptDelay[0] = arg;  
+         if (pgpDevice->debug > 0) printk(KERN_DEBUG "%s: Set EVR Accept Delay[0] for %u\n", MOD_NAME, arg);
+         return(SUCCESS);
+         break;  
+
+      // Set EVR's Accept Delay[1]
+      case IOCTL_Evr_AcceptDelay1:
+         pgpDevice->reg->acceptDelay[1] = arg;  
+         if (pgpDevice->debug > 0) printk(KERN_DEBUG "%s: Set EVR Accept Delay[1] for %u\n", MOD_NAME, arg);
+         return(SUCCESS);
+         break;     
+
+      // Set EVR's Accept Delay[2]
+      case IOCTL_Evr_AcceptDelay2:
+         pgpDevice->reg->acceptDelay[2] = arg;  
+         if (pgpDevice->debug > 0) printk(KERN_DEBUG "%s: Set EVR Accept Delay[2] for %u\n", MOD_NAME, arg);
+         return(SUCCESS);
+         break;  
+
+      // Set EVR's Accept Delay[3]
+      case IOCTL_Evr_AcceptDelay3:
+         pgpDevice->reg->acceptDelay[3] = arg;  
+         if (pgpDevice->debug > 0) printk(KERN_DEBUG "%s: Set EVR Accept Delay[3] for %u\n", MOD_NAME, arg);
+         return(SUCCESS);
+         break;  
+
+      // Set EVR's Accept Delay[4]
+      case IOCTL_Evr_AcceptDelay4:
+         pgpDevice->reg->acceptDelay[4] = arg;  
+         if (pgpDevice->debug > 0) printk(KERN_DEBUG "%s: Set EVR Accept Delay[4] for %u\n", MOD_NAME, arg);
+         return(SUCCESS);
+         break;  
+
+      // Set EVR's Accept Delay[5]
+      case IOCTL_Evr_AcceptDelay5:
+         pgpDevice->reg->acceptDelay[5] = arg;  
+         if (pgpDevice->debug > 0) printk(KERN_DEBUG "%s: Set EVR Accept Delay[5] for %u\n", MOD_NAME, arg);
+         return(SUCCESS);
+         break;     
+
+      // Set EVR's Accept Delay[6]
+      case IOCTL_Evr_AcceptDelay6:
+         pgpDevice->reg->acceptDelay[6] = arg;  
+         if (pgpDevice->debug > 0) printk(KERN_DEBUG "%s: Set EVR Accept Delay[6] for %u\n", MOD_NAME, arg);
+         return(SUCCESS);
+         break;  
+
+      // Set EVR's Accept Delay[7]
+      case IOCTL_Evr_AcceptDelay7:
+         pgpDevice->reg->acceptDelay[7] = arg;  
+         if (pgpDevice->debug > 0) printk(KERN_DEBUG "%s: Set EVR Accept Delay[7] for %u\n", MOD_NAME, arg);
+         return(SUCCESS);
+         break;           
+         
+      // No Operation
+      case IOCTL_NOP:
+         asm("nop");//no operation function
+         printk(KERN_WARNING "%s: NOP to %u\n", MOD_NAME, arg);
          return(SUCCESS);
          break;          
          

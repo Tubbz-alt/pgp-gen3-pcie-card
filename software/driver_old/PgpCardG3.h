@@ -60,11 +60,15 @@ struct PgpCardReg {
    __u32 pciStat[4];    // Software_Addr = 0x038:0x02C,  Firmware_Addr(13 downto 2) = 0x00E:0x00B
    __u32 sysSpare1;     // Software_Addr = 0x03C,        Firmware_Addr(13 downto 2) = 0x00F 
    
-   __u32 evrCardStat[5];// Software_Addr = 0x050:0x040,  Firmware_Addr(13 downto 2) = 0x014:0x010  
-   __u32 evrSpare0[11]; // Software_Addr = 0x07C:0x054,  Firmware_Addr(13 downto 2) = 0x01F:0x015
+   __u32 evrCardStat[3];// Software_Addr = 0x048:0x040,  Firmware_Addr(13 downto 2) = 0x012:0x010  
+   __u32 evrSpare0[13]; // Software_Addr = 0x07C:0x04C,  Firmware_Addr(13 downto 2) = 0x01F:0x013
    
    __u32 pgpCardStat[2];// Software_Addr = 0x084:0x080,  Firmware_Addr(13 downto 2) = 0x021:0x020       
-   __u32 pgpSpare0[94]; // Software_Addr = 0x1FC:0x088,  Firmware_Addr(13 downto 2) = 0x07F:0x022
+   __u32 pgpSpare0[78]; // Software_Addr = 0x1BC:0x088,  Firmware_Addr(13 downto 2) = 0x06F:0x022
+      
+   __u32 runDelay[8];   // Software_Addr = 0x1DC:0x1C0,  Firmware_Addr(13 downto 2) = 0x077:0x070       
+   __u32 acceptDelay[8];// Software_Addr = 0x1FC:0x1E0,  Firmware_Addr(13 downto 2) = 0x07F:0x078       
+
    __u32 pgpLaneStat[8];// Software_Addr = 0x21C:0x200,  Firmware_Addr(13 downto 2) = 0x087:0x080       
    __u32 pgpSpare1[56]; // Software_Addr = 0x2FC:0x220,  Firmware_Addr(13 downto 2) = 0x0BF:0x088
    __u32 BuildStamp[64];// Software_Addr = 0x3FC:0x300,  Firmware_Addr(13 downto 2) = 0x0FF:0x0C0

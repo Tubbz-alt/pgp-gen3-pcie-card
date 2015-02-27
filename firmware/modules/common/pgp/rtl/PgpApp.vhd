@@ -78,6 +78,8 @@ architecture mapping of PgpApp is
    signal trigLutIn     : TrigLutInVectorArray(0 to 7, 0 to 3);
    signal trigLutOut    : TrigLutOutVectorArray(0 to 7, 0 to 3);
    signal pgpRxCtrls    : AxiStreamCtrlVectorArray(0 to 7, 0 to 3);
+   signal runDelay,
+      acceptDelay : Slv32Array(0 to 7);  
    
 begin
 
@@ -159,7 +161,26 @@ begin
             dataOut(0) => enHeaderCheck(i, 0),
             dataOut(1) => enHeaderCheck(i, 1),
             dataOut(2) => enHeaderCheck(i, 2),
-            dataOut(3) => enHeaderCheck(i, 3));            
+            dataOut(3) => enHeaderCheck(i, 3));  
+
+      SynchronizerVector_1 : entity work.SynchronizerVector
+         generic map (
+            TPD_G   => TPD_G,
+            WIDTH_G => 32)
+         port map (
+            clk     => pgpClk,
+            dataIn  => PciToPgp.runDelay(i),
+            dataOut => runDelay(i)); 
+            
+      SynchronizerVector_2 : entity work.SynchronizerVector
+         generic map (
+            TPD_G   => TPD_G,
+            WIDTH_G => 32)
+         port map (
+            clk     => pgpClk,
+            dataIn  => PciToPgp.acceptDelay(i),
+            dataOut => acceptDelay(i));             
+            
    end generate GEN_SYNC_LANE;
 
    RstSync_4 : entity work.RstSync
@@ -170,7 +191,7 @@ begin
          asyncRst => PciToPgp.countRst,
          syncRst  => countRst);     
 
-   SynchronizerVector_1 : entity work.SynchronizerVector
+   SynchronizerVector_3 : entity work.SynchronizerVector
       generic map (
          TPD_G   => TPD_G,
          WIDTH_G => 8)
@@ -199,6 +220,9 @@ begin
          generic map (
             TPD_G => TPD_G)
          port map (
+            -- Delay Configuration
+            runDelay    => runDelay(lane),
+            acceptDelay => acceptDelay(lane),
             -- External Interfaces
             evrToPgp      => evrToPgp,
             --PGP Core interfaces

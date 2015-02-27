@@ -75,6 +75,7 @@ architecture rtl of EvrApp is
 begin
 
    evrToPci <= r.toPci;
+   evrToPgp <= r.toPgp;
 
    evrRst <= fromPci.evrReset;
    pllRst <= fromPci.pllRst;
@@ -120,27 +121,6 @@ begin
          dout(7 downto 0)  => fromPci.runCode,
          dout(15 downto 8) => fromPci.acceptCode);  
 
-   SynchronizerFifo_1 : entity work.SynchronizerFifo
-      generic map(
-         DATA_WIDTH_G => 32)
-      port map(
-         -- Write Ports (wr_clk domain)
-         wr_clk => pciClk,
-         din    => pciToEvr.runDelay,
-         -- Read Ports (rd_clk domain)
-         rd_clk => evrClk,
-         dout   => fromPci.runDelay);           
-
-   SynchronizerFifo_2 : entity work.SynchronizerFifo
-      generic map(
-         DATA_WIDTH_G => 32)
-      port map(
-         -- Write Ports (wr_clk domain)
-         wr_clk => pciClk,
-         din    => pciToEvr.acceptDelay,
-         -- Read Ports (rd_clk domain)
-         rd_clk => evrClk,
-         dout   => fromPci.acceptDelay);  
 
    process (evrClk)
    begin
@@ -197,28 +177,5 @@ begin
          end if;
       end if;
    end process;
-
-   EvrOpCodeDelay_0 : entity work.EvrOpCodeDelay
-      port map(
-         evrClk             => evrClk,
-         evrRst             => fromPci.evrReset,
-         delayConfig        => fromPci.runDelay,
-         din(64)            => r.toPgp.run,
-         din(63 downto 32)  => r.toPgp.seconds,
-         din(31 downto 0)   => r.toPgp.offset,
-         dout(64)           => evrToPgp.run,
-         dout(63 downto 32) => evrToPgp.seconds,
-         dout(31 downto 0)  => evrToPgp.offset); 
-
-   EvrOpCodeDelay_1 : entity work.EvrOpCodeDelay
-      port map(
-         evrClk             => evrClk,
-         evrRst             => fromPci.evrReset,
-         delayConfig        => fromPci.acceptDelay,
-         din(64)            => r.toPgp.accept,
-         din(63 downto 32)  => (others => '0'),
-         din(31 downto 0)   => (others => '0'),
-         dout(64)           => evrToPgp.accept,
-         dout(63 downto 32) => open,
-         dout(31 downto 0)  => open);          
+     
 end rtl;

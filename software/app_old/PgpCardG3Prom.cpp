@@ -123,8 +123,8 @@ bool PgpCardG3Prom::bufferedWriteBootProm ( ) {
    __u32 address = 0;  
    __u16 fileData;
    
-   __u32 bufAddr[512];  
-   __u16 bufData[512];   
+   __u32 bufAddr[256];  
+   __u16 bufData[256];   
    __u16 bufSize = 0;
    
    double size = double(PROM_SIZE);
@@ -166,7 +166,7 @@ bool PgpCardG3Prom::bufferedWriteBootProm ( ) {
          bufSize++;
          
          // Check if we need to send the buffer
-         if(bufSize==512) {
+         if(bufSize==256) {
             bufferedProgramCommand(bufAddr,bufData,bufSize);
             bufSize = 0;
          }

@@ -119,10 +119,10 @@ architecture rtl of PciApp is
       regTxRdData,
       regLocRdData,
       regFlashRdData,
-      runDelay,
-      acceptDelay,
       rebootTimer,
       scratchPad : slv(31 downto 0);
+   signal runDelay,
+      acceptDelay : Slv32Array(0 to 7);         
 
    signal serialNumber : slv(63 downto 0);
 
@@ -195,8 +195,6 @@ begin
          PciToEvr.enable      <= evrEnable;
          PciToEvr.runCode     <= runCode;
          PciToEvr.acceptCode  <= acceptCode;
-         PciToEvr.runDelay    <= runDelay;
-         PciToEvr.acceptDelay <= acceptDelay;
 
          for i in 0 to DMA_SIZE_C-1 loop
             PciToPgp.pgpRxRst(i) <= pgpRxRst(i) or cardRst;
@@ -226,6 +224,9 @@ begin
       PciToPgp.dmaTxIbSlave(lane)  <= dmaTxIbSlave(lane);
       PciToPgp.dmaTxObMaster(lane) <= dmaTxObMaster(lane);
       PciToPgp.dmaRxIbSlave(lane)  <= dmaRxIbSlave(lane);
+      
+      PciToPgp.runDelay    <= runDelay;
+      PciToPgp.acceptDelay <= acceptDelay;      
 
    end generate MAP_PGP_DMA_LANES;
 
@@ -474,8 +475,8 @@ begin
             pllTxRst      <= (others => '0');
             runCode       <= (others => '0');
             acceptCode    <= (others => '0');
-            runDelay      <= (others => '0');
-            acceptDelay   <= (others => '0');
+            runDelay      <= (others => (others => '0'));
+            acceptDelay   <= (others => (others => '0'));
             evrEnable     <= '0';
             evrReset      <= '0';
             evrPllRst     <= '0';
@@ -584,16 +585,6 @@ begin
                            end if;
                         end loop;
                      end loop;
-                  when x"13" =>
-                     regLocRdData  <= runDelay;
-                     if regWrEn = '1' then
-                        runDelay  <= regWrData;
-                     end if; 
-                  when x"14" =>
-                     regLocRdData  <= acceptDelay;
-                     if regWrEn = '1' then
-                        acceptDelay  <= regWrData;
-                     end if;                      
                   -------------------------------
                   -- PGP Registers
                   -------------------------------   
@@ -622,11 +613,21 @@ begin
                      if regAddr(9 downto 8) = "11" then
                         regLocRdData <= buildStampString(conv_integer(regAddr(7 downto 2)));
                      else
-                        -------------------------------
-                        -- More PGP Registers
-                        -------------------------------   
-                        --PGP DMA channels
                         for lane in 0 to 7 loop
+                           --regAddr: 0x70-0x77 
+                           if (regAddr(9 downto 2) = (112+lane)) then
+                              regLocRdData  <= runDelay(lane);
+                              if regWrEn = '1' then
+                                 runDelay(lane)  <= regWrData;
+                              end if;                            
+                           end if; 
+                           --regAddr: 0x78-0x7F 
+                           if (regAddr(9 downto 2) = (120+lane)) then
+                              regLocRdData  <= acceptDelay(lane);
+                              if regWrEn = '1' then
+                                 acceptDelay(lane)  <= regWrData;
+                              end if;                            
+                           end if;                            
                            --regAddr: 0x80-0x87 
                            if (regAddr(9 downto 2) = (128+lane)) then
                               regLocRdData(3 downto 0)   <= rxCount(lane, 0);

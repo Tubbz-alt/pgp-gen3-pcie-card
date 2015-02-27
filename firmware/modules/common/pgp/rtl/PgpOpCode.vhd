@@ -27,6 +27,9 @@ entity PgpOpCode is
    generic (
       TPD_G : time := 1 ns);
    port (
+      -- Delay Configuration
+      runDelay    : in slv(31 downto 0);
+      acceptDelay : in slv(31 downto 0);
       -- External Interfaces
       evrToPgp   : in  EvrToPgpType;
       -- PGP core interface
@@ -67,9 +70,37 @@ architecture rtl of PgpOpCode is
    signal r   : RegType := REG_INIT_C;
    signal rin : RegType;
 
-   signal fromEvr : EvrToPgpType := EVR_TO_PGP_INIT_C;
+   signal delay   : EvrToPgpType;
+   signal fromEvr : EvrToPgpType;
 
 begin
+
+   ----------------
+   -- Delay Modules
+   ----------------
+   EvrOpCodeDelay_0 : entity work.EvrOpCodeDelay
+      port map(
+         evrClk             => evrClk,
+         evrRst             => evrRst,
+         delayConfig        => runDelay,
+         din(64)            => evrToPgp.run,
+         din(63 downto 32)  => evrToPgp.seconds,
+         din(31 downto 0)   => evrToPgp.offset,
+         dout(64)           => delay.run,
+         dout(63 downto 32) => delay.seconds,
+         dout(31 downto 0)  => delay.offset); 
+
+   EvrOpCodeDelay_1 : entity work.EvrOpCodeDelay
+      port map(
+         evrClk             => evrClk,
+         evrRst             => evrRst,
+         delayConfig        => acceptDelay,
+         din(64)            => evrToPgp.accept,
+         din(63 downto 32)  => (others => '0'),
+         din(31 downto 0)   => (others => '0'),
+         dout(64)           => delay.accept,
+         dout(63 downto 32) => open,
+         dout(31 downto 0)  => open);  
 
    -------------------------------
    -- Output Bus Mapping
@@ -89,9 +120,9 @@ begin
       port map(
          -- Write Ports (wr_clk domain)
          wr_clk             => evrClk,
-         wr_en              => evrToPgp.run,
-         din(63 downto 32)  => evrToPgp.seconds,
-         din(31 downto 0)   => evrToPgp.offset,
+         wr_en              => delay.run,
+         din(63 downto 32)  => delay.seconds,
+         din(31 downto 0)   => delay.offset,
          -- Read Ports (rd_clk domain)
          rd_clk             => pgpClk,
          rd_en              => '1',
@@ -102,7 +133,7 @@ begin
    SynchronizerOneShot_Inst : entity work.SynchronizerOneShot
       port map(
          clk     => pgpClk,
-         dataIn  => evrToPgp.accept,
+         dataIn  => delay.accept,
          dataOut => fromEvr.accept); 
 
    -------------------------------

@@ -51,10 +51,10 @@
 // int pgpcard_setEvrAcceptCode(int fd, uint acceptCode)
 
 // Set EVR Run Delay
-// int pgpcard_setEvrRunDelay(int fd, uint runDelay)
+// int pgpcard_setEvrRunDelay(int fd, uint lane, uint runDelay)
 
 // Set EVR Run Delay
-// int pgpcard_setEvrAcceptDelay(int fd, uint acceptDelay)
+// int pgpcard_setEvrAcceptDelay(int fd, uint lane, uint acceptDelay)
 
 // Enable/Disable EVR 
 // int pgpcard_enableEvr(int fd)
@@ -214,21 +214,79 @@ inline int pgpcard_setEvrAcceptCode(int fd, uint acceptCode) {
 }
 
 // Set EVR Run Delay
-inline int pgpcard_setEvrRunDelay(int fd, uint runDelay) {
+inline int pgpcard_setEvrRunDelay(int fd, uint lane, uint runDelay) {
    PgpCardTx  t;
 
    t.model = sizeof(PgpCardTx*);
-   t.cmd   = IOCTL_Evr_RunDelay;
+   // Determine command
+   switch ( lane ) {   
+      case 0x0:
+         t.cmd   = IOCTL_Evr_RunDelay0;
+         break;      
+      case 0x1:
+         t.cmd   = IOCTL_Evr_RunDelay1;
+         break;      
+      case 0x2:
+         t.cmd   = IOCTL_Evr_RunDelay2;
+         break;      
+      case 0x3:
+         t.cmd   = IOCTL_Evr_RunDelay3;
+         break; 
+      case 0x4:
+         t.cmd   = IOCTL_Evr_RunDelay4;
+         break;      
+      case 0x5:
+         t.cmd   = IOCTL_Evr_RunDelay5;
+         break;      
+      case 0x6:
+         t.cmd   = IOCTL_Evr_RunDelay6;
+         break;      
+      case 0x7:
+         t.cmd   = IOCTL_Evr_RunDelay7;
+         break;          
+      default:
+         t.cmd   = IOCTL_NOP;
+         break;
+   }   
    t.data  = (__u32*) runDelay;
    return(write(fd, &t, sizeof(PgpCardTx)));
 }
 
 // Set EVR Accept Delay
-inline int pgpcard_setEvrAcceptDelay(int fd, uint acceptDelay) {
+inline int pgpcard_setEvrAcceptDelay(int fd, uint lane, uint acceptDelay) {
    PgpCardTx  t;
 
    t.model = sizeof(PgpCardTx*);
-   t.cmd   = IOCTL_Evr_AcceptDelay;
+   // Determine command
+   switch ( lane ) {   
+      case 0x0:
+         t.cmd   = IOCTL_Evr_AcceptDelay0;
+         break;      
+      case 0x1:
+         t.cmd   = IOCTL_Evr_AcceptDelay1;
+         break;      
+      case 0x2:
+         t.cmd   = IOCTL_Evr_AcceptDelay2;
+         break;      
+      case 0x3:
+         t.cmd   = IOCTL_Evr_AcceptDelay3;
+         break; 
+      case 0x4:
+         t.cmd   = IOCTL_Evr_AcceptDelay4;
+         break;      
+      case 0x5:
+         t.cmd   = IOCTL_Evr_AcceptDelay5;
+         break;      
+      case 0x6:
+         t.cmd   = IOCTL_Evr_AcceptDelay6;
+         break;      
+      case 0x7:
+         t.cmd   = IOCTL_Evr_AcceptDelay7;
+         break;          
+      default:
+         t.cmd   = IOCTL_NOP;
+         break;
+   }   
    t.data  = (__u32*) acceptDelay;
    return(write(fd, &t, sizeof(PgpCardTx)));
 }

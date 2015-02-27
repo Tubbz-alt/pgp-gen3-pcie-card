@@ -77,6 +77,8 @@ package PgpCardG3Pkg is
       dmaRxIbSlave     : AxiStreamSlaveArray(0 to 7);
       dmaRxDescFromPci : DescFromPciArray(0 to 7);
       dmaRxTranFromPci : TranFromPciArray(0 to 7);
+      runDelay         : Slv32Array(0 to 7);
+      acceptDelay      : Slv32Array(0 to 7);      
    end record;
 
    -- EVR -> PGP Parallel Interface
@@ -109,8 +111,6 @@ package PgpCardG3Pkg is
       enable      : sl;
       runCode     : slv(7 downto 0);
       acceptCode  : slv(7 downto 0);
-      runDelay    : slv(31 downto 0);
-      acceptDelay : slv(31 downto 0);
    end record;
    constant PCI_TO_EVR_INIT_C : PciToEvrType := (
       countRst    => '0',
@@ -118,9 +118,7 @@ package PgpCardG3Pkg is
       evrReset    => '0',
       enable      => '0',
       runCode     => (others => '0'),
-      acceptCode  => (others => '0'),
-      runDelay    => (others => '0'),
-      acceptDelay => (others => '0'));    
+      acceptCode  => (others => '0'));  
 
    type TrigLutInType is record         --pgpClk Domain
       raddr : slv(7 downto 0);
