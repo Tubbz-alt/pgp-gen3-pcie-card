@@ -183,8 +183,15 @@ bool PgpCardG3Prom::bufferedWriteBootProm ( ) {
    
    // Check if we need to send the buffer
    if(bufSize != 0) {
-      bufferedProgramCommand(bufAddr,bufData,bufSize);
-   }   
+      // Pad the end of the block with ones
+      for(i=bufSize;i<256;i++){
+         bufData[bufSize] = 0xFFFF;
+      }
+      // Send the last block program 
+      if(bufferedProgramCommand(bufAddr,256,bufData)) {
+         return false;
+      }      
+   }     
    
    mcsReader.close();   
    cout << "Writing completed" << endl;   
