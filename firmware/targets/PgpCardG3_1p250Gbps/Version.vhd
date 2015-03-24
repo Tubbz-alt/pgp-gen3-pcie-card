@@ -4,9 +4,9 @@ use ieee.std_logic_1164.all;
 
 package Version is
 
-constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CEC83004"; -- MAKE_VERSION
+constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CEC83005"; -- MAKE_VERSION
 
-constant BUILD_STAMP_C : string := "PgpCardG3_1p250Gbps: Vivado v2014.1 (x86_64) Built Fri Feb 27 12:19:48 PST 2015 by ruckman";
+constant BUILD_STAMP_C : string := "PgpCardG3_1p250Gbps: Vivado v2014.1 (x86_64) Built Tue Mar 24 10:03:56 PDT 2015 by ruckman";
 
 end Version;
 
@@ -22,6 +22,8 @@ end Version;
 -- 02/24/2015 (0xCEC83003): Added runDelay and acceptDelay registers
 --
 -- 02/26/2015 (0xCEC83004): Dedicating one runDelay/acceptDelay register pair per lane
+--
+-- 03/24/2015 (0xCEC83005): Dedicating one runCode/acceptCode register pair per lane
 --
 -------------------------------------------------------------------------------
 

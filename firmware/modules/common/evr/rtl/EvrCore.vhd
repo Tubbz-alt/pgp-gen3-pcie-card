@@ -5,13 +5,13 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-24
--- Last update: 2014-10-07
--- Platform   : Vivado 2014.1
+-- Last update: 2015-03-24
+-- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
 -- Description: 
 -------------------------------------------------------------------------------
--- Copyright (c) 2014 SLAC National Accelerator Laboratory
+-- Copyright (c) 2015 SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
 
 library ieee;
@@ -25,7 +25,7 @@ entity EvrCore is
       -- External Interfaces
       pciToEvr   : in  PciToEvrType;
       evrToPci   : out EvrToPciType;
-      evrToPgp   : out EvrToPgpType;
+      evrToPgp   : out EvrToPgpArray(0 to 7);
       -- GT Pins
       evrRefClkP : in  sl;
       evrRefClkN : in  sl;

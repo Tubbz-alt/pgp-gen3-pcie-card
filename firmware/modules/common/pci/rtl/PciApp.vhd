@@ -5,8 +5,8 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2015-02-24
--- Platform   : Vivado 2014.1
+-- Last update: 2015-03-24
+-- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
 -- Description:
@@ -122,7 +122,7 @@ architecture rtl of PciApp is
       rebootTimer,
       scratchPad : slv(31 downto 0);
    signal runDelay,
-      acceptDelay : Slv32Array(0 to 7);         
+      acceptDelay : Slv32Array(0 to 7);
 
    signal serialNumber : slv(63 downto 0);
 
@@ -155,7 +155,7 @@ architecture rtl of PciApp is
       evrEnable : sl;
    signal evrErrorCnt : slv(3 downto 0);
    signal runCode,
-      acceptCode : slv(7 downto 0);
+      acceptCode : Slv8Array(0 to 7);
    
    attribute KEEP_HIERARCHY : string;
    attribute KEEP_HIERARCHY of
@@ -189,16 +189,16 @@ begin
          PciToPgp.loopBack      <= loopBack;
          PciToPgp.enHeaderCheck <= enHeaderCheck;
 
-         PciToEvr.countRst    <= countRst or cardRst;
-         PciToEvr.pllRst      <= evrPllRst or cardRst;
-         PciToEvr.evrReset    <= evrReset or cardRst;
-         PciToEvr.enable      <= evrEnable;
-         PciToEvr.runCode     <= runCode;
-         PciToEvr.acceptCode  <= acceptCode;
+         PciToEvr.countRst <= countRst or cardRst;
+         PciToEvr.pllRst   <= evrPllRst or cardRst;
+         PciToEvr.evrReset <= evrReset or cardRst;
+         PciToEvr.enable   <= evrEnable;
 
          for i in 0 to DMA_SIZE_C-1 loop
-            PciToPgp.pgpRxRst(i) <= pgpRxRst(i) or cardRst;
-            PciToPgp.pgpTxRst(i) <= pgpTxRst(i) or cardRst;
+            PciToEvr.runCode(i)    <= runCode(i);
+            PciToEvr.acceptCode(i) <= acceptCode(i);
+            PciToPgp.pgpRxRst(i)   <= pgpRxRst(i) or cardRst;
+            PciToPgp.pgpTxRst(i)   <= pgpTxRst(i) or cardRst;
          end loop;
       end if;
    end process;
@@ -224,9 +224,9 @@ begin
       PciToPgp.dmaTxIbSlave(lane)  <= dmaTxIbSlave(lane);
       PciToPgp.dmaTxObMaster(lane) <= dmaTxObMaster(lane);
       PciToPgp.dmaRxIbSlave(lane)  <= dmaRxIbSlave(lane);
-      
-      PciToPgp.runDelay    <= runDelay;
-      PciToPgp.acceptDelay <= acceptDelay;      
+
+      PciToPgp.runDelay(lane)    <= runDelay(lane);
+      PciToPgp.acceptDelay(lane) <= acceptDelay(lane);
 
    end generate MAP_PGP_DMA_LANES;
 
@@ -473,8 +473,8 @@ begin
             pgpTxRst      <= (others => '0');
             pllRxRst      <= (others => '0');
             pllTxRst      <= (others => '0');
-            runCode       <= (others => '0');
-            acceptCode    <= (others => '0');
+            runCode       <= (others => x"00");
+            acceptCode    <= (others => x"00");
             runDelay      <= (others => (others => '0'));
             acceptDelay   <= (others => (others => '0'));
             evrEnable     <= '0';
@@ -561,18 +561,14 @@ begin
                      regLocRdData(3 downto 0) <= evrErrorCnt;
                      regLocRdData(4)          <= evrLinkUp;
                   when x"11" =>
-                     -- EVR's Enable, trigger codes, and Resets
-                     regLocRdData(7 downto 0)  <= runCode;
-                     regLocRdData(15 downto 8) <= acceptCode;
-                     regLocRdData(16)          <= evrEnable;
-                     regLocRdData(17)          <= evrReset;
-                     regLocRdData(18)          <= evrPllRst;
+                     -- EVR's Enable and Resets
+                     regLocRdData(0) <= evrEnable;
+                     regLocRdData(1) <= evrReset;
+                     regLocRdData(2) <= evrPllRst;
                      if regWrEn = '1' then
-                        runCode    <= regWrData(7 downto 0);
-                        acceptCode <= regWrData(15 downto 8);
-                        evrEnable  <= regWrData(16);
-                        evrReset   <= regWrData(17);
-                        evrPllRst  <= regWrData(18);
+                        evrEnable <= regWrData(0);
+                        evrReset  <= regWrData(1);
+                        evrPllRst <= regWrData(2);
                      end if;
                   when x"12" =>
                      --EVR's Lanes Masks
@@ -614,20 +610,34 @@ begin
                         regLocRdData <= buildStampString(conv_integer(regAddr(7 downto 2)));
                      else
                         for lane in 0 to 7 loop
+                           --regAddr: 0x60-0x67 
+                           if (regAddr(9 downto 2) = (96+lane)) then
+                              regLocRdData(7 downto 0) <= runCode(lane);
+                              if regWrEn = '1' then
+                                 runCode(lane) <= regWrData(7 downto 0);
+                              end if;
+                           end if;
+                           --regAddr: 0x68-0x6F 
+                           if (regAddr(9 downto 2) = (104+lane)) then
+                              regLocRdData(7 downto 0) <= acceptCode(lane);
+                              if regWrEn = '1' then
+                                 acceptCode(lane) <= regWrData(7 downto 0);
+                              end if;
+                           end if;
                            --regAddr: 0x70-0x77 
                            if (regAddr(9 downto 2) = (112+lane)) then
-                              regLocRdData  <= runDelay(lane);
+                              regLocRdData <= runDelay(lane);
                               if regWrEn = '1' then
-                                 runDelay(lane)  <= regWrData;
-                              end if;                            
-                           end if; 
+                                 runDelay(lane) <= regWrData;
+                              end if;
+                           end if;
                            --regAddr: 0x78-0x7F 
                            if (regAddr(9 downto 2) = (120+lane)) then
-                              regLocRdData  <= acceptDelay(lane);
+                              regLocRdData <= acceptDelay(lane);
                               if regWrEn = '1' then
-                                 acceptDelay(lane)  <= regWrData;
-                              end if;                            
-                           end if;                            
+                                 acceptDelay(lane) <= regWrData;
+                              end if;
+                           end if;
                            --regAddr: 0x80-0x87 
                            if (regAddr(9 downto 2) = (128+lane)) then
                               regLocRdData(3 downto 0)   <= rxCount(lane, 0);

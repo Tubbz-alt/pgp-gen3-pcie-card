@@ -64,7 +64,10 @@ struct PgpCardReg {
    __u32 evrSpare0[13]; // Software_Addr = 0x07C:0x04C,  Firmware_Addr(13 downto 2) = 0x01F:0x013
    
    __u32 pgpCardStat[2];// Software_Addr = 0x084:0x080,  Firmware_Addr(13 downto 2) = 0x021:0x020       
-   __u32 pgpSpare0[78]; // Software_Addr = 0x1BC:0x088,  Firmware_Addr(13 downto 2) = 0x06F:0x022
+   __u32 pgpSpare0[62]; // Software_Addr = 0x17C:0x088,  Firmware_Addr(13 downto 2) = 0x05F:0x022
+   
+   __u32 runCode[8];   // Software_Addr = 0x19C:0x180,  Firmware_Addr(13 downto 2) = 0x067:0x060       
+   __u32 acceptCode[8];// Software_Addr = 0x1BC:0x1A0,  Firmware_Addr(13 downto 2) = 0x06F:0x068         
       
    __u32 runDelay[8];   // Software_Addr = 0x1DC:0x1C0,  Firmware_Addr(13 downto 2) = 0x077:0x070       
    __u32 acceptDelay[8];// Software_Addr = 0x1FC:0x1E0,  Firmware_Addr(13 downto 2) = 0x07F:0x078       

@@ -5,13 +5,13 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2014-07-31
--- Platform   : Vivado 2014.1
+-- Last update: 2015-03-24
+-- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
 -- Description: 
 -------------------------------------------------------------------------------
--- Copyright (c) 2014 SLAC National Accelerator Laboratory
+-- Copyright (c) 2015 SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
 
 library ieee;
@@ -33,7 +33,7 @@ entity PgpApp is
       -- External Interfaces     
       pciToPgp     : in  PciToPgpType;
       pgpToPci     : out PgpToPciType;
-      evrToPgp     : in  EvrToPgpType;
+      evrToPgp     : in  EvrToPgpArray(0 to 7);
       -- Non VC Rx Signals
       pgpRxIn      : out Pgp2bRxInArray(0 to 7);
       pgpRxOut     : in  Pgp2bRxOutArray(0 to 7);
@@ -79,7 +79,7 @@ architecture mapping of PgpApp is
    signal trigLutOut    : TrigLutOutVectorArray(0 to 7, 0 to 3);
    signal pgpRxCtrls    : AxiStreamCtrlVectorArray(0 to 7, 0 to 3);
    signal runDelay,
-      acceptDelay : Slv32Array(0 to 7);  
+      acceptDelay : Slv32Array(0 to 7);
    
 begin
 
@@ -124,7 +124,7 @@ begin
       RstSync_2 : entity work.PwrUpRst
          generic map (
             TPD_G      => TPD_G,
-            DURATION_G => getTimeRatio(PGP_RATE_G, 200.0))-- 100 ms reset    
+            DURATION_G => getTimeRatio(PGP_RATE_G, 200.0))  -- 100 ms reset    
          port map (
             clk    => pgpClk,
             arst   => PciToPgp.pgpTxRst(i),
@@ -133,7 +133,7 @@ begin
       RstSync_3 : entity work.PwrUpRst
          generic map (
             TPD_G      => TPD_G,
-            DURATION_G => getTimeRatio(PGP_RATE_G, 200.0))-- 100 ms reset    
+            DURATION_G => getTimeRatio(PGP_RATE_G, 200.0))  -- 100 ms reset    
          port map (
             clk    => pgpClk,
             arst   => PciToPgp.pgpRxRst(i),
@@ -171,7 +171,7 @@ begin
             clk     => pgpClk,
             dataIn  => PciToPgp.runDelay(i),
             dataOut => runDelay(i)); 
-            
+
       SynchronizerVector_2 : entity work.SynchronizerVector
          generic map (
             TPD_G   => TPD_G,
@@ -180,7 +180,7 @@ begin
             clk     => pgpClk,
             dataIn  => PciToPgp.acceptDelay(i),
             dataOut => acceptDelay(i));             
-            
+
    end generate GEN_SYNC_LANE;
 
    RstSync_4 : entity work.RstSync
@@ -221,10 +221,10 @@ begin
             TPD_G => TPD_G)
          port map (
             -- Delay Configuration
-            runDelay    => runDelay(lane),
-            acceptDelay => acceptDelay(lane),
+            runDelay      => runDelay(lane),
+            acceptDelay   => acceptDelay(lane),
             -- External Interfaces
-            evrToPgp      => evrToPgp,
+            evrToPgp      => evrToPgp(lane),
             --PGP Core interfaces
             pgpTxIn       => pgpTxIn(lane),
             -- RX Virtual Channel Interface

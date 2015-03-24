@@ -104,8 +104,8 @@ typedef struct {
    __u32 PgpFifoErrCnt[8];
    
    // EVR Status & Control Registers   
-   __u32 EvrRunCode;   
-   __u32 EvrAcceptCode;   
+   __u32 EvrRunCode[8];   
+   __u32 EvrAcceptCode[8];   
    __u32 EvrEnHdrCheck[8][4];   
    __u32 EvrEnable;   
    __u32 EvrReady;   
@@ -174,23 +174,41 @@ typedef struct {
 #define IOCTL_Evr_Clr_PLL_RST 0x27
 #define IOCTL_Evr_Mask        0x28
 
-#define IOCTL_Evr_RunDelay0    0x30
-#define IOCTL_Evr_RunDelay1    0x31
-#define IOCTL_Evr_RunDelay2    0x32
-#define IOCTL_Evr_RunDelay3    0x33
-#define IOCTL_Evr_RunDelay4    0x34
-#define IOCTL_Evr_RunDelay5    0x35
-#define IOCTL_Evr_RunDelay6    0x36
-#define IOCTL_Evr_RunDelay7    0x37
+#define IOCTL_Evr_RunCode0    0x30
+#define IOCTL_Evr_RunCode1    0x31
+#define IOCTL_Evr_RunCode2    0x32
+#define IOCTL_Evr_RunCode3    0x33
+#define IOCTL_Evr_RunCode4    0x34
+#define IOCTL_Evr_RunCode5    0x35
+#define IOCTL_Evr_RunCode6    0x36
+#define IOCTL_Evr_RunCode7    0x37
 
-#define IOCTL_Evr_AcceptDelay0 0x40
-#define IOCTL_Evr_AcceptDelay1 0x41
-#define IOCTL_Evr_AcceptDelay2 0x42
-#define IOCTL_Evr_AcceptDelay3 0x43
-#define IOCTL_Evr_AcceptDelay4 0x44
-#define IOCTL_Evr_AcceptDelay5 0x45
-#define IOCTL_Evr_AcceptDelay6 0x46
-#define IOCTL_Evr_AcceptDelay7 0x47
+#define IOCTL_Evr_AcceptCode0 0x38
+#define IOCTL_Evr_AcceptCode1 0x39
+#define IOCTL_Evr_AcceptCode2 0x3A
+#define IOCTL_Evr_AcceptCode3 0x3B
+#define IOCTL_Evr_AcceptCode4 0x3C
+#define IOCTL_Evr_AcceptCode5 0x3D
+#define IOCTL_Evr_AcceptCode6 0x3E
+#define IOCTL_Evr_AcceptCode7 0x3F
+
+#define IOCTL_Evr_RunDelay0    0x40
+#define IOCTL_Evr_RunDelay1    0x41
+#define IOCTL_Evr_RunDelay2    0x42
+#define IOCTL_Evr_RunDelay3    0x43
+#define IOCTL_Evr_RunDelay4    0x44
+#define IOCTL_Evr_RunDelay5    0x45
+#define IOCTL_Evr_RunDelay6    0x46
+#define IOCTL_Evr_RunDelay7    0x47
+
+#define IOCTL_Evr_AcceptDelay0 0x48
+#define IOCTL_Evr_AcceptDelay1 0x49
+#define IOCTL_Evr_AcceptDelay2 0x4A
+#define IOCTL_Evr_AcceptDelay3 0x4B
+#define IOCTL_Evr_AcceptDelay4 0x4C
+#define IOCTL_Evr_AcceptDelay5 0x4D
+#define IOCTL_Evr_AcceptDelay6 0x4E
+#define IOCTL_Evr_AcceptDelay7 0x4F
 
 // Set Debug, Pass Debug Value As Arg
 #define IOCTL_Set_Debug 0xFE

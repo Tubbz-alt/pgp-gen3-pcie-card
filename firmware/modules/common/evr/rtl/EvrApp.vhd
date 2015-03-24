@@ -5,8 +5,8 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2015-02-24
--- Platform   : Vivado 2014.1
+-- Last update: 2015-03-24
+-- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
 -- Description: 
@@ -27,7 +27,7 @@ entity EvrApp is
       -- External Interfaces
       pciToEvr : in  PciToEvrType;
       evrToPci : out EvrToPciType;
-      evrToPgp : out EvrToPgpType;
+      evrToPgp : out EvrToPgpArray(0 to 7);
       -- MGT physical channel
       rxLinkUp : in  sl;
       rxError  : in  sl;
@@ -53,7 +53,7 @@ architecture rtl of EvrApp is
       offset      : slv(31 downto 0);
       secondsTmp  : slv(31 downto 0);
       seconds     : slv(31 downto 0);
-      toPgp       : EvrToPgpType;
+      toPgp       : EvrToPgpArray(0 to 7);
       toPci       : EvrToPciType;
    end record;
    constant REG_INIT_C : RegType := (
@@ -62,7 +62,7 @@ architecture rtl of EvrApp is
       offset      => (others => '0'),
       secondsTmp  => (others => '0'),
       seconds     => (others => '0'),
-      toPgp       => EVR_TO_PGP_INIT_C,
+      toPgp       => (others => EVR_TO_PGP_INIT_C),
       toPci       => EVR_TO_PCI_INIT_C);   
    signal r       : RegType      := REG_INIT_C;
    signal fromPci : PciToEvrType := PCI_TO_EVR_INIT_C;
@@ -108,28 +108,33 @@ begin
          dataIn  => pciToEvr.enable,
          dataOut => fromPci.enable);       
 
-   SynchronizerFifo_0 : entity work.SynchronizerFifo
-      generic map(
-         DATA_WIDTH_G => 16)
-      port map(
-         -- Write Ports (wr_clk domain)
-         wr_clk            => pciClk,
-         din(7 downto 0)   => pciToEvr.runCode,
-         din(15 downto 8)  => pciToEvr.acceptCode,
-         -- Read Ports (rd_clk domain)
-         rd_clk            => evrClk,
-         dout(7 downto 0)  => fromPci.runCode,
-         dout(15 downto 8) => fromPci.acceptCode);  
-
+   SYNC_TRIG_CODES :
+   for i in 0 to 7 generate
+      SynchronizerFifo_0 : entity work.SynchronizerFifo
+         generic map(
+            DATA_WIDTH_G => 16)
+         port map(
+            -- Write Ports (wr_clk domain)
+            wr_clk            => pciClk,
+            din(7 downto 0)   => pciToEvr.runCode(i),
+            din(15 downto 8)  => pciToEvr.acceptCode(i),
+            -- Read Ports (rd_clk domain)
+            rd_clk            => evrClk,
+            dout(7 downto 0)  => fromPci.runCode(i),
+            dout(15 downto 8) => fromPci.acceptCode(i));  
+   end generate SYNC_TRIG_CODES;
 
    process (evrClk)
+      variable i : natural;
    begin
       if rising_edge(evrClk) then
          if fromPci.evrReset = '1' then
             r <= REG_INIT_C;
          else
-            r.toPgp.run    <= '0';
-            r.toPgp.accept <= '0';
+            for i in 0 to 7 loop
+               r.toPgp(i).run    <= '0';
+               r.toPgp(i).accept <= '0';
+            end loop;
             r.toPci.linkUp <= rxLinkUp;
 
             -- Error Counting
@@ -161,21 +166,22 @@ begin
                r.secondsTmp <= r.secondsTmp(30 downto 0) & '0';
             end if;
 
-            -- Check for run code event 
-            if (fromPci.enable = '1') and (r.eventStream = fromPci.runCode) then
-               -- Latch the seconds and offset
-               r.toPgp.run     <= '1';
-               r.toPgp.seconds <= r.seconds;
-               r.toPgp.offset  <= r.offset;
-            end if;
-
-            -- Check for accept code event 
-            if (fromPci.enable = '1') and (r.eventStream = fromPci.acceptCode) then
-               r.toPgp.accept <= '1';
-            end if;
+            for i in 0 to 7 loop
+               -- Check for run code event 
+               if (fromPci.enable = '1') and (r.eventStream = fromPci.runCode(i)) then
+                  -- Latch the seconds and offset
+                  r.toPgp(i).run     <= '1';
+                  r.toPgp(i).seconds <= r.seconds;
+                  r.toPgp(i).offset  <= r.offset;
+               end if;
+               -- Check for accept code event 
+               if (fromPci.enable = '1') and (r.eventStream = fromPci.acceptCode(i)) then
+                  r.toPgp(i).accept <= '1';
+               end if;
+            end loop;
             
          end if;
       end if;
    end process;
-     
+   
 end rtl;

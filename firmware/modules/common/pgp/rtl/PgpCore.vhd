@@ -5,13 +5,13 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2014-07-31
--- Platform   : Vivado 2014.1
+-- Last update: 2015-03-24
+-- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
 -- Description: 
 -------------------------------------------------------------------------------
--- Copyright (c) 2014 SLAC National Accelerator Laboratory
+-- Copyright (c) 2015 SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
 
 library ieee;
@@ -47,7 +47,7 @@ entity PgpCore is
       -- Parallel Interface
       PciToPgp   : in  PciToPgpType;
       PgpToPci   : out PgpToPciType;
-      EvrToPgp   : in  EvrToPgpType;
+      evrToPgp   : in  EvrToPgpArray(0 to 7);
       -- GT Pins
       pgpRefClkP : in  sl;
       pgpRefClkN : in  sl;

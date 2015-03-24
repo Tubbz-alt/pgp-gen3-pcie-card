@@ -45,10 +45,10 @@
 // int pgpcard_clrTxReset(int fd, uint lane);
 
 // Set EVR Run Code
-// int pgpcard_setEvrRunCode(int fd, uint runCode)
+// int pgpcard_setEvrRunCode(int fd, uint lane uint runCode)
 
 // Set EVR Run Code
-// int pgpcard_setEvrAcceptCode(int fd, uint acceptCode)
+// int pgpcard_setEvrAcceptCode(int fd, uint lane uint acceptCode)
 
 // Set EVR Run Delay
 // int pgpcard_setEvrRunDelay(int fd, uint lane, uint runDelay)
@@ -194,23 +194,81 @@ inline int pgpcard_clrLoop(int fd, uint lane) {
 }
 
 // Set EVR Run Code
-inline int pgpcard_setEvrRunCode(int fd, uint runCode) {
+inline int pgpcard_setEvrRunCode(int fd, uint lane, uint runDelay) {
    PgpCardTx  t;
 
    t.model = sizeof(PgpCardTx*);
-   t.cmd   = IOCTL_Evr_RunCode;
-   t.data  = (__u32*) runCode;
-   return(write(fd, &t, sizeof(PgpCardTx)));
+   // Determine command
+   switch ( lane ) {   
+      case 0x0:
+         t.cmd   = IOCTL_Evr_RunCode0;
+         break;      
+      case 0x1:
+         t.cmd   = IOCTL_Evr_RunCode1;
+         break;      
+      case 0x2:
+         t.cmd   = IOCTL_Evr_RunCode2;
+         break;      
+      case 0x3:
+         t.cmd   = IOCTL_Evr_RunCode3;
+         break; 
+      case 0x4:
+         t.cmd   = IOCTL_Evr_RunCode4;
+         break;      
+      case 0x5:
+         t.cmd   = IOCTL_Evr_RunCode5;
+         break;      
+      case 0x6:
+         t.cmd   = IOCTL_Evr_RunCode6;
+         break;      
+      case 0x7:
+         t.cmd   = IOCTL_Evr_RunCode7;
+         break;          
+      default:
+         t.cmd   = IOCTL_NOP;
+         break;
+   }   
+   t.data  = (__u32*) runDelay;
+   return(write(fd, &t, sizeof(PgpCardTx)));     
 }
 
 // Set EVR Accept Code
-inline int pgpcard_setEvrAcceptCode(int fd, uint acceptCode) {
+inline int pgpcard_setEvrAcceptCode(int fd, uint lane, uint runDelay) {
    PgpCardTx  t;
 
    t.model = sizeof(PgpCardTx*);
-   t.cmd   = IOCTL_Evr_AcceptCode;
-   t.data  = (__u32*) acceptCode;
-   return(write(fd, &t, sizeof(PgpCardTx)));
+   // Determine command
+   switch ( lane ) {   
+      case 0x0:
+         t.cmd   = IOCTL_Evr_AcceptCode0;
+         break;      
+      case 0x1:
+         t.cmd   = IOCTL_Evr_AcceptCode1;
+         break;      
+      case 0x2:
+         t.cmd   = IOCTL_Evr_AcceptCode2;
+         break;      
+      case 0x3:
+         t.cmd   = IOCTL_Evr_AcceptCode3;
+         break; 
+      case 0x4:
+         t.cmd   = IOCTL_Evr_AcceptCode4;
+         break;      
+      case 0x5:
+         t.cmd   = IOCTL_Evr_AcceptCode5;
+         break;      
+      case 0x6:
+         t.cmd   = IOCTL_Evr_AcceptCode6;
+         break;      
+      case 0x7:
+         t.cmd   = IOCTL_Evr_AcceptCode7;
+         break;          
+      default:
+         t.cmd   = IOCTL_NOP;
+         break;
+   }   
+   t.data  = (__u32*) runDelay;
+   return(write(fd, &t, sizeof(PgpCardTx)));   
 }
 
 // Set EVR Run Delay

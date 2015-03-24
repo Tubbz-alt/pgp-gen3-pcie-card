@@ -5,8 +5,8 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2015-02-24
--- Platform   : Vivado 2014.1
+-- Last update: 2015-03-24
+-- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
 -- Description:
@@ -78,7 +78,7 @@ package PgpCardG3Pkg is
       dmaRxDescFromPci : DescFromPciArray(0 to 7);
       dmaRxTranFromPci : TranFromPciArray(0 to 7);
       runDelay         : Slv32Array(0 to 7);
-      acceptDelay      : Slv32Array(0 to 7);      
+      acceptDelay      : Slv32Array(0 to 7);
    end record;
 
    -- EVR -> PGP Parallel Interface
@@ -88,6 +88,7 @@ package PgpCardG3Pkg is
       seconds : slv(31 downto 0);
       offset  : slv(31 downto 0);
    end record;
+   type EvrToPgpArray is array (integer range<>) of EvrToPgpType;
    constant EVR_TO_PGP_INIT_C : EvrToPgpType := (
       run     => '0',
       accept  => '0',
@@ -105,20 +106,20 @@ package PgpCardG3Pkg is
 
    -- PCIe -> EVR Parallel Interface
    type PciToEvrType is record          -- pciClk Domain
-      countRst    : sl;
-      pllRst      : sl;
-      evrReset    : sl;
-      enable      : sl;
-      runCode     : slv(7 downto 0);
-      acceptCode  : slv(7 downto 0);
+      countRst   : sl;
+      pllRst     : sl;
+      evrReset   : sl;
+      enable     : sl;
+      runCode    : Slv8Array(0 to 7);
+      acceptCode : Slv8Array(0 to 7);
    end record;
    constant PCI_TO_EVR_INIT_C : PciToEvrType := (
-      countRst    => '0',
-      pllRst      => '0',
-      evrReset    => '0',
-      enable      => '0',
-      runCode     => (others => '0'),
-      acceptCode  => (others => '0'));  
+      countRst   => '0',
+      pllRst     => '0',
+      evrReset   => '0',
+      enable     => '0',
+      runCode    => (others => x"00"),
+      acceptCode => (others => x"00"));  
 
    type TrigLutInType is record         --pgpClk Domain
       raddr : slv(7 downto 0);

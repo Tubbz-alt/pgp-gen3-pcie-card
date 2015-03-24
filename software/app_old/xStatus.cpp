@@ -130,10 +130,23 @@ int main (int argc, char **argv) {
       cout << "0x" <<  setw(1) << setfill('0') << status.PgpFifoErrCnt[7-x];            
       if(x!=7) cout << ", "; else cout << endl;
    } 
-   cout << endl;     
-   
-   cout << "             EvrRunCode: 0x" << setw(2) << setfill('0') << status.EvrRunCode << endl;
-   cout << "          EvrAcceptCode: 0x" << setw(2) << setfill('0') << status.EvrAcceptCode << endl;  
+   cout << endl;        
+   cout << "          EvrRunCode[0]: 0x" << setw(2) << setfill('0') << status.EvrRunCode[0] << endl;
+   cout << "          EvrRunCode[1]: 0x" << setw(2) << setfill('0') << status.EvrRunCode[1] << endl;
+   cout << "          EvrRunCode[2]: 0x" << setw(2) << setfill('0') << status.EvrRunCode[2] << endl;
+   cout << "          EvrRunCode[3]: 0x" << setw(2) << setfill('0') << status.EvrRunCode[3] << endl;
+   cout << "          EvrRunCode[4]: 0x" << setw(2) << setfill('0') << status.EvrRunCode[4] << endl;
+   cout << "          EvrRunCode[5]: 0x" << setw(2) << setfill('0') << status.EvrRunCode[5] << endl;
+   cout << "          EvrRunCode[6]: 0x" << setw(2) << setfill('0') << status.EvrRunCode[6] << endl;
+   cout << "          EvrRunCode[7]: 0x" << setw(2) << setfill('0') << status.EvrRunCode[7] << endl;
+   cout << "       EvrAcceptCode[0]: 0x" << setw(2) << setfill('0') << status.EvrAcceptCode[0] << endl;   
+   cout << "       EvrAcceptCode[1]: 0x" << setw(2) << setfill('0') << status.EvrAcceptCode[1] << endl;   
+   cout << "       EvrAcceptCode[2]: 0x" << setw(2) << setfill('0') << status.EvrAcceptCode[2] << endl;   
+   cout << "       EvrAcceptCode[3]: 0x" << setw(2) << setfill('0') << status.EvrAcceptCode[3] << endl;   
+   cout << "       EvrAcceptCode[4]: 0x" << setw(2) << setfill('0') << status.EvrAcceptCode[4] << endl;   
+   cout << "       EvrAcceptCode[5]: 0x" << setw(2) << setfill('0') << status.EvrAcceptCode[5] << endl;   
+   cout << "       EvrAcceptCode[6]: 0x" << setw(2) << setfill('0') << status.EvrAcceptCode[6] << endl;   
+   cout << "       EvrAcceptCode[7]: 0x" << setw(2) << setfill('0') << status.EvrAcceptCode[7] << endl;    
    cout << "         EvrRunDelay[0]: 0x" << setw(8) << setfill('0') << status.EvrRunDelay[0] << endl;
    cout << "         EvrRunDelay[1]: 0x" << setw(8) << setfill('0') << status.EvrRunDelay[1] << endl;
    cout << "         EvrRunDelay[2]: 0x" << setw(8) << setfill('0') << status.EvrRunDelay[2] << endl;

@@ -5,13 +5,13 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2014-03-29
--- Last update: 2014-07-09
--- Platform   : Vivado 2014.1
+-- Last update: 2015-03-24
+-- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
 -- Description: 
 -------------------------------------------------------------------------------
--- Copyright (c) 2014 SLAC National Accelerator Laboratory
+-- Copyright (c) 2015 SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
 
 library ieee;
@@ -88,11 +88,11 @@ architecture rtl of PgpCardG3Core is
       pciClk,
       pciRst,
       pciLinkUp : sl;
-   signal PgpToPci : PgpToPciType;
-   signal PciToPgp : PciToPgpType;
-   signal EvrToPci : EvrToPciType;
-   signal PciToEvr : PciToEvrType;
-   signal EvrToPgp : EvrToPgpType;
+   signal pgpToPci : PgpToPciType;
+   signal pciToPgp : PciToPgpType;
+   signal evrToPci : EvrToPciType;
+   signal pciToEvr : PciToEvrType;
+   signal evrToPgp : EvrToPgpArray(0 to 7);
 
 begin
 
@@ -101,13 +101,13 @@ begin
       port map (
          clkIn  => evrClk,
          clkOut => led(0));   
-         
+
    led(1) <= EvrToPci.linkUp;
    led(7) <= PciToEvr.countRst;
    led(2) <= PciToEvr.pllRst;
    led(3) <= PciToEvr.evrReset;
    led(4) <= PciToEvr.enable;
-   
+
    led(5) <= not(pciRst);
    led(6) <= pciLinkUp;
 
@@ -140,9 +140,9 @@ begin
          MMCM_CLKIN_PERIOD_G  => MMCM_CLKIN_PERIOD_G)  
       port map (
          -- Parallel Interface
-         EvrToPgp   => EvrToPgp,
-         PciToPgp   => PciToPgp,
-         PgpToPci   => PgpToPci,
+         evrToPgp   => evrToPgp,
+         pciToPgp   => pciToPgp,
+         pgpToPci   => pgpToPci,
          -- PGP Fiber Links         
          pgpRefClkP => pgpRefClkP,
          pgpRefClkN => pgpRefClkN,
@@ -165,9 +165,9 @@ begin
    EvrCore_Inst : entity work.EvrCore
       port map (
          -- External Interfaces
-         PciToEvr   => PciToEvr,
-         EvrToPci   => EvrToPci,
-         EvrToPgp   => EvrToPgp,
+         pciToEvr   => pciToEvr,
+         evrToPci   => evrToPci,
+         evrToPgp   => evrToPgp,
          -- EVR Ports       
          evrRefClkP => evrRefClkP,
          evrRefClkN => evrRefClkN,
@@ -199,10 +199,10 @@ begin
          flashOe    => flashOe,
          flashWe    => flashWe,
          -- Parallel Interface
-         PgpToPci   => PgpToPci,
-         PciToPgp   => PciToPgp,
-         PciToEvr   => PciToEvr,
-         EvrToPci   => EvrToPci,
+         pgpToPci   => pgpToPci,
+         pciToPgp   => pciToPgp,
+         pciToEvr   => pciToEvr,
+         evrToPci   => evrToPci,
          -- PCIe Ports      
          pciRstL    => pciRstL,
          pciRefClkP => pciRefClkP,

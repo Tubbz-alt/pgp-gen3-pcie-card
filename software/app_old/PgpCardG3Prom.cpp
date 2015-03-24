@@ -122,6 +122,7 @@ bool PgpCardG3Prom::bufferedWriteBootProm ( ) {
    
    __u32 address = 0;  
    __u16 fileData;
+   __u16 i;
    
    __u32 bufAddr[256];  
    __u16 bufData[256];   
@@ -188,9 +189,7 @@ bool PgpCardG3Prom::bufferedWriteBootProm ( ) {
          bufData[bufSize] = 0xFFFF;
       }
       // Send the last block program 
-      if(bufferedProgramCommand(bufAddr,256,bufData)) {
-         return false;
-      }      
+      bufferedProgramCommand(bufAddr,bufData,256);  
    }     
    
    mcsReader.close();   

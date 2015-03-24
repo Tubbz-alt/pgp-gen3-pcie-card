@@ -387,21 +387,20 @@ int my_Ioctl(struct file *filp, __u32 cmd, __u64 argument) {
          stat->EvrErrCnt = (tmp >>  0) & 0xF;
          
          tmp = pgpDevice->reg->evrCardStat[1];
-         stat->EvrPllRst     = (tmp >>  18) & 0x1;
-         stat->EvrReset      = (tmp >>  17) & 0x1;
-         stat->EvrEnable     = (tmp >>  16) & 0x1;
-         stat->EvrAcceptCode = (tmp >>  8)  & 0xFF;
-         stat->EvrRunCode    = (tmp >>  0)  & 0xFF;
+         stat->EvrPllRst     = (tmp >>  2) & 0x1;
+         stat->EvrReset      = (tmp >>  1) & 0x1;
+         stat->EvrEnable     = (tmp >>  0) & 0x1;
          
          tmp = pgpDevice->reg->evrCardStat[2];
          for (x=0; x < 8; x++) {
             for (y=0; y < 4; y++) {
                stat->EvrEnHdrCheck[x][y] = (tmp >> ((4*x)+y)) & 0x1;
             }
+            stat->EvrRunCode[x]     = pgpDevice->reg->runCode[x] & 0xFF;
+            stat->EvrAcceptCode[x]  = pgpDevice->reg->acceptCode[x] & 0xFF;
             stat->EvrRunDelay[x]    = pgpDevice->reg->runDelay[x];
-            stat->EvrAcceptDelay[x] = pgpDevice->reg->acceptDelay[x];
+            stat->EvrAcceptDelay[x] = pgpDevice->reg->acceptDelay[x];            
          }
-         
          
          tmp = pgpDevice->reg->pgpCardStat[0];
          for (x=0; x < 8; x++) {
@@ -525,76 +524,168 @@ int my_Ioctl(struct file *filp, __u32 cmd, __u64 argument) {
          pgpDevice->reg->pgpCardStat[0] &= mask;
          if (pgpDevice->debug > 0) printk(KERN_DEBUG "%s: Tx reset clr for %u\n", MOD_NAME, arg);
          return(SUCCESS);
-         break;      
-
-      // Set EVR's Run Code
-      case IOCTL_Evr_RunCode:      
-         tmp = pgpDevice->reg->evrCardStat[1];
-         tmp &= 0xFFFFFF00;
-         tmp |= (arg & 0xFF) << 0;
-         pgpDevice->reg->evrCardStat[1] = tmp;
-         if (pgpDevice->debug > 0) printk(KERN_DEBUG "%s: Set EVR Run Code for %u\n", MOD_NAME, arg);
-         return(SUCCESS);
-         break;
-         
-      // Set EVR's Accept Code
-      case IOCTL_Evr_AcceptCode:
-         tmp = pgpDevice->reg->evrCardStat[1];
-         tmp &= 0xFFFF00FF;
-         tmp |= (arg & 0xFF) << 8;
-         pgpDevice->reg->evrCardStat[1] = tmp;  
-         if (pgpDevice->debug > 0) printk(KERN_DEBUG "%s: Set EVR Accept Code for %u\n", MOD_NAME, arg);
-         return(SUCCESS);
-         break;  
+         break;        
          
       // Enable EVR
       case IOCTL_Evr_Enable:
-         pgpDevice->reg->evrCardStat[1] |= 0x10000;  
+         pgpDevice->reg->evrCardStat[1] |= 0x1;  
          if (pgpDevice->debug > 0) printk(KERN_DEBUG "%s: Enable EVR\n", MOD_NAME);
          return(SUCCESS);
          break;
 
       // Disable EVR
       case IOCTL_Evr_Disable:
-         pgpDevice->reg->evrCardStat[1] &= 0xFFFEFFFF;  
+         pgpDevice->reg->evrCardStat[1] &= 0xFFFFFFFE;  
          if (pgpDevice->debug > 0) printk(KERN_DEBUG "%s: Disable EVR\n", MOD_NAME);
          return(SUCCESS);
          break;  
 
       // Set Reset EVR
       case IOCTL_Evr_Set_Reset:
-         pgpDevice->reg->evrCardStat[1] |= 0x20000;  
+         pgpDevice->reg->evrCardStat[1] |= 0x2;  
          if (pgpDevice->debug > 0) printk(KERN_DEBUG "%s: Set Reset EVR\n", MOD_NAME);
          return(SUCCESS);
          break;
 
       // Clear Reset EVR
       case IOCTL_Evr_Clr_Reset:
-         pgpDevice->reg->evrCardStat[1] &= 0xFFFDFFFF;  
+         pgpDevice->reg->evrCardStat[1] &= 0xFFFFFFFD;  
          if (pgpDevice->debug > 0) printk(KERN_DEBUG "%s: Clear Reset EVR\n", MOD_NAME);
          return(SUCCESS);
          break; 
 
       // Set PLL Reset EVR
       case IOCTL_Evr_Set_PLL_RST:
-         pgpDevice->reg->evrCardStat[1] |= 0x40000;  
+         pgpDevice->reg->evrCardStat[1] |= 0x4;  
          if (pgpDevice->debug > 0) printk(KERN_DEBUG "%s: Set Reset EVR\n", MOD_NAME);
          return(SUCCESS);
          break;
 
       // Clear PLL Reset EVR
       case IOCTL_Evr_Clr_PLL_RST:
-         pgpDevice->reg->evrCardStat[1] &= 0xFFFBFFFF;  
+         pgpDevice->reg->evrCardStat[1] &= 0xFFFFFFFB;  
          if (pgpDevice->debug > 0) printk(KERN_DEBUG "%s: Clear Reset EVR\n", MOD_NAME);
          return(SUCCESS);
          break;          
-         
+
       // Set EVR Virtual channel masking
       case IOCTL_Evr_Mask:
          pgpDevice->reg->evrCardStat[2] = arg;  
          if (pgpDevice->debug > 0) printk(KERN_DEBUG "%s: Set EVR Virtual channel masking for %u\n", MOD_NAME, arg);
          return(SUCCESS);
          break;      
+
+      // Set EVR's Run Trigger OP-Code[0]
+      case IOCTL_Evr_RunCode0:      
+         pgpDevice->reg->runCode[0] = arg;
+         if (pgpDevice->debug > 0) printk(KERN_DEBUG "%s: Set EVR Run Trigger OP-Code[0] for %u\n", MOD_NAME, arg);
+         return(SUCCESS);
+         break;
+         
+      // Set EVR's Run Trigger OP-Code[1]
+      case IOCTL_Evr_RunCode1:      
+         pgpDevice->reg->runCode[1] = arg;
+         if (pgpDevice->debug > 0) printk(KERN_DEBUG "%s: Set EVR Run Trigger OP-Code[1] for %u\n", MOD_NAME, arg);
+         return(SUCCESS);
+         break;    
+
+      // Set EVR's Run Trigger OP-Code[2]
+      case IOCTL_Evr_RunCode2:      
+         pgpDevice->reg->runCode[2] = arg;
+         if (pgpDevice->debug > 0) printk(KERN_DEBUG "%s: Set EVR Run Trigger OP-Code[2] for %u\n", MOD_NAME, arg);
+         return(SUCCESS);
+         break;
+         
+      // Set EVR's Run Trigger OP-Code[3]
+      case IOCTL_Evr_RunCode3:      
+         pgpDevice->reg->runCode[3] = arg;
+         if (pgpDevice->debug > 0) printk(KERN_DEBUG "%s: Set EVR Run Trigger OP-Code[3] for %u\n", MOD_NAME, arg);
+         return(SUCCESS);
+         break;    
+
+      // Set EVR's Run Trigger OP-Code[4]
+      case IOCTL_Evr_RunCode4:      
+         pgpDevice->reg->runCode[4] = arg;
+         if (pgpDevice->debug > 0) printk(KERN_DEBUG "%s: Set EVR Run Trigger OP-Code[4] for %u\n", MOD_NAME, arg);
+         return(SUCCESS);
+         break;
+         
+      // Set EVR's Run Trigger OP-Code[5]
+      case IOCTL_Evr_RunCode5:      
+         pgpDevice->reg->runCode[5] = arg;
+         if (pgpDevice->debug > 0) printk(KERN_DEBUG "%s: Set EVR Run Trigger OP-Code[5] for %u\n", MOD_NAME, arg);
+         return(SUCCESS);
+         break;    
+
+      // Set EVR's Run Trigger OP-Code[6]
+      case IOCTL_Evr_RunCode6:      
+         pgpDevice->reg->runCode[6] = arg;
+         if (pgpDevice->debug > 0) printk(KERN_DEBUG "%s: Set EVR Run Trigger OP-Code[6] for %u\n", MOD_NAME, arg);
+         return(SUCCESS);
+         break;
+         
+      // Set EVR's Run Trigger OP-Code[7]
+      case IOCTL_Evr_RunCode7:      
+         pgpDevice->reg->runCode[7] = arg;
+         if (pgpDevice->debug > 0) printk(KERN_DEBUG "%s: Set EVR Run Trigger OP-Code[7] for %u\n", MOD_NAME, arg);
+         return(SUCCESS);
+         break;             
+         
+      // Set EVR's Accept Trigger OP-Code[0]
+      case IOCTL_Evr_AcceptCode0:
+         pgpDevice->reg->acceptCode[0] = arg;  
+         if (pgpDevice->debug > 0) printk(KERN_DEBUG "%s: Set EVR Accept Trigger OP-Code[0] for %u\n", MOD_NAME, arg);
+         return(SUCCESS);
+         break;  
+
+      // Set EVR's Accept Trigger OP-Code[1]
+      case IOCTL_Evr_AcceptCode1:
+         pgpDevice->reg->acceptCode[1] = arg;  
+         if (pgpDevice->debug > 0) printk(KERN_DEBUG "%s: Set EVR Accept Trigger OP-Code[1] for %u\n", MOD_NAME, arg);
+         return(SUCCESS);
+         break;     
+
+      // Set EVR's Accept Trigger OP-Code[2]
+      case IOCTL_Evr_AcceptCode2:
+         pgpDevice->reg->acceptCode[2] = arg;  
+         if (pgpDevice->debug > 0) printk(KERN_DEBUG "%s: Set EVR Accept Trigger OP-Code[2] for %u\n", MOD_NAME, arg);
+         return(SUCCESS);
+         break;  
+
+      // Set EVR's Accept Trigger OP-Code[3]
+      case IOCTL_Evr_AcceptCode3:
+         pgpDevice->reg->acceptCode[3] = arg;  
+         if (pgpDevice->debug > 0) printk(KERN_DEBUG "%s: Set EVR Accept Trigger OP-Code[3] for %u\n", MOD_NAME, arg);
+         return(SUCCESS);
+         break;  
+
+      // Set EVR's Accept Trigger OP-Code[4]
+      case IOCTL_Evr_AcceptCode4:
+         pgpDevice->reg->acceptCode[4] = arg;  
+         if (pgpDevice->debug > 0) printk(KERN_DEBUG "%s: Set EVR Accept Trigger OP-Code[4] for %u\n", MOD_NAME, arg);
+         return(SUCCESS);
+         break;  
+
+      // Set EVR's Accept Trigger OP-Code[5]
+      case IOCTL_Evr_AcceptCode5:
+         pgpDevice->reg->acceptCode[5] = arg;  
+         if (pgpDevice->debug > 0) printk(KERN_DEBUG "%s: Set EVR Accept Trigger OP-Code[5] for %u\n", MOD_NAME, arg);
+         return(SUCCESS);
+         break;     
+
+      // Set EVR's Accept Trigger OP-Code[6]
+      case IOCTL_Evr_AcceptCode6:
+         pgpDevice->reg->acceptCode[6] = arg;  
+         if (pgpDevice->debug > 0) printk(KERN_DEBUG "%s: Set EVR Accept Trigger OP-Code[6] for %u\n", MOD_NAME, arg);
+         return(SUCCESS);
+         break;  
+
+      // Set EVR's Accept Trigger OP-Code[7]
+      case IOCTL_Evr_AcceptCode7:
+         pgpDevice->reg->acceptCode[7] = arg;  
+         if (pgpDevice->debug > 0) printk(KERN_DEBUG "%s: Set EVR Accept Trigger OP-Code[7] for %u\n", MOD_NAME, arg);
+         return(SUCCESS);
+         break;           
 
       // Set EVR's Run Delay[0]
       case IOCTL_Evr_RunDelay0:      
