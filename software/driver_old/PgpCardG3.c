@@ -971,7 +971,7 @@ static irqreturn_t PgpCard_IRQHandler(int irq, void *dev_id, struct pt_regs *reg
                      // Setup descriptor
                      pgpDevice->rxBuffer[idx]->fifoError   = (descA & 0x80000000) >> 31;// Bits 31    = fifoError
                      pgpDevice->rxBuffer[idx]->eofe        = (descA & 0x40000000) >> 30;// Bits 30    = EOFE
-                     pgpDevice->rxBuffer[idx]->lane        = (descA & 0x3C000000) >> 26;// Bits 29:26 = Lane
+                     pgpDevice->rxBuffer[idx]->lane        = (descA & 0x1C000000) >> 26;// Bits 28:26 = Lane
                      pgpDevice->rxBuffer[idx]->vc          = (descA & 0x03000000) >> 24;// Bits 25:24 = VC
                      pgpDevice->rxBuffer[idx]->length      = (descA & 0x00FFFFFF) >> 0; // Bits 23:00 = Length
                      pgpDevice->rxBuffer[idx]->lengthError = (descB & 0x00000002) >> 1; // Legacy Unused bit
@@ -994,7 +994,7 @@ static irqreturn_t PgpCard_IRQHandler(int irq, void *dev_id, struct pt_regs *reg
                   }
                   
                   // Return entry to FPGA if device is not open
-                  else pgpDevice->reg->rxFree[(descA >> 27) & 0x1F] = (descB & 0xFFFFFFFC); 
+                  else pgpDevice->reg->rxFree[(descA >> 26) & 0x7] = (descB & 0xFFFFFFFC); 
 
                } else printk(KERN_WARNING "%s: Irq: Failed to locate RX descriptor %.8x. Maj=%i\n",MOD_NAME,(__u32)(descA&0xFFFFFFFC),pgpDevice->major);
             }
