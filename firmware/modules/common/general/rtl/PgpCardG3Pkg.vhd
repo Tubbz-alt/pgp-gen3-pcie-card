@@ -97,12 +97,14 @@ package PgpCardG3Pkg is
 
    -- EVR -> PCIe Parallel Interface
    type EvrToPciType is record          --evrClk Domain
-      linkUp   : sl;
-      errorCnt : slv(3 downto 0);
+      linkUp     : sl;
+      errorCnt   : slv(3 downto 0);
+      runCodeCnt : Slv32Array(0 to 7);
    end record;
    constant EVR_TO_PCI_INIT_C : EvrToPciType := (
-      linkUp   => '0',
-      errorCnt => (others => '0'));    
+      linkUp     => '0',
+      errorCnt   => (others => '0'),
+      runCodeCnt => (others => (others => '0')));
 
    -- PCIe -> EVR Parallel Interface
    type PciToEvrType is record          -- pciClk Domain
@@ -110,6 +112,7 @@ package PgpCardG3Pkg is
       pllRst     : sl;
       evrReset   : sl;
       enable     : sl;
+      enableLane : slv(0 to 7);
       runCode    : Slv8Array(0 to 7);
       acceptCode : Slv8Array(0 to 7);
    end record;
@@ -118,6 +121,7 @@ package PgpCardG3Pkg is
       pllRst     => '0',
       evrReset   => '0',
       enable     => '0',
+      enableLane => (others => '0'),
       runCode    => (others => x"00"),
       acceptCode => (others => x"00"));  
 

@@ -147,12 +147,14 @@ architecture rtl of PciApp is
       pllRxReady,
       pllTxRst,
       pllRxRst : slv(1 downto 0);
+   signal evrRunCnt : Slv32Array(7 downto 0);
 
    --EVR Signals     
    signal evrPllRst,
       evrReset,
       evrLinkUp,
       evrEnable : sl;
+   signal evrEnableLane : slv(7 downto 0);
    signal evrErrorCnt : slv(3 downto 0);
    signal runCode,
       acceptCode : Slv8Array(0 to 7);
@@ -189,12 +191,13 @@ begin
          PciToPgp.loopBack      <= loopBack;
          PciToPgp.enHeaderCheck <= enHeaderCheck;
 
-         PciToEvr.countRst <= countRst or cardRst;
-         PciToEvr.pllRst   <= evrPllRst or cardRst;
-         PciToEvr.evrReset <= evrReset or cardRst;
-         PciToEvr.enable   <= evrEnable;
+         PciToEvr.countRst   <= countRst or cardRst;
+         PciToEvr.pllRst     <= evrPllRst or cardRst;
+         PciToEvr.evrReset   <= evrReset or cardRst;
+         PciToEvr.enable     <= evrEnable;
 
          for i in 0 to DMA_SIZE_C-1 loop
+            PciToEvr.enableLane(i) <= evrEnableLane(i);
             PciToEvr.runCode(i)    <= runCode(i);
             PciToEvr.acceptCode(i) <= acceptCode(i);
             PciToPgp.pgpRxRst(i)   <= pgpRxRst(i) or cardRst;
@@ -315,6 +318,15 @@ begin
                rd_clk => pciClk,
                dout   => rxCount(lane, vc));          
       end generate GEN_SYNC_VC;
+
+      SynchronizerFifo_5 : entity work.SynchronizerFifo
+         generic map(
+            DATA_WIDTH_G => 32)
+         port map(
+            wr_clk => evrClk,
+            din    => evrToPci.runCodeCnt(lane),
+            rd_clk => pciClk,
+            dout   => evrRunCnt(lane)); 
    end generate GEN_SYNC_LANE;
 
    Synchronizer_Inst : entity work.Synchronizer
@@ -478,6 +490,7 @@ begin
             runDelay      <= (others => (others => '0'));
             acceptDelay   <= (others => (others => '0'));
             evrEnable     <= '0';
+            evrEnableLane <= (others => '0');
             evrReset      <= '0';
             evrPllRst     <= '0';
             enHeaderCheck <= (others => (others => '0'));
@@ -565,10 +578,12 @@ begin
                      regLocRdData(0) <= evrEnable;
                      regLocRdData(1) <= evrReset;
                      regLocRdData(2) <= evrPllRst;
+                     regLocRdData(15 downto 8) <= evrEnableLane;
                      if regWrEn = '1' then
-                        evrEnable <= regWrData(0);
-                        evrReset  <= regWrData(1);
-                        evrPllRst <= regWrData(2);
+                        evrEnable     <= regWrData(0);
+                        evrReset      <= regWrData(1);
+                        evrPllRst     <= regWrData(2);
+                        evrEnableLane <= regWrData(15 downto 8);
                      end if;
                   when x"12" =>
                      --EVR's Lanes Masks
@@ -648,6 +663,10 @@ begin
                               regLocRdData(23 downto 20) <= cellErrorCnt(lane);
                               regLocRdData(27 downto 24) <= linkDownCnt(lane);
                               regLocRdData(31 downto 28) <= linkErrorCnt(lane);
+                           end if;
+                           --regAddr: 0x88-8F
+                           if (regAddr(9 downto 2) = (136+lane)) then
+                              regLocRdData(31 downto 0) <= evrRunCnt(lane);
                            end if;
                         end loop;
                      end if;

@@ -97,10 +97,11 @@ architecture rtl of PgpCardG3Core is
 begin
 
    --led(0) <= uOr(EvrToPci.errorCnt);  
-   ClkOutBufSingle_Inst : entity work.ClkOutBufSingle
-      port map (
-         clkIn  => evrClk,
-         clkOut => led(0));   
+--   ClkOutBufSingle_Inst : entity work.ClkOutBufSingle
+--      port map (
+--         clkIn  => evrClk,
+--         clkOut => led(0));   
+   led(0) <= evrToPgp(0).run;
 
    led(1) <= EvrToPci.linkUp;
    led(7) <= PciToEvr.countRst;

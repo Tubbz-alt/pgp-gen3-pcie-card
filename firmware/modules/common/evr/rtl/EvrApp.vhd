@@ -108,6 +108,17 @@ begin
          dataIn  => pciToEvr.enable,
          dataOut => fromPci.enable);       
 
+   SynchronizerFifo_Inst : entity work.SynchronizerFifo
+      generic map ( 
+         DATA_WIDTH_G => 8 )
+      port map (
+         -- Write Ports (wr_clk domain)
+         wr_clk => pciClk,
+         din    => pciToEvr.enableLane,
+         -- Read Ports (rd_clk domain)
+         rd_clk => evrClk,
+         dout   => fromPci.enableLane);
+
    SYNC_TRIG_CODES :
    for i in 0 to 7 generate
       SynchronizerFifo_0 : entity work.SynchronizerFifo
@@ -144,6 +155,18 @@ begin
                r.toPci.errorCnt <= r.toPci.errorCnt + 1;
             end if;
 
+            -- Counting valid run codes
+            if (fromPci.countRst = '1') then
+               r.toPci.runCodeCnt <= (others => (others => '0'));
+            else
+               for i in 0 to 7 loop
+--                  if (fromPci.enable = '1') and (fromPci.enableLane(i) = '1') and (r.eventStream = fromPci.runCode(i)) and (rxLinkUp = '1') then
+                  if (fromPci.enable = '1') and (r.eventStream = fromPci.runCode(i)) and (rxLinkUp = '1') then
+                     r.toPci.runCodeCnt(i) <= r.toPci.runCodeCnt(i) + 1;
+                  end if;
+               end loop;
+            end if;
+
             -- Extract out the event and data bus
             r.eventStream <= rxData(7 downto 0);
             r.dataStream  <= rxData(15 downto 8);
@@ -168,14 +191,16 @@ begin
 
             for i in 0 to 7 loop
                -- Check for run code event 
-               if (fromPci.enable = '1') and (r.eventStream = fromPci.runCode(i)) then
+--               if (fromPci.enable = '1') and (fromPci.enableLane(i) = '1') and (r.eventStream = fromPci.runCode(i)) and (rxLinkUp = '1') then
+               if (fromPci.enable = '1') and (r.eventStream = fromPci.runCode(i)) and (rxLinkUp = '1') then
                   -- Latch the seconds and offset
                   r.toPgp(i).run     <= '1';
                   r.toPgp(i).seconds <= r.seconds;
                   r.toPgp(i).offset  <= r.offset;
                end if;
                -- Check for accept code event 
-               if (fromPci.enable = '1') and (r.eventStream = fromPci.acceptCode(i)) then
+--               if (fromPci.enable = '1') and (fromPci.enableLane(i) = '1') and (r.eventStream = fromPci.acceptCode(i)) and (rxLinkUp = '1') then
+               if (fromPci.enable = '1') and (r.eventStream = fromPci.acceptCode(i)) and (rxLinkUp = '1') then
                   r.toPgp(i).accept <= '1';
                end if;
             end loop;
