@@ -17,6 +17,7 @@
 
 #define DEVNAME "/dev/PgpCardG3_0"
 
+#define LOOPBACK true
 using namespace std;
 
 int main (int argc, char **argv) {
@@ -27,7 +28,8 @@ int main (int argc, char **argv) {
    uint          lane;
    uint          vc;
    uint          size;
-   uint          *data;
+   uint          *txData;
+   uint          *rxData;
 
    if (argc != 4) {
       cout << "Usage: xwrite lane vc size" << endl;
@@ -53,7 +55,7 @@ int main (int argc, char **argv) {
    time(&t);
    srandom(t); 
 
-   data = (uint *)malloc(sizeof(uint)*size);
+   txData = (uint *)malloc(sizeof(uint)*size);
 
    // DMA Write
    cout << endl;
@@ -62,27 +64,25 @@ int main (int argc, char **argv) {
    cout << ", Vc=" << dec << vc << endl;  
       
    for (x=0; x<size; x++) {
-      data[x] = random();
-      cout << " 0x" << setw(8) << setfill('0') << hex << data[x];
+      txData[x] = random();
+      cout << " 0x" << setw(8) << setfill('0') << hex << txData[x];
       if ( ((x+1)%10) == 0 ) cout << endl << "   ";
    }
    cout << endl;
-   ret = pgpcard_send (s,data,size,lane,vc);
+   ret = pgpcard_send (s,txData,size,lane,vc);
    cout << "Ret=" << dec << ret << endl << endl;
   
-   free(data);
-   
-   //sleep(1);
-/*   
-   // Allocate a buffer
+#if LOOPBACK
+   sleep(1);
    uint          maxSize;
    uint          eofe;
    uint          fifoErr;
-   uint          lengthErr;   
+   uint          lengthErr;  
+   uint          error;  
    maxSize = 1024*1024*2;
-   data = (uint *)malloc(sizeof(uint)*maxSize);
+   rxData = (uint *)malloc(sizeof(uint)*maxSize);
 
-   ret = pgpcard_recv(s,data,maxSize,&lane,&vc,&eofe,&fifoErr,&lengthErr);
+   ret = pgpcard_recv(s,rxData,maxSize,&lane,&vc,&eofe,&fifoErr,&lengthErr);
 
    if ( ret != 0 ) {
       cout << "Receiving:";
@@ -92,18 +92,32 @@ int main (int argc, char **argv) {
       cout << ", FifoErr=" << dec << fifoErr;
       cout << ", LengthErr=" << dec << lengthErr << endl;
 
-
-      for (x=0; x<ret; x++) {
-         cout << " 0x" << setw(8) << setfill('0') << hex << data[x];
+      for (x=0; x<(uint)ret; x++) {
+         cout << " 0x" << setw(8) << setfill('0') << hex << rxData[x];
          if ( ((x+1)%10) == 0 ) cout << endl << "   ";
       }
       cout << endl;
       cout << "Ret=" << dec << ret << endl;
       cout << endl;
+      
+      if((uint)ret == size){
+         error = 0;
+         for (x=0; x<(uint)ret; x++) {
+            if(rxData[x]!=txData[x]) error++;
+         }
+         if(error!=0){
+            cout << "Error Count = " << dec << error << endl;
+         }else{
+            cout << "No Errors detected" << endl;  
+         }
+      } else{
+         cout << "Error: RX size != TX size" << endl;
+      }
    }
-  
-   free(data);   
-*/   
+   free(rxData);   
+#endif
+   
+   free(txData);   
    close(s);
    return(0);
 }
