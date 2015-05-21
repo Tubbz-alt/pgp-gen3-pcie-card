@@ -26,6 +26,9 @@
 // Receive Frame, size in dwords, return in dwords
 // int pgpcard_recv(int fd, void *buf, size_t maxSize, uint *lane, uint *vc, uint *eofe, uint *fifoErr, uint *lengthErr);
 
+// Send PGP OP-Code
+// int pgpcard_sendOpCode(int fd, uint opCode);
+
 // Read Status
 // int pgpcard_status(int fd, PgpCardStatus *status);
 
@@ -110,6 +113,16 @@ inline int pgpcard_recv(int fd, void *buf, size_t maxSize, uint *lane, uint *vc,
    *lengthErr = pgpCardRx.lengthErr;
 
    return(ret);
+}
+
+// Send PGP OP-Code
+inline int pgpcard_sendOpCode(int fd, uint opCode){
+   PgpCardTx  t;
+
+   t.model = sizeof(PgpCardTx*);
+   t.cmd   = IOCTL_Pgp_OpCode;;
+   t.data  = (__u32*) (opCode&0xFF);
+   return(write(fd, &t, sizeof(PgpCardTx)));   
 }
 
 // Read Status

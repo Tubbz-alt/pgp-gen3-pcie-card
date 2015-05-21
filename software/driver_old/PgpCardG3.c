@@ -473,6 +473,13 @@ int my_Ioctl(struct file *filp, __u32 cmd, __u64 argument) {
          return(SUCCESS);
          break;   
          
+      // Send PGP OP-Code
+      case IOCTL_Pgp_OpCode:
+         pgpDevice->reg->pgpOpCode = arg;
+         if (pgpDevice->debug > 0) printk(KERN_DEBUG "%s: Send OP-Code: %u\n", MOD_NAME, arg);
+         return(SUCCESS);
+         break;         
+         
       // Count Reset
       case IOCTL_Count_Reset:         
          pgpDevice->reg->cardRstStat |= 0x1;//set the reset counter bit

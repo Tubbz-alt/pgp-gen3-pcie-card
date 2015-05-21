@@ -151,6 +151,9 @@ typedef struct {
 // No Operation
 #define IOCTL_NOP 0x03
 
+// No Operation
+#define IOCTL_Pgp_OpCode 0x04
+
 // Set Loopback, Pass PGP Channel As Arg
 #define IOCTL_Set_Loop 0x10
 #define IOCTL_Clr_Loop 0x11

@@ -35,9 +35,6 @@
 #define PCI_VENDOR_ID_SLAC           0x1A4A
 #define PCI_DEVICE_ID_SLAC_PGPCARD   0x2020
 
-#define PCI_VENDOR_ID_XILINX         0x10EE
-#define PCI_DEVICE_ID_XILINX_PGPCARD 0x0007
-
 // Max number of devices to support
 #define MAX_PCI_DEVICES 8
 
@@ -56,7 +53,9 @@ struct PgpCardReg {
    __u32 cardRstStat;   // Software_Addr = 0x010,        Firmware_Addr(13 downto 2) = 0x004
    __u32 irq;           // Software_Addr = 0x014,        Firmware_Addr(13 downto 2) = 0x005 
    __u32 pgpRate;       // Software_Addr = 0x018,        Firmware_Addr(13 downto 2) = 0x006
-   __u32 sysSpare0[4];  // Software_Addr = 0x028:0x01C,  Firmware_Addr(13 downto 2) = 0x00A:0x007
+   __u32 reboot;        // Software_Addr = 0x01C,        Firmware_Addr(13 downto 2) = 0x007
+   __u32 pgpOpCode;     // Software_Addr = 0x020,        Firmware_Addr(13 downto 2) = 0x008
+   __u32 sysSpare0[2];  // Software_Addr = 0x028:0x024,  Firmware_Addr(13 downto 2) = 0x00A:0x009
    __u32 pciStat[4];    // Software_Addr = 0x038:0x02C,  Firmware_Addr(13 downto 2) = 0x00E:0x00B
    __u32 sysSpare1;     // Software_Addr = 0x03C,        Firmware_Addr(13 downto 2) = 0x00F 
    
@@ -220,7 +219,6 @@ void PgpCard_VmClose(struct vm_area_struct *vma);
 
 // PCI device IDs
 static struct pci_device_id PgpCard_Ids[] = {
-   { PCI_DEVICE(PCI_VENDOR_ID_XILINX, PCI_DEVICE_ID_XILINX_PGPCARD) },
    { PCI_DEVICE(PCI_VENDOR_ID_SLAC,   PCI_DEVICE_ID_SLAC_PGPCARD)   },
    { 0, }
 };
