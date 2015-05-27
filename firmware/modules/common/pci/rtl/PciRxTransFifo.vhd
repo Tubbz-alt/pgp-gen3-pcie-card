@@ -163,7 +163,7 @@ begin
                   v.tranCnt                         := r.tranCnt + 1;
                end if;
                -- Check the counter and tLast
-               if (r.cnt = PCI_MAX_RX_TRANS_LENGTH_C) or (sAxisMaster.tLast = '1') then
+               if (r.cnt = PCIE_MAX_RX_TRANS_LENGTH_C) or (sAxisMaster.tLast = '1') then
                   -- Write to the transaction FIFO
                   v.tranWr            := '1';
                   -- Reset the counter
@@ -202,12 +202,12 @@ begin
       end if;
    end process seq;
 
-   Fifo_Data : entity work.SsiFifo
+   FIFO_DATA : entity work.AxiStreamFifo
       generic map (
-         -- General Configurations         
+         -- General Configurations
          TPD_G               => TPD_G,
          PIPE_STAGES_G       => 0,
-         EN_FRAME_FILTER_G   => false,
+         SLAVE_READY_EN_G    => false,
          VALID_THOLD_G       => 1,
          -- FIFO configurations
          CASCADE_SIZE_G      => 1,
@@ -220,8 +220,8 @@ begin
          FIFO_ADDR_WIDTH_G   => 9,
          FIFO_FIXED_THRESH_G => true,
          FIFO_PAUSE_THRESH_G => 500,
-         SLAVE_AXI_CONFIG_G  => AXIS_PCIE_CONFIG_C,
-         MASTER_AXI_CONFIG_G => AXIS_PCIE_CONFIG_C) 
+         SLAVE_AXI_CONFIG_G  => PCI_AXIS_CONFIG_C,
+         MASTER_AXI_CONFIG_G => PCI_AXIS_CONFIG_C) 
       port map (
          -- Slave Port
          sAxisClk    => sAxisClk,

@@ -127,6 +127,7 @@ typedef struct {
  
    // TX Descriptor Status
    __u32 TxDmaAFull[8];
+   __u32 TxFifoCnt[8];
    __u32 TxReadReady;
    __u32 TxRetFifoCount;
    __u32 TxCount;

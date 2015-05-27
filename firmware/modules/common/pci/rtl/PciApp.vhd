@@ -132,6 +132,7 @@ architecture rtl of PciApp is
    signal txDmaIrqReq : sl;
 
    --PGP Signals
+   signal pgpOpCodeEn : sl;
    signal enHeaderCheck : SlVectorArray(0 to 7, 0 to 3);
    signal rxCount       : Slv4VectorArray(0 to 7, 0 to 3);
    signal cellErrorCnt,
@@ -141,6 +142,7 @@ architecture rtl of PciApp is
    signal locLinkReady,
       remLinkReady,
       loopback,
+      pgpOpCode,
       pgpTxRst,
       pgpRxRst : slv(7 downto 0);
    signal pllTxReady,
@@ -148,7 +150,7 @@ architecture rtl of PciApp is
       pllTxRst,
       pllRxRst : slv(1 downto 0);
    signal evrRunCnt : Slv32Array(7 downto 0);
-
+   
    --EVR Signals     
    signal evrPllRst,
       evrReset,
@@ -159,12 +161,12 @@ architecture rtl of PciApp is
    signal runCode,
       acceptCode : Slv8Array(0 to 7);
    
-   attribute KEEP_HIERARCHY : string;
-   attribute KEEP_HIERARCHY of
-      PciRegCtrl_Inst,
-      PciRxDesc_Inst,
-      PciTxDesc_Inst,
-      PciFlashBpi_Inst : label is "TRUE";
+   -- attribute KEEP_HIERARCHY : string;
+   -- attribute KEEP_HIERARCHY of
+      -- PciRegCtrl_Inst,
+      -- PciRxDesc_Inst,
+      -- PciTxDesc_Inst,
+      -- PciFlashBpi_Inst : label is "TRUE";
    
 begin
    
@@ -183,25 +185,27 @@ begin
    begin
       if rising_edge(pciClk) then
          
-         PciToPgp.pllRxRst(0)   <= pllRxRst(0) or cardRst;
-         PciToPgp.pllRxRst(1)   <= pllRxRst(1) or cardRst;
-         PciToPgp.pllTxRst(0)   <= pllTxRst(0) or cardRst;
-         PciToPgp.pllTxRst(1)   <= pllTxRst(1) or cardRst;
-         PciToPgp.countRst      <= countRst or cardRst;
-         PciToPgp.loopBack      <= loopBack;
-         PciToPgp.enHeaderCheck <= enHeaderCheck;
+         pciToPgp.pllRxRst(0)   <= pllRxRst(0) or cardRst;
+         pciToPgp.pllRxRst(1)   <= pllRxRst(1) or cardRst;
+         pciToPgp.pllTxRst(0)   <= pllTxRst(0) or cardRst;
+         pciToPgp.pllTxRst(1)   <= pllTxRst(1) or cardRst;
+         pciToPgp.countRst      <= countRst or cardRst;
+         pciToPgp.loopBack      <= loopBack;
+         pciToPgp.pgpOpCodeEn   <= pgpOpCodeEn;
+         pciToPgp.pgpOpCode     <= pgpOpCode;
+         pciToPgp.enHeaderCheck <= enHeaderCheck;
 
-         PciToEvr.countRst   <= countRst or cardRst;
-         PciToEvr.pllRst     <= evrPllRst or cardRst;
-         PciToEvr.evrReset   <= evrReset or cardRst;
-         PciToEvr.enable     <= evrEnable;
+         pciToEvr.countRst   <= countRst or cardRst;
+         pciToEvr.pllRst     <= evrPllRst or cardRst;
+         pciToEvr.evrReset   <= evrReset or cardRst;
+         pciToEvr.enable     <= evrEnable;
 
          for i in 0 to DMA_SIZE_C-1 loop
-            PciToEvr.enableLane(i) <= evrEnableLane(i);
-            PciToEvr.runCode(i)    <= runCode(i);
-            PciToEvr.acceptCode(i) <= acceptCode(i);
-            PciToPgp.pgpRxRst(i)   <= pgpRxRst(i) or cardRst;
-            PciToPgp.pgpTxRst(i)   <= pgpTxRst(i) or cardRst;
+            pciToEvr.enableLane(i) <= evrEnableLane(i);
+            pciToEvr.runCode(i)    <= runCode(i);
+            pciToEvr.acceptCode(i) <= acceptCode(i);
+            pciToPgp.pgpRxRst(i)   <= pgpRxRst(i) or cardRst;
+            pciToPgp.pgpTxRst(i)   <= pgpTxRst(i) or cardRst;
          end loop;
       end if;
    end process;
@@ -210,26 +214,26 @@ begin
    for lane in 0 to DMA_SIZE_C-1 generate
 
       -- Input buses
-      dmaTxIbMaster(lane) <= PgpToPci.dmaTxIbMaster(lane);
-      dmaTxObSlave(lane)  <= PgpToPci.dmaTxObSlave(lane);
-      dmaRxIbMaster(lane) <= PgpToPci.dmaRxIbMaster(lane);
+      dmaTxIbMaster(lane) <= pgpToPci.dmaTxIbMaster(lane);
+      dmaTxObSlave(lane)  <= pgpToPci.dmaTxObSlave(lane);
+      dmaRxIbMaster(lane) <= pgpToPci.dmaRxIbMaster(lane);
 
-      dmaTxDescToPci(lane) <= PgpToPci.dmaTxDescToPci(lane);
-      dmaRxDescToPci(lane) <= PgpToPci.dmaRxDescToPci(lane);
+      dmaTxDescToPci(lane) <= pgpToPci.dmaTxDescToPci(lane);
+      dmaRxDescToPci(lane) <= pgpToPci.dmaRxDescToPci(lane);
 
       -- Output buses
-      PciToPgp.dmaTxTranFromPci(lane) <= dmaTxTranFromPci(lane);
-      PciToPgp.dmaRxTranFromPci(lane) <= dmaRxTranFromPci(lane);
+      pciToPgp.dmaTxTranFromPci(lane) <= dmaTxTranFromPci(lane);
+      pciToPgp.dmaRxTranFromPci(lane) <= dmaRxTranFromPci(lane);
 
-      PciToPgp.dmaTxDescFromPci(lane) <= dmaTxDescFromPci(lane);
-      PciToPgp.dmaRxDescFromPci(lane) <= dmaRxDescFromPci(lane);
+      pciToPgp.dmaTxDescFromPci(lane) <= dmaTxDescFromPci(lane);
+      pciToPgp.dmaRxDescFromPci(lane) <= dmaRxDescFromPci(lane);
 
-      PciToPgp.dmaTxIbSlave(lane)  <= dmaTxIbSlave(lane);
-      PciToPgp.dmaTxObMaster(lane) <= dmaTxObMaster(lane);
-      PciToPgp.dmaRxIbSlave(lane)  <= dmaRxIbSlave(lane);
+      pciToPgp.dmaTxIbSlave(lane)  <= dmaTxIbSlave(lane);
+      pciToPgp.dmaTxObMaster(lane) <= dmaTxObMaster(lane);
+      pciToPgp.dmaRxIbSlave(lane)  <= dmaRxIbSlave(lane);
 
-      PciToPgp.runDelay(lane)    <= runDelay(lane);
-      PciToPgp.acceptDelay(lane) <= acceptDelay(lane);
+      pciToPgp.runDelay(lane)    <= runDelay(lane);
+      pciToPgp.acceptDelay(lane) <= acceptDelay(lane);
 
    end generate MAP_PGP_DMA_LANES;
 
@@ -474,6 +478,8 @@ begin
       variable vc   : integer;
    begin
       if rising_edge(pciClk) then
+         -- Reset the strobes
+         pgpOpCodeEn <= '0';      
          if pciRst = '1' then
             regLocRdData  <= (others => '0');
             scratchPad    <= (others => '0');
@@ -481,6 +487,7 @@ begin
             countRst      <= '0';
             cardRst       <= '1';
             loopBack      <= (others => '0');
+            pgpOpCode     <= (others => '0');
             pgpRxRst      <= (others => '0');
             pgpTxRst      <= (others => '0');
             pllRxRst      <= (others => '0');
@@ -498,6 +505,7 @@ begin
             rebootEn      <= '0';
             rebootTimer   <= (others => '0');
          else
+
             -- Check for enabled timer
             if rebootEn = '1' then
                if rebootTimer = toSlv(getTimeRatio(125.0E+6, 1.0), 32) then
@@ -552,6 +560,13 @@ begin
                      if (regWrEn = '1') and (regWrData = x"BABECAFE") then
                         rebootEn <= '1';
                      end if;
+                  when x"08" =>
+                     -- PGP OP-Code
+                     regLocRdData(7 downto 0) <= pgpOpCode;
+                     if regWrEn = '1' then
+                        pgpOpCodeEn <= '1';
+                        pgpOpCode   <= regWrData(7 downto 0);
+                     end if;                     
                   when x"0B" =>
                      regLocRdData(31 downto 16) <= cfgOut.command;
                      regLocRdData(15 downto 0)  <= cfgOut.Status;

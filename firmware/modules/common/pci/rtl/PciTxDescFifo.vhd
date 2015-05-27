@@ -30,6 +30,7 @@ entity PciTxDescFifo is
       tFifoWr    : in  sl;
       tFifoDin   : in  slv(63 downto 0);
       tFifoAFull : out sl;
+      tFifoCnt   : out slv(8 downto 0);
       -- DMA Controller Interface
       newReq     : in  sl;
       newAck     : out sl;
@@ -82,14 +83,15 @@ begin
          DATA_WIDTH_G => 64,
          ADDR_WIDTH_G => 9)    
       port map (
-         rst       => pciRst,
-         clk       => pciClk,
-         din       => tFifoDin,
-         wr_en     => tFifoWr,
-         rd_en     => r.newAck,
-         dout      => tFifoDout,
-         valid     => tFifoValid,
-         prog_full => tFifoAFull);
+         rst        => pciRst,
+         clk        => pciClk,
+         din        => tFifoDin,
+         wr_en      => tFifoWr,
+         rd_en      => r.newAck,
+         dout       => tFifoDout,
+         valid      => tFifoValid,
+         data_count => tFifoCnt,
+         prog_full  => tFifoAFull);
 
    comb : process (newReq, pciRst, r, tFifoDout, tFifoValid) is
       variable v : RegType;

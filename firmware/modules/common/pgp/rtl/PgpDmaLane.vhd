@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2014-08-18
+-- Last update: 2015-05-21
 -- Platform   : Vivado 2014.1
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -49,6 +49,7 @@ entity PgpDmaLane is
       pgpTxSlaves      : in  AxiStreamSlaveArray(0 to 3);
       -- Frame Receive Interface
       pgpRxMasters     : in  AxiStreamMasterArray(0 to 3);
+      pgpRxSlaves      : out AxiStreamSlaveArray(0 to 3);
       pgpRxCtrl        : out AxiStreamCtrlArray(0 to 3);
       -- EVR Trigger Interface
       enHeaderCheck    : in  slv(3 downto 0);
@@ -68,22 +69,22 @@ architecture rtl of PgpDmaLane is
 
    constant DMA_CH_C : slv(3 downto 0) := toSlv(LANE_G, 4);
 
-   signal rxMasters   : AxiStreamMasterArray(0 to 3);
-   signal rxSlaves    : AxiStreamSlaveArray(0 to 3);
-   signal rxMaster    : AxiStreamMasterType;
-   signal rxSlave     : AxiStreamSlaveType;
-   signal txMaster    : AxiStreamMasterType;
-   signal txSlave     : AxiStreamSlaveType;
+   signal rxMasters : AxiStreamMasterArray(0 to 3);
+   signal rxSlaves  : AxiStreamSlaveArray(0 to 3);
+
+   signal rxMaster : AxiStreamMasterType;
+   signal rxSlave  : AxiStreamSlaveType;
+
+   signal txMaster : AxiStreamMasterType;
+   signal txSlave  : AxiStreamSlaveType;
+
+   signal txMasters : AxiStreamMasterArray(0 to 3);
+   signal txSlaves  : AxiStreamSlaveArray(0 to 3);
+
    signal pgpTxMaster : AxiStreamMasterType;
    signal pgpTxSlave  : AxiStreamSlaveType;
-   signal fifoErr     : slv(3 downto 0);
 
-   attribute dont_touch : string;
-   attribute dont_touch of
-      txMaster,
-      txSlave,
-      pgpTxMaster,
-      pgpTxSlave : signal is "true";
+   signal fifoErr : slv(3 downto 0);
    
 begin
 
@@ -110,26 +111,22 @@ begin
          mAxisMaster    => txMaster,
          mAxisSlave     => txSlave);
 
-   SsiFifo_TX : entity work.SsiFifo
+   FIFO_TX : entity work.AxiStreamFifo
       generic map (
-         -- General Configurations         
+         -- General Configurations
          TPD_G               => TPD_G,
          PIPE_STAGES_G       => 0,
-         EN_FRAME_FILTER_G   => false,
+         SLAVE_READY_EN_G    => true,
          VALID_THOLD_G       => 1,
          -- FIFO configurations
-         CASCADE_SIZE_G      => 1,
-         BRAM_EN_G           => true,
-         XIL_DEVICE_G        => "7SERIES",
+         BRAM_EN_G           => false,
          USE_BUILT_IN_G      => false,
          GEN_SYNC_FIFO_G     => true,
-         ALTERA_SYN_G        => false,
-         ALTERA_RAM_G        => "M9K",
-         FIFO_ADDR_WIDTH_G   => 9,
-         FIFO_FIXED_THRESH_G => true,
-         FIFO_PAUSE_THRESH_G => 500,
+         CASCADE_SIZE_G      => 1,
+         FIFO_ADDR_WIDTH_G   => 4,
+         -- AXI Stream Port Configurations
          SLAVE_AXI_CONFIG_G  => ssiAxiStreamConfig(4),
-         MASTER_AXI_CONFIG_G => SSI_PGP2B_CONFIG_C)
+         MASTER_AXI_CONFIG_G => SSI_PGP2B_CONFIG_C)         
       port map (
          -- Slave Port
          sAxisClk    => pgpClk,
@@ -140,7 +137,7 @@ begin
          mAxisClk    => pgpClk,
          mAxisRst    => pgpTxRst,
          mAxisMaster => pgpTxMaster,
-         mAxisSlave  => pgpTxSlave);           
+         mAxisSlave  => pgpTxSlave);        
 
    AxiStreamDeMux_Inst : entity work.AxiStreamDeMux
       generic map (
@@ -148,9 +145,8 @@ begin
          NUM_MASTERS_G => 4)
       port map (
          -- Clock and reset
-         axisClk => pgpClk,
-         axisRst => pgpTxRst,
-
+         axisClk                          => pgpClk,
+         axisRst                          => pgpTxRst,
          -- Slave
          sAxisMaster.tValid               => pgpTxMaster.tValid,
          sAxisMaster.tData(15 downto 0)   => pgpTxMaster.tData(15 downto 0),
@@ -163,18 +159,47 @@ begin
          sAxisMaster.tId                  => (others => '0'),
          sAxisMaster.tUser(1 downto 0)    => pgpTxMaster.tUser(1 downto 0),
          sAxisMaster.tUser(127 downto 2)  => (others => '0'),
-
-
-         sAxisSlave      => pgpTxSlave,
+         sAxisSlave                       => pgpTxSlave,
          -- Masters
-         mAxisMasters(0) => pgpTxMasters(0),
-         mAxisMasters(1) => pgpTxMasters(1),
-         mAxisMasters(2) => pgpTxMasters(2),
-         mAxisMasters(3) => pgpTxMasters(3),
-         mAxisSlaves(0)  => pgpTxSlaves(0),
-         mAxisSlaves(1)  => pgpTxSlaves(1),
-         mAxisSlaves(2)  => pgpTxSlaves(2),
-         mAxisSlaves(3)  => pgpTxSlaves(3));    
+         mAxisMasters(0)                  => txMasters(0),
+         mAxisMasters(1)                  => txMasters(1),
+         mAxisMasters(2)                  => txMasters(2),
+         mAxisMasters(3)                  => txMasters(3),
+         mAxisSlaves(0)                   => txSlaves(0),
+         mAxisSlaves(1)                   => txSlaves(1),
+         mAxisSlaves(2)                   => txSlaves(2),
+         mAxisSlaves(3)                   => txSlaves(3));    
+
+   GEN_VC_TX_BUFFER :
+   for vc in 0 to 3 generate
+      FIFO_VC_TX : entity work.AxiStreamFifo
+         generic map (
+            -- General Configurations
+            TPD_G               => TPD_G,
+            PIPE_STAGES_G       => 0,
+            SLAVE_READY_EN_G    => true,
+            VALID_THOLD_G       => 1,
+            -- FIFO configurations
+            BRAM_EN_G           => false,
+            USE_BUILT_IN_G      => false,
+            GEN_SYNC_FIFO_G     => true,
+            CASCADE_SIZE_G      => 1,
+            FIFO_ADDR_WIDTH_G   => 4,
+            -- AXI Stream Port Configurations
+            SLAVE_AXI_CONFIG_G  => SSI_PGP2B_CONFIG_C,
+            MASTER_AXI_CONFIG_G => SSI_PGP2B_CONFIG_C)         
+         port map (
+            -- Slave Port
+            sAxisClk    => pgpClk,
+            sAxisRst    => pgpTxRst,
+            sAxisMaster => txMasters(vc),
+            sAxisSlave  => txSlaves(vc),
+            -- Master Port
+            mAxisClk    => pgpClk,
+            mAxisRst    => pgpTxRst,
+            mAxisMaster => pgpTxMasters(vc),
+            mAxisSlave  => pgpTxSlaves(vc));       
+   end generate GEN_VC_TX_BUFFER;
 
    --------------------
    -- RX DMA Controller
@@ -197,6 +222,7 @@ begin
             trigLutIn     => trigLutIn(vc),
             -- 16-bit Streaming RX Interface
             pgpRxMaster   => pgpRxMasters(vc),
+            pgpRxSlave    => pgpRxSlaves(vc),
             pgpRxCtrl     => pgpRxCtrl(vc),
             -- 32-bit Streaming TX Interface
             mAxisMaster   => rxMasters(vc),
@@ -206,6 +232,35 @@ begin
             -- Global Signals
             clk           => pgpClk,
             rst           => pgpRxRst); 
+            
+      -- FIFO_RX : entity work.AxiStreamFifo
+         -- generic map (
+            -- -- General Configurations
+            -- TPD_G               => TPD_G,
+            -- PIPE_STAGES_G       => 0,
+            -- SLAVE_READY_EN_G    => true,
+            -- VALID_THOLD_G       => 1,
+            -- -- FIFO configurations
+            -- BRAM_EN_G           => false,
+            -- USE_BUILT_IN_G      => false,
+            -- GEN_SYNC_FIFO_G     => true,
+            -- CASCADE_SIZE_G      => 1,
+            -- FIFO_ADDR_WIDTH_G   => 4,
+            -- -- AXI Stream Port Configurations
+            -- SLAVE_AXI_CONFIG_G  => SSI_PGP2B_CONFIG_C,
+            -- MASTER_AXI_CONFIG_G => ssiAxiStreamConfig(4))      
+         -- port map (
+            -- -- Slave Port
+            -- sAxisClk    => pgpClk,
+            -- sAxisRst    => pgpTxRst,
+            -- sAxisMaster => pgpRxMasters(vc),
+            -- sAxisSlave  => pgpRxSlaves(vc),
+            -- -- Master Port
+            -- mAxisClk    => pgpClk,
+            -- mAxisRst    => pgpTxRst,
+            -- mAxisMaster => rxMasters(vc),
+            -- mAxisSlave  => rxSlaves(vc));              
+            
    end generate GEN_VC_RX_BUFFER;
 
    AxiStreamMux_Inst : entity work.AxiStreamMux

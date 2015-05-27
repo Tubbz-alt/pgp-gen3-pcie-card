@@ -47,7 +47,6 @@ architecture rtl of PciTlpOutbound is
 
    type StateType is (
       IDLE_S,
-      REG_S,
       DMA_S);   
 
    type RegType is record
@@ -59,17 +58,20 @@ architecture rtl of PciTlpOutbound is
    end record RegType;
    
    constant REG_INIT_C : RegType := (
-      0,
-      AXI_STREAM_SLAVE_INIT_C,
-      AXI_STREAM_MASTER_INIT_C,
-      (others => AXI_STREAM_MASTER_INIT_C),
-      IDLE_S);
+      chPntr        => 0,
+      sAxisSlave    => AXI_STREAM_SLAVE_INIT_C,
+      regObMaster   => AXI_STREAM_MASTER_INIT_C,
+      dmaTxObMaster => (others => AXI_STREAM_MASTER_INIT_C),
+      state         => IDLE_S);
 
    signal r   : RegType := REG_INIT_C;
    signal rin : RegType;
 
    signal dmaTag     : slv(7 downto 0);
    signal dmaTagPntr : natural range 0 to 127;
+   
+   -- attribute dont_touch : string;
+   -- attribute dont_touch of r : signal is "true";
    
 begin
 
@@ -83,34 +85,52 @@ begin
       -- Latch the current value
       v := r;
 
-      -- Reset strobing signals   
+      -- Default to not ready for data
       v.sAxisSlave.tReady := '0';
-      ssiResetFlags(v.regObMaster);
+
+      -- Update REG tValid register
+      if regObSlave.tReady = '1' then
+         v.regObMaster.tValid := '0';
+      end if;
+
+      -- Update DMA tValid registers
       for i in 0 to DMA_SIZE_G-1 loop
-         ssiResetFlags(v.dmaTxObMaster(i));
+         if dmaTxObSlave(i).tReady = '1' then
+            v.dmaTxObMaster(i).tValid := '0';
+         end if;
       end loop;
 
       case r.state is
          ----------------------------------------------------------------------
          when IDLE_S =>
-            -- Check for valid data
-            if (r.sAxisSlave.tReady = '0') and (sAxisMaster.tValid = '1') then
+            -- Check for new data
+            if (sAxisMaster.tValid = '1') and (v.regObMaster.tValid = '0') then
                -- Check for SOF and correct request ID
                if (sAxisMaster.tUser(1) = '1') then
                   -- Check for memory read or write always goes to reg block
-                  if sAsixHdr.xType = "00000" then
-                     -- Set the tReady flag
-                     v.sAxisSlave.tReady := regObSlave.tReady;
-                     -- Next state
-                     v.state             := REG_S;
+                  -- Note: Memory IO bursting not supported. Only one 32-bit word transaction at a time.    
+                  if (sAsixHdr.xType = "00000") and (sAxisMaster.tLast = '1') and (sAxisMaster.tUser(1) = '1') then
+                     -- Accept the data
+                     v.sAxisSlave.tReady := '1';
+                     v.regObMaster       := sAxisMaster;
                   -- Else check for a a completion header with data payload and for TX DMA tag
                   elsif (sAsixHdr.xType = "01010") and (dmaTag(0) = '1') and (dmaTagPntr < DMA_SIZE_G) then
                      -- Set the channel pointer
-                     v.chPntr            := dmaTagPntr;
-                     -- Set the tReady flag
-                     v.sAxisSlave.tReady := dmaTxObSlave(dmaTagPntr).tReady;
-                     -- Next state
-                     v.state             := DMA_S;
+                     v.chPntr := dmaTagPntr;
+                     -- Check if target is ready for data
+                     if v.dmaTxObMaster(dmaTagPntr).tValid = '0' then
+                        -- Ready for data
+                        v.sAxisSlave.tReady         := '1';
+                        v.dmaTxObMaster(dmaTagPntr) := sAxisMaster;
+                        -- Check for not(tLast)
+                        if sAxisMaster.tLast = '0' then
+                           -- Next state
+                           v.state := DMA_S;
+                        end if;
+                     else
+                        -- Next state
+                        v.state := DMA_S;
+                     end if;
                   else
                      -- Blow off the data
                      v.sAxisSlave.tReady := '1';
@@ -121,35 +141,16 @@ begin
                end if;
             end if;
          ----------------------------------------------------------------------
-         when REG_S =>
-            -- Set the ready flag
-            v.sAxisSlave.tReady := regObSlave.tReady;
-            -- Check for valid data 
-            if (r.sAxisSlave.tReady = '1') and (sAxisMaster.tValid = '1') then
-               -- Write to the FIFO
-               v.regObMaster := sAxisMaster;
-               -- Check for tLast
-               if sAxisMaster.tLast = '1' then
-                  -- Stop reading out the FIFO
-                  v.sAxisSlave.tReady := '0';
-                  -- Next state
-                  v.state             := IDLE_S;
-               end if;
-            end if;
-         ----------------------------------------------------------------------
          when DMA_S =>
-            -- Set the ready flag
-            v.sAxisSlave.tReady := dmaTxObSlave(r.chPntr).tReady;
-            -- Check for valid data 
-            if (r.sAxisSlave.tReady = '1') and (sAxisMaster.tValid = '1') then
-               -- Write to the FIFO
+            -- Check if target is ready for data
+            if (v.dmaTxObMaster(r.chPntr).tValid = '0') and (sAxisMaster.tValid = '1') then
+               -- Ready for data
+               v.sAxisSlave.tReady       := '1';
                v.dmaTxObMaster(r.chPntr) := sAxisMaster;
                -- Check for tLast
                if sAxisMaster.tLast = '1' then
-                  -- Stop reading out the FIFO
-                  v.sAxisSlave.tReady := '0';
                   -- Next state
-                  v.state             := IDLE_S;
+                  v.state := IDLE_S;
                end if;
             end if;
       ----------------------------------------------------------------------
@@ -164,7 +165,7 @@ begin
       rin <= v;
 
       -- Outputs
-      sAxisSlave    <= r.sAxisSlave;
+      sAxisSlave    <= v.sAxisSlave;
       dmaTxObMaster <= r.dmaTxObMaster;
       regObMaster   <= r.regObMaster;
       

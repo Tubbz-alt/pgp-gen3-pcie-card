@@ -96,9 +96,9 @@ void *runWrite ( void *t ) {
             txData->count++;
             txData->total += ret;
          }
-         pntr++;
-         lane = (pntr % 8) >> 0;
-         vc   = (pntr & 0x18) >> 3;
+         pntr++;         
+         lane = (pntr>>0)&0x7;
+         //vc   = (pntr>>3)&0x3;
       }
    }
    free(data);

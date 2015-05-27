@@ -163,6 +163,7 @@ ssize_t PgpCard_Write(struct file *filp, const char* buffer, size_t count, loff_
        // Write descriptor
        if(pgpCardTx->pgpLane < 8) {
            pgpDevice->reg->txWrA[pgpCardTx->pgpLane] = descA;
+           asm("nop");//no operation function
            pgpDevice->reg->txWrB[pgpCardTx->pgpLane] = descB;   
        } else {
          printk(KERN_DEBUG "%s: Write: Invalid pgpCardTx->pgpLane: %i\n", MOD_NAME, pgpCardTx->pgpLane);
@@ -460,6 +461,10 @@ int my_Ioctl(struct file *filp, __u32 cmd, __u64 argument) {
          stat->TxCount = pgpDevice->reg->txCount;
          stat->TxWrite = pgpDevice->txWrite;
          stat->TxRead  = pgpDevice->txRead;
+         
+         for (x=0; x < 8; x++) {
+            stat->TxFifoCnt[x] = pgpDevice->reg->txFifoCnt[x];
+         }           
 
          // Copy to user
          if ((read = copy_to_user((__u32*)argument, stat, sizeof(PgpCardStatus)))) {

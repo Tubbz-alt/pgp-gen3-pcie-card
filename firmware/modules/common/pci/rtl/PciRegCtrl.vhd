@@ -5,8 +5,8 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-08-22
--- Last update: 2014-08-18
--- Platform   : Vivado 2014.1
+-- Last update: 2015-05-20
+-- Platform   : Vivado 2015.1
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
 -- Description: 
@@ -51,92 +51,83 @@ architecture rtl of PciRegCtrl is
 
    type stateType is (
       IDLE_S,
-      COMMON_CHECK_S,
       PIPE_WAIT_S,
       ACK_HDR_S);   
 
    type RegType is record
-      wrEn     : sl;
-      rdEn     : sl;
-      hdr      : PciHdrType;
-      rxSlave  : AxiStreamSlaveType;
-      txMaster : AxiStreamMasterType;
-      state    : StateType;
+      wrEn       : sl;
+      rdEn       : sl;
+      hdr        : PciHdrType;
+      regObSlave : AxiStreamSlaveType;
+      txMaster   : AxiStreamMasterType;
+      state      : StateType;
    end record RegType;
    
    constant REG_INIT_C : RegType := (
-      '0',
-      '0',
-      PCI_HDR_INIT_C,
-      AXI_STREAM_SLAVE_INIT_C,
-      AXI_STREAM_MASTER_INIT_C,
-      IDLE_S);
+      wrEn       => '0',
+      rdEn       => '0',
+      hdr        => PCI_HDR_INIT_C,
+      regObSlave => AXI_STREAM_SLAVE_INIT_C,
+      txMaster   => AXI_STREAM_MASTER_INIT_C,
+      state      => IDLE_S);
 
    signal r   : RegType := REG_INIT_C;
    signal rin : RegType;
-
-   signal rxMaster : AxiStreamMasterType;
-   signal txSlave  : AxiStreamSlaveType;
 
    -- attribute dont_touch      : string;
    -- attribute dont_touch of r : signal is "true";
 
 begin
 
-   PciFifoSync_RX : entity work.PciFifoSync
-      generic map (
-         TPD_G => TPD_G)   
-      port map (
-         pciClk      => pciClk,
-         pciRst      => pciRst,
-         -- Slave Port
-         sAxisMaster => regObMaster,
-         sAxisSlave  => regObSlave,
-         -- Master Port
-         mAxisMaster => rxMaster,
-         mAxisSlave  => r.rxSlave);             
-
-   comb : process (pciRst, r, regBusy, regRdData, regTranFromPci, rxMaster, txSlave) is
-      variable v : RegType;
+   comb : process (pciRst, r, regBusy, regIbSlave, regObMaster, regRdData, regTranFromPci) is
+      variable v      : RegType;
+      variable header : PciHdrType;
    begin
       -- Latch the current value
       v := r;
 
       -- Reset strobing signals
-      v.wrEn           := '0';
-      v.rdEn           := '0';
-      v.rxSlave.tReady := '0';
-      ssiResetFlags(v.txMaster);
+      v.wrEn := '0';
+      v.rdEn := '0';
+
+      -- Reset strobing signals
+      v.regObSlave.tReady := '0';
+
+      -- Update tValid register
+      if regIbSlave.tReady = '1' then
+         v.txMaster.tValid := '0';
+      end if;
+
+      -- Decode the current header for the FIFO
+      header := getPcieHdr(regObMaster);
 
       case r.state is
          ----------------------------------------------------------------------
          when IDLE_S =>
             -- Check for FIFO data
-            if (rxMaster.tValid = '1') and (r.rxSlave.tReady = '0') and (regBusy = '0') then
+            if (regObMaster.tValid = '1') and (regBusy = '0') then
                -- ACK the FIFO tValid
-               v.rxSlave.tReady := '1';
+               v.regObSlave.tReady := '1';
                -- Latch the header
-               v.hdr            := getPcieHdr(rxMaster);
-               -- Check for SOF
-               if (ssiGetUserSof(AXIS_PCIE_CONFIG_C, rxMaster) = '1') then
+               v.hdr               := header;
+               -- Check the bar
+               if header.bar = 0 then
+                  -- Check for read operation
+                  if (header.fmt(1) = '0') then
+                     -- Read from the register
+                     v.rdEn  := '1';
+                     -- Next state
+                     v.state := PIPE_WAIT_S;
+                  else
+                     -- Write to the register
+                     v.wrEn  := '1';
+                     -- Next state
+                     v.state := ACK_HDR_S;
+                  end if;
+               else
                   -- Next state
-                  v.state := COMMON_CHECK_S;
+                  v.state := ACK_HDR_S;
                end if;
-            end if;
-         ----------------------------------------------------------------------
-         when COMMON_CHECK_S =>
-            -- Check for FMT
-            if r.hdr.fmt(1) = '1' then
-               -- Write to the register
-               v.wrEn  := '1';
-               -- Next state
-               v.state := ACK_HDR_S;
-            -- Else perform a read
-            else
-               -- Read from the register
-               v.rdEn  := '1';
-               -- Next state
-               v.state := PIPE_WAIT_S;
             end if;
          ----------------------------------------------------------------------
          when PIPE_WAIT_S =>
@@ -144,8 +135,8 @@ begin
             v.state := ACK_HDR_S;
          ----------------------------------------------------------------------
          when ACK_HDR_S =>
-            -- Check if FIFO is ready and either write operation or wait for read to complete
-            if (txSlave.tReady = '1') and ((r.hdr.fmt(1) = '1') or (regBusy = '0')) then
+            -- Check if target is ready for data
+            if (v.txMaster.tValid = '0') and (regBusy = '0') then
                ------------------------------------------------------
                -- Generate a 3-DW completion TPL             
                ------------------------------------------------------
@@ -156,12 +147,14 @@ begin
                   v.txMaster.tData(111 downto 104) := r.hdr.data(23 downto 16);
                   v.txMaster.tData(119 downto 112) := r.hdr.data(15 downto 8);
                   v.txMaster.tData(127 downto 120) := r.hdr.data(7 downto 0);
-               else                     --send read data 
+               elsif r.hdr.bar = 0 then            --send read data 
                   -- Reorder Data
                   v.txMaster.tData(103 downto 96)  := regRdData(31 downto 24);
                   v.txMaster.tData(111 downto 104) := regRdData(23 downto 16);
                   v.txMaster.tData(119 downto 112) := regRdData(15 downto 8);
                   v.txMaster.tData(127 downto 120) := regRdData(7 downto 0);
+               else
+                  v.txMaster.tData(127 downto 96) := (others => '0');
                end if;
                --H2
                v.txMaster.tData(95 downto 80) := r.hdr.ReqId;           -- Echo back requester ID
@@ -198,8 +191,6 @@ begin
                ------------------------------------------------------  
                -- Write to the FIFO
                v.txMaster.tValid              := '1';
-               -- Set the SOF bit
-               ssiSetUserSof(AXIS_PCIE_CONFIG_C, v.txMaster, '1');
                -- Set the EOF bit
                v.txMaster.tLast               := '1';
                -- Check for write operation
@@ -223,11 +214,13 @@ begin
       rin <= v;
 
       -- Outputs
-      regBar    <= r.hdr.bar;
-      regAddr   <= r.hdr.addr;
-      regWrEn   <= r.wrEn;
-      regWrData <= r.hdr.data;
-      regRdEn   <= r.rdEn;
+      regObSlave  <= v.regObSlave;
+      regIbMaster <= r.txMaster;
+      regBar      <= r.hdr.bar;
+      regAddr     <= r.hdr.addr;
+      regWrEn     <= r.wrEn;
+      regWrData   <= r.hdr.data;
+      regRdEn     <= r.rdEn;
       
    end process comb;
 
@@ -237,18 +230,5 @@ begin
          r <= rin after TPD_G;
       end if;
    end process seq;
-
-   PciFifoSync_TX : entity work.PciFifoSync
-      generic map (
-         TPD_G => TPD_G)   
-      port map (
-         pciClk      => pciClk,
-         pciRst      => pciRst,
-         -- Slave Port
-         sAxisMaster => r.txMaster,
-         sAxisSlave  => txSlave,
-         -- Master Port
-         mAxisMaster => regIbMaster,
-         mAxisSlave  => regIbSlave);
 
 end rtl;

@@ -5,8 +5,8 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-03
--- Last update: 2014-08-18
--- Platform   : Vivado 2014.1
+-- Last update: 2015-05-23
+-- Platform   : Vivado 2015.1
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
 -- Description:
@@ -31,14 +31,13 @@ entity PciTxDmaMemReq is
       -- DMA Interface
       dmaIbMaster    : out AxiStreamMasterType;
       dmaIbSlave     : in  AxiStreamSlaveType;
-      dmaObMaster    : in  AxiStreamMasterType;
-      dmaObSlave     : in  AxiStreamSlaveType;
       dmaDescFromPci : in  DescFromPciType;
       dmaDescToPci   : out DescToPciType;
       dmaTranFromPci : in  TranFromPciType;
       -- Transaction Interface
       start          : out sl;
       done           : in  sl;
+      pause          : in  sl;
       remLength      : in  slv(23 downto 0);
       newControl     : out slv(7 downto 0);
       newLength      : out slv(23 downto 0);
@@ -49,67 +48,62 @@ end PciTxDmaMemReq;
 
 architecture rtl of PciTxDmaMemReq is
 
-   constant TIMEOUT_MAX_C  : slv(11 downto 0) := (others => '1');
-   constant TIMEOUT_SIZE_C : slv(11 downto 0) := toSlv(2000, 12);
-
    type StateType is (
       IDLE_S,
       CHECK_THRESH_S,
       SEND_IO_REQ_HDR_S,
-      WAIT_FOR_RESPONSE_S,
+      CALC_PIPELINE_DLY_S,
       CHECK_LENGTH_S,
       TR_DONE_S);    
 
    type RegType is record
       start        : sl;
-      timeout      : sl;
+      cnt          : slv(3 downto 0);
       newControl   : slv(7 downto 0);
       tranLength   : slv(8 downto 0);
       newLength    : slv(23 downto 0);
       pendLength   : slv(23 downto 0);
       reqLength    : slv(23 downto 0);
       newAddr      : slv(29 downto 0);
-      timer        : slv(11 downto 0);
       dmaDescToPci : DescToPciType;
       txMaster     : AxiStreamMasterType;
       state        : StateType;
    end record RegType;
    
    constant REG_INIT_C : RegType := (
-      '0',
-      '0',
-      (others => '0'),
-      (others => '0'),
-      (others => '0'),
-      (others => '0'),
-      (others => '0'),
-      (others => '0'),
-      (others => '0'),
-      DESC_TO_PCI_INIT_C,
-      AXI_STREAM_MASTER_INIT_C,
-      IDLE_S);
+      start        => '0',
+      cnt          => (others => '0'),
+      newControl   => (others => '0'),
+      tranLength   => (others => '0'),
+      newLength    => (others => '0'),
+      pendLength   => (others => '0'),
+      reqLength    => (others => '0'),
+      newAddr      => (others => '0'),
+      dmaDescToPci => DESC_TO_PCI_INIT_C,
+      txMaster     => AXI_STREAM_MASTER_INIT_C,
+      state        => IDLE_S);
 
    signal r   : RegType := REG_INIT_C;
    signal rin : RegType;
 
-   signal txSlave : AxiStreamSlaveType;
-
-   -- attribute dont_touch      : string;
+   -- attribute dont_touch : string;
    -- attribute dont_touch of r : signal is "true";
 
 begin
 
-   comb : process (dmaDescFromPci, dmaObMaster, dmaObSlave, dmaTranFromPci, done, pciRst, r,
-                   remLength, txSlave) is
+   comb : process (dmaDescFromPci, dmaIbSlave, dmaTranFromPci, done, pause, pciRst, r, remLength) is
       variable v : RegType;
    begin
       -- Latch the current value
       v := r;
 
       -- Reset strobing signals
-      v.start   := '0';
-      v.timeout := '0';
-      ssiResetFlags(v.txMaster);
+      v.start := '0';
+
+      -- Update tValid register
+      if dmaIbSlave.tReady = '1' then
+         v.txMaster.tValid := '0';
+      end if;
 
       -- Calculate the length difference
       v.pendLength := remLength - r.reqLength;
@@ -133,18 +127,20 @@ begin
                v.reqLength             := dmaDescFromPci.newLength;
                -- Reset the pending length for next state (won't be updated yet) 
                v.pendLength            := (others => '0');
+               -- Reset the counter
+               v.cnt                   := x"0";
                -- Next state
                v.state                 := CHECK_THRESH_S;
             end if;
          ----------------------------------------------------------------------
          when CHECK_THRESH_S =>
             -- Check pending threshold
-            if (r.pendLength < (PCI_MAX_TX_TRANS_LENGTH_C/2)) then
+            if (r.pendLength = 0) then
                -- Calculate the transaction length
-               if r.reqLength < PCI_MAX_TX_TRANS_LENGTH_C then
+               if r.reqLength < PCIE_MAX_TX_TRANS_LENGTH_C then
                   v.tranLength := r.reqLength(8 downto 0);
                else
-                  v.tranLength := toSlv(PCI_MAX_TX_TRANS_LENGTH_C, 9);
+                  v.tranLength := toSlv(PCIE_MAX_TX_TRANS_LENGTH_C, 9);
                end if;
                -- Next state
                v.state := SEND_IO_REQ_HDR_S;
@@ -152,7 +148,7 @@ begin
          ----------------------------------------------------------------------
          when SEND_IO_REQ_HDR_S =>
             -- Check if the FIFO is ready
-            if txSlave.tReady = '1' then
+            if (v.txMaster.tValid = '0') then
                ------------------------------------------------------
                -- generated a TLP 3-DW data transfer without payload 
                --
@@ -192,8 +188,6 @@ begin
                v.txMaster.tData(9 downto 0)   := '0' & r.tranLength;  -- Transaction length
                -- Write the header to FIFO
                v.txMaster.tValid              := '1';
-               -- Set the SOF bit
-               ssiSetUserSof(AXIS_PCIE_CONFIG_C, v.txMaster, '1');
                -- Set the EOF bit
                v.txMaster.tLast               := '1';
                -- Set AXIS tKeep
@@ -203,35 +197,20 @@ begin
                -- Calculate remaining request length
                v.reqLength                    := r.reqLength - r.tranLength;
                -- Next state
-               v.state                        := WAIT_FOR_RESPONSE_S;
+               v.state                        := CALC_PIPELINE_DLY_S;
             end if;
          ----------------------------------------------------------------------
-         when WAIT_FOR_RESPONSE_S =>
-            -- Check for the response (tValid, SOF, tReady)
-            if (dmaObMaster.tValid = '1') and (dmaObMaster.tUser(1) = '1') and (dmaObSlave.tReady = '1') then
-               -- Reset the counter
-               v.timer := (others => '0');
+         when CALC_PIPELINE_DLY_S =>
+            v.cnt := r.cnt + 1;
+            if r.cnt = x"F" then
+               v.cnt   := x"0";
                -- Next state
                v.state := CHECK_LENGTH_S;
-            else
-               -- Check if the FIFO is ready
-               if txSlave.tReady = '1' then
-                  -- Check for roll over
-                  if r.timer /= TIMEOUT_MAX_C then
-                     -- Increment the counter
-                     v.timer := r.timer + 1;
-                     -- Check the counter
-                     if r.timer = TIMEOUT_SIZE_C then
-                        -- Strobe the debugging signal
-                        v.timeout := '1';
-                     end if;
-                  end if;
-               end if;
             end if;
          ----------------------------------------------------------------------
          when CHECK_LENGTH_S =>
             -- Check if we are done requesting memory
-            if r.reqLength /= 0 then
+            if (r.reqLength /= 0) and (pause = '0') then
                -- Next state
                v.state := CHECK_THRESH_S;
             end if;
@@ -270,6 +249,7 @@ begin
       newControl   <= r.newControl;
       newLength    <= r.newLength;
       dmaDescToPci <= r.dmaDescToPci;
+      dmaIbMaster  <= r.txMaster;
       
    end process comb;
 
@@ -279,18 +259,5 @@ begin
          r <= rin after TPD_G;
       end if;
    end process seq;
-
-   PciFifoSync_TX : entity work.PciFifoSync
-      generic map (
-         TPD_G => TPD_G)   
-      port map (
-         pciClk      => pciClk,
-         pciRst      => pciRst,
-         -- Slave Port
-         sAxisMaster => r.txMaster,
-         sAxisSlave  => txSlave,
-         -- Master Port
-         mAxisMaster => dmaIbMaster,
-         mAxisSlave  => dmaIbSlave);
 
 end rtl;

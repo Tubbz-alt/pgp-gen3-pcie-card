@@ -203,13 +203,16 @@ architecture rtl of PciFrontEnd is
       SI_CLR);         
    signal irqState : IrqStateType := SI_IDLE;
 
-   attribute KEEP_HIERARCHY : string;
-   attribute KEEP_HIERARCHY of
-      PcieCore_Inst,
-      PciTlpCtrl_Inst : label is "TRUE";
+   -- attribute KEEP_HIERARCHY : string;
+   -- attribute KEEP_HIERARCHY of
+      -- PcieCore_Inst,
+      -- PciTlpCtrl_Inst : label is "TRUE";
 
-   -- attribute dont_touch                 : string;
-   -- attribute dont_touch of pciRxOutUser : signal is "true";
+   -- attribute dont_touch              : string;
+   -- attribute dont_touch of irqState  : signal is "true";
+   -- attribute dont_touch of irqReq    : signal is "true";
+   -- attribute dont_touch of irqEnable : signal is "true";
+   -- attribute dont_touch of irqActive : signal is "true";
    
 begin
 

@@ -4,9 +4,9 @@ use ieee.std_logic_1164.all;
 
 package Version is
 
-constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CEC83005"; -- MAKE_VERSION
+constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CEC83008"; -- MAKE_VERSION
 
-constant BUILD_STAMP_C : string := "PgpCardG3_4p760Gbps: Vivado v2014.1 (x86_64) Built Tue Mar 24 10:04:06 PDT 2015 by ruckman";
+constant BUILD_STAMP_C : string := "PgpCardG3_4p760Gbps: Vivado v2015.1 (x86_64) Built Tue May 26 15:42:12 PDT 2015 by ruckman";
 
 end Version;
 
@@ -25,5 +25,9 @@ end Version;
 --
 -- 03/24/2015 (0xCEC83005): Dedicating one runCode/acceptCode register pair per lane
 --
+-- 05/20/2015 (0xCEC83007): Registers added to access counters of valid runCodes
+--                          Registers added for per-lane enables of EVR functionality
+--
+-- 05/26/2015 (0xCEC83008): Added PgpOpCode register and fixed a bug in the DMA
+--
 -------------------------------------------------------------------------------
-

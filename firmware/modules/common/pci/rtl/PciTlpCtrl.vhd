@@ -62,17 +62,17 @@ architecture rtl of PciTlpCtrl is
       EOF_10_S);    
 
    type RegType is record
-      sAxisSlave : AxiStreamSlaveType;
+      rxSlave : AxiStreamSlaveType;
       txMaster   : AxiStreamMasterType;
       master     : AxiStreamMasterType;
       state      : StateType;
    end record RegType;
    
    constant REG_INIT_C : RegType := (
-      AXI_STREAM_SLAVE_INIT_C,
-      AXI_STREAM_MASTER_INIT_C,
-      AXI_STREAM_MASTER_INIT_C,
-      SOF_00_S);
+      rxSlave => AXI_STREAM_SLAVE_INIT_C,
+      txMaster => AXI_STREAM_MASTER_INIT_C,
+      master => AXI_STREAM_MASTER_INIT_C,
+      state => SOF_00_S);
 
    signal r   : RegType := REG_INIT_C;
    signal rin : RegType;
@@ -120,22 +120,26 @@ begin
       -- Latch the current value
       v := r;
 
-      -- Reset strobing signals   
-      ssiResetFlags(v.txMaster);
+      -- Not ready for data
+      v.rxSlave.tReady := '0';
 
-      -- Sample the FIFO status
-      v.sAxisSlave := txSlave;
+      -- Update tValid register
+      if txSlave.tReady = '1' then
+         v.txMaster.tValid := '0';
+      end if;
 
       case r.state is
          ----------------------------------------------------------------------
          when SOF_00_S =>
-            -- Check for valid data
-            if (r.sAxisSlave.tReady = '1') and (sAxisMaster.tValid = '1') then
+            -- Check for data moving
+            if (v.txMaster.tValid = '0') and (sAxisMaster.tValid = '1') then
+               -- Ready for data
+               v.rxSlave.tReady := '1';
                -- Pass the data to the FIFO
-               v.txMaster := sAxisMaster;
+               v.txMaster       := sAxisMaster;
                -- Save this transaction
-               v.master   := sAxisMaster;
-               -- Check for straddling SOF
+               v.master         := sAxisMaster;
+               -- Check for straddling SOF                  
                if (tFirst = '1') and (sof /= x"0") then
                   -- Terminate the incoming packet
                   v.txMaster.tLast    := '1';
@@ -151,9 +155,11 @@ begin
             end if;
          ----------------------------------------------------------------------
          when SOF_10_S =>
-            -- Check for valid data
-            if (r.sAxisSlave.tReady = '1') and (sAxisMaster.tValid = '1') then
-               -- Pass the data to the FIFO
+            -- Check for data moving
+            if (v.txMaster.tValid = '0') and (sAxisMaster.tValid = '1') then
+               -- Ready for data
+               v.rxSlave.tReady                := '1';
+               -- Update the bus with last transaction
                v.txMaster                      := r.master;
                -- Update tData value
                v.txMaster.tData(63 downto 0)   := r.master.tData(127 downto 64);
@@ -175,10 +181,8 @@ begin
                elsif (sAxisMaster.tLast = '1') then
                   -- Check the upper half for EOF
                   if (eof(3) = '1') then
-                     -- Stop receiving
-                     v.sAxisSlave.tReady := '0';
                      -- Next state
-                     v.state             := EOF_10_S;
+                     v.state := EOF_10_S;
                   else
                      -- Assert tLast
                      v.txMaster.tLast := '1';
@@ -189,10 +193,8 @@ begin
             end if;
          ----------------------------------------------------------------------
          when EOF_10_S =>
-            -- Stop receiving
-            v.sAxisSlave.tReady := '0';
-            -- Check for valid data
-            if (txSlave.tReady = '1') then
+            -- Check if target is ready for data
+            if v.txMaster.tValid = '0' then
                -- Pass the data to the FIFO
                v.txMaster                      := r.master;
                -- Update tData value
@@ -218,7 +220,8 @@ begin
       rin <= v;
 
       -- Outputs
-      sAxisSlave <= r.sAxisSlave;
+      sAxisSlave   <= v.rxSlave;
+      axisHdr      <= getPcieHdr(r.txMaster);      
       
    end process comb;
 
@@ -229,21 +232,6 @@ begin
       end if;
    end process seq;
 
-   PciFifoSync_TX : entity work.PciFifoSync
-      generic map (
-         TPD_G => TPD_G)   
-      port map (
-         pciClk      => pciClk,
-         pciRst      => pciRst,
-         -- Slave Port
-         sAxisMaster => r.txMaster,
-         sAxisSlave  => txSlave,
-         -- Master Port
-         mAxisMaster => axisMaster,
-         mAxisSlave  => axisSlave);         
-
-   axisHdr <= getPcieHdr(axisMaster);
-
    PciTlpOutbound_Inst : entity work.PciTlpOutbound
       generic map (
          TPD_G      => TPD_G,
@@ -251,8 +239,8 @@ begin
       port map (
          -- PCIe Interface
          sAsixHdr      => axisHdr,
-         sAxisMaster   => axisMaster,
-         sAxisSlave    => axisSlave,
+         sAxisMaster   => r.txMaster,
+         sAxisSlave    => txSlave,
          -- Outbound DMA Interface
          regObMaster   => regObMaster,
          regObSlave    => regObSlave,

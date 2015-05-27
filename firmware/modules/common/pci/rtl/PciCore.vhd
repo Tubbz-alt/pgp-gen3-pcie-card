@@ -85,10 +85,10 @@ architecture mapping of PciCore is
    signal dmaRxIbMaster    : AxiStreamMasterArray(0 to 7);
    signal dmaRxIbSlave     : AxiStreamSlaveArray(0 to 7);
 
-   attribute KEEP_HIERARCHY : string;
-   attribute KEEP_HIERARCHY of
-      PciFrontEnd_Inst,
-      PciApp_Inst : label is "TRUE";
+   -- attribute KEEP_HIERARCHY : string;
+   -- attribute KEEP_HIERARCHY of
+      -- PciFrontEnd_Inst,
+      -- PciApp_Inst : label is "TRUE";
    
 begin
 

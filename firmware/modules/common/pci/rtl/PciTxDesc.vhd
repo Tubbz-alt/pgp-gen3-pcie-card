@@ -88,6 +88,7 @@ architecture rtl of PciTxDesc is
    -- Transmit descriptor write
    signal tFifoDin : std_logic_vector(63 downto 0);
    signal tFifoWr  : std_logic_vector(0 to (DMA_SIZE_G-1));
+   signal tFifoCnt : Slv9Array(0 to (DMA_SIZE_G-1));
 
    -- Done Descriptor Logic
    signal doneCnt      : std_logic_vector(4 downto 0) := (others=>'0');
@@ -149,6 +150,7 @@ begin
             pciRst     => pciRst,
             tFifoWr    => tFifoWr(i),
             tFifoDin   => tFifoDin,
+            tFifoCnt   => tFifoCnt(i),
             tFifoAFull => dmaDescAFull(i),
             newReq     => dmaDescToPci(i).newReq,
             newAck     => dmaDescFromPci(i).newAck,
@@ -179,9 +181,9 @@ begin
             -- Reset RX counter
             if countReset = '1' then
                txCount <= (others => '0');
-            elsif dFifoAFull = '0' then
+            elsif (dFifoAFull = '0') and (dFifoWr = '0') then
                -- Poll the doneReq
-               if dmaDescToPci(conv_integer(doneCnt)).doneReq = '1' and (doneAck(conv_integer(doneCnt)) = '0') then
+               if dmaDescToPci(conv_integer(doneCnt)).doneReq = '1' then
                   doneAck(conv_integer(doneCnt))      <= '1';
                   txCount               <= txCount + 1;
                   dFifoWr               <= '1';
@@ -236,21 +238,22 @@ begin
             -- Register Read
             if regRdEn = '1' and regCs = '1' then
                regRdData <= (others => '0');
+               if regAddr < 64 then
+                  if (regAddr < (8+DMA_SIZE_G)) and (regAddr >= 8) then
+                     regRdData(8 downto 0) <= tFifoCnt(conv_integer(regAddr));
+                  end if;
                -- Status read: AFull
-               if regAddr = 64 then
+               elsif regAddr = 64 then
                   regRdData((DMA_SIZE_G-1) downto 0) <= dmaDescAFull;
-               end if;
                -- Status read: valid and count
-               if regAddr = 65 then
+               elsif regAddr = 65 then
                   regRdData(31)         <= dFifoValid;
                   regRdData(8 downto 0) <= dFifoCnt;
-               end if;
                -- Counter read
-               if regAddr = 66 then
+               elsif regAddr = 66 then
                   regRdData <= txCount;
-               end if;
                -- FIFO Read
-               if regAddr = 67 then
+               elsif regAddr = 67 then
                   -- Check if we need to read the FIFO
                   if dFifoValid = '1' then
                      regRdData(31 downto 2) <= dFifoDout(31 downto 2);

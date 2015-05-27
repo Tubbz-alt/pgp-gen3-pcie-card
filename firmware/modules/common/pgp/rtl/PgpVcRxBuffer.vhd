@@ -38,6 +38,7 @@ entity PgpVcRxBuffer is
       trigLutIn     : out TrigLutInType;
       -- 16-bit Streaming RX Interface
       pgpRxMaster   : in  AxiStreamMasterType;
+      pgpRxSlave    : out AxiStreamSlaveType;
       pgpRxCtrl     : out AxiStreamCtrlType;
       -- 32-bit Streaming TX Interface
       mAxisMaster   : out AxiStreamMasterType;
@@ -128,7 +129,7 @@ begin
          sAxisClk    => clk,
          sAxisRst    => rst,
          sAxisMaster => pgpRxMaster,
-         sAxisSlave  => open,
+         sAxisSlave  => pgpRxSlave,
          sAxisCtrl   => axisCtrl,
          -- Master Port
          mAxisClk    => clk,

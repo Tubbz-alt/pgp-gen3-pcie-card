@@ -17,6 +17,8 @@
 
 #define DEVNAME "/dev/PgpCardG3_0"//need to pass to main
 
+#define PRINT_MISC true
+
 using namespace std;
 
 int main (int argc, char **argv) {
@@ -131,6 +133,9 @@ int main (int argc, char **argv) {
       if(x!=7) cout << ", "; else cout << endl;
    } 
    cout << endl;        
+   
+#if PRINT_MISC
+
    cout << "          EvrRunCode[0]: 0x" << setw(2) << setfill('0') << status.EvrRunCode[0] << endl;
    cout << "          EvrRunCode[1]: 0x" << setw(2) << setfill('0') << status.EvrRunCode[1] << endl;
    cout << "          EvrRunCode[2]: 0x" << setw(2) << setfill('0') << status.EvrRunCode[2] << endl;
@@ -176,12 +181,17 @@ int main (int argc, char **argv) {
       }
    }
    cout << endl; 
-   
+
    cout << "        TxDmaAFull[7:0]: ";        
    for(x=0;x<8;x++){
       cout << setw(1) << setfill('0') << status.TxDmaAFull[7-x];            
       if(x!=7) cout << ", "; else cout << endl;
    }
+   cout << "         TxFifoCnt[7:0]: ";        
+   for(x=0;x<8;x++){
+      cout << setw(1) << setfill('0') << status.TxFifoCnt[7-x];            
+      if(x!=7) cout << ", "; else cout << endl;
+   }   
    cout << "         TxDmaReadReady: 0x" << setw(1) << setfill('0') << status.TxReadReady << endl;
    cout << "      TxDmaRetFifoCount: 0x" << setw(3) << setfill('0') << status.TxRetFifoCount << endl;
    cout << "             TxDmaCount: 0x" << setw(8) << setfill('0') << status.TxCount << endl;
@@ -212,21 +222,22 @@ int main (int argc, char **argv) {
    cout << "             RxDmaWrite: 0x" <<  setw(2) << setfill('0') << status.RxWrite << endl;
    cout << "              RxDmaRead: 0x" <<  setw(2) << setfill('0') << status.RxRead  << endl;   
    cout << endl;   
-   
-   // cout << "          PciCommand: 0x" << setw(4) << setfill('0') << status.PciCommand << endl;
-   // cout << "           PciStatus: 0x" << setw(4) << setfill('0') << status.PciStatus << endl;
-   // cout << "         PciDCommand: 0x" << setw(4) << setfill('0') << status.PciDCommand << endl;
-   // cout << "          PciDStatus: 0x" << setw(4) << setfill('0') << status.PciDStatus << endl;
-   // cout << "         PciLCommand: 0x" << setw(4) << setfill('0') << status.PciLCommand << endl;
-   // cout << "          PciLStatus: 0x" << setw(4) << setfill('0') << status.PciLStatus << endl;
-   // cout << "        PciLinkState: 0x" << setw(1) << setfill('0') << status.PciLinkState << endl;
-   // cout << "         PciFunction: 0x" << setw(1) << setfill('0') << status.PciFunction << endl;
-   // cout << "           PciDevice: 0x" << setw(1) << setfill('0') << status.PciDevice << endl;
-   // cout << "              PciBus: 0x" << setw(2) << setfill('0') << status.PciBus << endl;
-   // cout << "         PciBaseAddr: 0x" << setw(8) << setfill('0') << status.PciBaseHdwr << endl;
-   // cout << "       PciBaseLength: 0x" << setw(8) << setfill('0') << status.PciBaseLen << endl;     
-   // cout << endl;   
-   
+
+   cout << "          PciCommand: 0x" << setw(4) << setfill('0') << status.PciCommand << endl;
+   cout << "           PciStatus: 0x" << setw(4) << setfill('0') << status.PciStatus << endl;
+   cout << "         PciDCommand: 0x" << setw(4) << setfill('0') << status.PciDCommand << endl;
+   cout << "          PciDStatus: 0x" << setw(4) << setfill('0') << status.PciDStatus << endl;
+   cout << "         PciLCommand: 0x" << setw(4) << setfill('0') << status.PciLCommand << endl;
+   cout << "          PciLStatus: 0x" << setw(4) << setfill('0') << status.PciLStatus << endl;
+   cout << "        PciLinkState: 0x" << setw(1) << setfill('0') << status.PciLinkState << endl;
+   cout << "         PciFunction: 0x" << setw(1) << setfill('0') << status.PciFunction << endl;
+   cout << "           PciDevice: 0x" << setw(1) << setfill('0') << status.PciDevice << endl;
+   cout << "              PciBus: 0x" << setw(2) << setfill('0') << status.PciBus << endl;
+   cout << "         PciBaseAddr: 0x" << setw(8) << setfill('0') << status.PciBaseHdwr << endl;
+   cout << "       PciBaseLength: 0x" << setw(8) << setfill('0') << status.PciBaseLen << endl;     
+   cout << endl;
+#endif 
+
    pgpcard_dumpDebug(s);
 
    cout << "Clearing debug level" << endl;

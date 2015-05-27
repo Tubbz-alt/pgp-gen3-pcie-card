@@ -11,11 +11,11 @@ set KERNAL_TYPE = `uname -m`
 if ( $KERNAL_TYPE == "x86_64" ) then
 	printf  "Using 64-bit Xilinx\n"
 	source /afs/slac/g/reseng/xilinx/ise_14.7/ISE_DS/settings64.csh
-	source /afs/slac/g/reseng/xilinx/vivado_2014.1/Vivado/2014.1/settings64.csh
+	source /afs/slac/g/reseng/xilinx/vivado_2015.1/Vivado/2015.1/settings64.csh
 else
 	printf  "Using 32-bit Xilinx\n"
 	source /afs/slac/g/reseng/xilinx/ise_14.7/ISE_DS/settings32.csh
-	source /afs/slac/g/reseng/xilinx/vivado_2014.1/Vivado/2014.1/settings32.csh
+	source /afs/slac/g/reseng/xilinx/vivado_2015.1/Vivado/2015.1/settings32.csh
 endif
 
 # Setup the VCS software

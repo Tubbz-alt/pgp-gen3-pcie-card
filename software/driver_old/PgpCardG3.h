@@ -88,7 +88,8 @@ struct PgpCardReg {
    
    //PciTxDesc.vhd
    __u32 txWrA[8];      // Software_Addr = 0x81C:0x800,  Firmware_Addr(13 downto 2) = 0x207:0x200   
-   __u32 txSpare0[24];  // Software_Addr = 0x87C:0x820,  Firmware_Addr(13 downto 2) = 0x21F:0x208
+   __u32 txFifoCnt[8];  // Software_Addr = 0x83C:0x820,  Firmware_Addr(13 downto 2) = 0x20F:0x208
+   __u32 txSpare0[16];  // Software_Addr = 0x87C:0x840,  Firmware_Addr(13 downto 2) = 0x21F:0x210
    __u32 txWrB[8];      // Software_Addr = 0x89C:0x880,  Firmware_Addr(13 downto 2) = 0x227:0x220      
    __u32 txSpare1[24];  // Software_Addr = 0x8FC:0x8A0,  Firmware_Addr(13 downto 2) = 0x23F:0x228   
    __u32 txStat[2];     // Software_Addr = 0x904:0x900,  Firmware_Addr(13 downto 2) = 0x241:0x240      

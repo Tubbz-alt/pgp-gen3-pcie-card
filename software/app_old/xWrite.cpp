@@ -18,6 +18,8 @@
 #define DEVNAME "/dev/PgpCardG3_0"
 
 #define LOOPBACK true
+#define PRINT_DATA false
+
 using namespace std;
 
 int main (int argc, char **argv) {
@@ -65,8 +67,10 @@ int main (int argc, char **argv) {
       
    for (x=0; x<size; x++) {
       txData[x] = random();
-      cout << " 0x" << setw(8) << setfill('0') << hex << txData[x];
-      if ( ((x+1)%10) == 0 ) cout << endl << "   ";
+      if(PRINT_DATA){
+         cout << " 0x" << setw(8) << setfill('0') << hex << txData[x];
+         if ( ((x+1)%10) == 0 ) cout << endl << "   ";
+      }
    }
    cout << endl;
    ret = pgpcard_send (s,txData,size,lane,vc);
@@ -91,10 +95,11 @@ int main (int argc, char **argv) {
       cout << ", Eofe=" << dec << eofe;
       cout << ", FifoErr=" << dec << fifoErr;
       cout << ", LengthErr=" << dec << lengthErr << endl;
-
-      for (x=0; x<(uint)ret; x++) {
-         cout << " 0x" << setw(8) << setfill('0') << hex << rxData[x];
-         if ( ((x+1)%10) == 0 ) cout << endl << "   ";
+      if(PRINT_DATA){
+         for (x=0; x<(uint)ret; x++) {
+            cout << " 0x" << setw(8) << setfill('0') << hex << rxData[x];
+            if ( ((x+1)%10) == 0 ) cout << endl << "   ";
+         }
       }
       cout << endl;
       cout << "Ret=" << dec << ret << endl;

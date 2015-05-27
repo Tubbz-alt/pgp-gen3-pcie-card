@@ -49,9 +49,7 @@ architecture rtl of PciTlpInbound is
 
    type StateType is (
       IDLE_S,
-      REG_S,
-      TX_DMA_S,
-      RX_DMA_S);    
+      DMA_RX_S);    
 
    type RegType is record
       trnPending   : sl;
@@ -65,23 +63,24 @@ architecture rtl of PciTlpInbound is
    end record RegType;
    
    constant REG_INIT_C : RegType := (
-      '0',
-      0,
-      0,
-      AXI_STREAM_SLAVE_INIT_C,
-      (others => AXI_STREAM_SLAVE_INIT_C),
-      (others => AXI_STREAM_SLAVE_INIT_C),
-      AXI_STREAM_MASTER_INIT_C,
-      IDLE_S);
+      trnPending   => '0',
+      arbCnt       => 0,
+      chPntr       => 0,
+      regIbSlave   => AXI_STREAM_SLAVE_INIT_C,
+      dmaTxIbSlave => (others => AXI_STREAM_SLAVE_INIT_C),
+      dmaRxIbSlave => (others => AXI_STREAM_SLAVE_INIT_C),
+      txMaster     => AXI_STREAM_MASTER_INIT_C,
+      state        => IDLE_S);
 
    signal r   : RegType := REG_INIT_C;
    signal rin : RegType;
-
-   signal txSlave : AxiStreamSlaveType;
+   
+   -- attribute dont_touch : string;
+   -- attribute dont_touch of r : signal is "true";
    
 begin
-   
-   comb : process (dmaRxIbMaster, dmaTxIbMaster, pciRst, r, regIbMaster, txSlave) is
+
+   comb : process (dmaRxIbMaster, dmaTxIbMaster, mAxisSlave, pciRst, r, regIbMaster) is
       variable v : RegType;
       variable i : natural;
    begin
@@ -95,7 +94,11 @@ begin
          v.dmaTxIbSlave(i).tReady := '0';
          v.dmaRxIbSlave(i).tReady := '0';
       end loop;
-      ssiResetFlags(v.txMaster);
+
+      -- Update tValid register
+      if mAxisSlave.tReady = '1' then
+         v.txMaster.tValid := '0';
+      end if;
 
       -- Check if there is a pending transaction
       if regIbMaster.tValid = '1' then
@@ -113,54 +116,32 @@ begin
       case r.state is
          ----------------------------------------------------------------------
          when IDLE_S =>
-            -- Highest priority: Register access
-            if (regIbMaster.tValid = '1') and (r.regIbSlave.tReady = '0') then
-               -- Check for SOF bit
-               if (ssiGetUserSof(AXIS_PCIE_CONFIG_C, regIbMaster) = '1') then
-                  -- Set the ready flag
-                  v.regIbSlave.tReady := txSlave.tReady;
-                  -- Next state
-                  v.state             := REG_S;
-               else
-                  -- Blow of the data
+            -- Check if target is ready for data
+            if v.txMaster.tValid = '0' then
+               -- 1st priority: Register access (single 32-bit MEM IO access only)
+               if regIbMaster.tValid = '1' then
+                  -- Ready for data
                   v.regIbSlave.tReady := '1';
-               end if;
-            else
-               -- Check for TX data (only 4DW occur here for TX DMA engine)
-               if (dmaTxIbMaster(r.arbCnt).tValid = '1') and (r.dmaTxIbSlave(r.arbCnt).tReady = '0') then
-                  -- Check for SOF bit
-                  if (ssiGetUserSof(AXIS_PCIE_CONFIG_C, dmaTxIbMaster(r.arbCnt)) = '1') then
-                     -- Select the register path
-                     v.chPntr                        := r.arbCnt;
-                     -- Set the ready flag
-                     v.dmaTxIbSlave(r.arbCnt).tReady := txSlave.tReady;
-                     -- Next state
-                     v.state                         := TX_DMA_S;
-                  else
-                     -- Blow of the data
-                     v.dmaTxIbSlave(r.arbCnt).tReady := '1';
-                  end if;
-               -- Check for RX data
-               elsif (dmaRxIbMaster(r.arbCnt).tValid = '1') and (r.dmaRxIbSlave(r.arbCnt).tReady = '0') then
-                  -- Check for SOF bit
-                  if (ssiGetUserSof(AXIS_PCIE_CONFIG_C, dmaRxIbMaster(r.arbCnt)) = '1') then
-                     -- Select the register path
-                     v.chPntr                        := r.arbCnt;
-                     -- Set the ready flag
-                     v.dmaRxIbSlave(r.arbCnt).tReady := txSlave.tReady;
-                     -- Next state
-                     v.state                         := RX_DMA_S;
-                  else
-                     -- Blow of the data
-                     v.dmaRxIbSlave(r.arbCnt).tReady := '1';
-                  end if;
-                  -- Increment counters
-                  if r.arbCnt = DMA_SIZE_G-1 then
-                     v.arbCnt := 0;
-                  else
-                     v.arbCnt := r.arbCnt + 1;
-                  end if;
+                  v.txMaster          := regIbMaster;
+               -- 2nd priority: TX DMA's Memory Requesting
+               elsif dmaTxIbMaster(r.arbCnt).tValid = '1' then
+                  -- Ready for data
+                  v.dmaTxIbSlave(r.arbCnt).tReady := '1';
+                  v.txMaster          := dmaTxIbMaster(r.arbCnt);             
                else
+                  -- Check for RX DMA data
+                  if dmaRxIbMaster(r.arbCnt).tValid = '1' then
+                     -- Select the register path
+                     v.chPntr                        := r.arbCnt;
+                     -- Ready for data
+                     v.dmaRxIbSlave(r.arbCnt).tReady := '1';
+                     v.txMaster                      := dmaRxIbMaster(r.arbCnt);
+                     -- Check for not(tLast)
+                     if dmaRxIbMaster(r.arbCnt).tLast = '0'then
+                        -- Next state
+                        v.state := DMA_RX_S;
+                     end if;
+                  end if;
                   -- Increment counters
                   if r.arbCnt = DMA_SIZE_G-1 then
                      v.arbCnt := 0;
@@ -170,51 +151,16 @@ begin
                end if;
             end if;
          ----------------------------------------------------------------------
-         when REG_S =>
-            -- Set the ready flag
-            v.regIbSlave.tReady := txSlave.tReady;
-            -- Check for valid data 
-            if (r.regIbSlave.tReady = '1') and (regIbMaster.tValid = '1') then
-               -- Write to the FIFO
-               v.txMaster := regIbMaster;
-               -- Check for tLast
-               if regIbMaster.tLast = '1' then
-                  -- Stop reading out the FIFO
-                  v.regIbSlave.tReady := '0';
-                  -- Next state
-                  v.state             := IDLE_S;
-               end if;
-            end if;
-         ----------------------------------------------------------------------
-         when TX_DMA_S =>
-            -- Set the ready flag
-            v.dmaTxIbSlave(r.chPntr).tReady := txSlave.tReady;
-            -- Check for valid data 
-            if (r.dmaTxIbSlave(r.chPntr).tReady = '1') and (dmaTxIbMaster(r.chPntr).tValid = '1') then
-               -- Write to the FIFO
-               v.txMaster := dmaTxIbMaster(r.chPntr);
-               -- Check for tLast
-               if dmaTxIbMaster(r.chPntr).tLast = '1' then
-                  -- Stop reading out the FIFO
-                  v.dmaTxIbSlave(r.chPntr).tReady := '0';
-                  -- Next state
-                  v.state                         := IDLE_S;
-               end if;
-            end if;
-         ----------------------------------------------------------------------
-         when RX_DMA_S =>
-            -- Set the ready flag
-            v.dmaRxIbSlave(r.chPntr).tReady := txSlave.tReady;
-            -- Check for valid data 
-            if (r.dmaRxIbSlave(r.chPntr).tReady = '1') and (dmaRxIbMaster(r.chPntr).tValid = '1') then
-               -- Write to the FIFO
-               v.txMaster := dmaRxIbMaster(r.chPntr);
+         when DMA_RX_S =>
+            -- Check if target is ready for data
+            if (v.txMaster.tValid = '0') and (dmaRxIbMaster(r.chPntr).tValid = '1') then
+               -- Ready for data
+               v.dmaRxIbSlave(r.chPntr).tReady := '1';
+               v.txMaster                      := dmaRxIbMaster(r.chPntr);
                -- Check for tLast
                if dmaRxIbMaster(r.chPntr).tLast = '1' then
-                  -- Stop reading out the FIFO
-                  v.dmaRxIbSlave(r.chPntr).tReady := '0';
                   -- Next state
-                  v.state                         := IDLE_S;
+                  v.state := IDLE_S;
                end if;
             end if;
       ----------------------------------------------------------------------
@@ -230,9 +176,10 @@ begin
 
       -- Outputs
       trnPending   <= r.trnPending;
-      regIbSlave   <= r.regIbSlave;
-      dmaTxIbSlave <= r.dmaTxIbSlave;
-      dmaRxIbSlave <= r.dmaRxIbSlave;
+      regIbSlave   <= v.regIbSlave;
+      dmaTxIbSlave <= v.dmaTxIbSlave;
+      dmaRxIbSlave <= v.dmaRxIbSlave;
+      mAxisMaster  <= r.txMaster;
 
    end process comb;
 
@@ -242,18 +189,5 @@ begin
          r <= rin after TPD_G;
       end if;
    end process seq;
-
-   PciFifoSync_TX : entity work.PciFifoSync
-      generic map (
-         TPD_G => TPD_G)   
-      port map (
-         pciClk      => pciClk,
-         pciRst      => pciRst,
-         -- Slave Port
-         sAxisMaster => r.txMaster,
-         sAxisSlave  => txSlave,
-         -- Master Port
-         mAxisMaster => mAxisMaster,
-         mAxisSlave  => mAxisSlave);         
-
+   
 end rtl;

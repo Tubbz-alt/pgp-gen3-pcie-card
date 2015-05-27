@@ -16,8 +16,5 @@ export MODULE_DIRS = $(PROJ_DIR)/../../modules/StdLib \
                      $(PROJ_DIR)/../../modules/common/pgp \
                      $(PROJ_DIR)
 
-# Max number of smart explorer runs
-export SMART_MAX_RUNS = 10
-
 # Use top level makefile
 include ../../modules/StdLib/build/system_vivado_v1.mk

@@ -69,6 +69,8 @@ package PgpCardG3Pkg is
       pgpRxRst         : slv(7 downto 0);
       countRst         : sl;
       loopback         : slv(7 downto 0);
+      pgpOpCodeEn      : sl;
+      pgpOpCode        : slv(7 downto 0);
       enHeaderCheck    : SlVectorArray(0 to 7, 0 to 3);
       dmaTxIbSlave     : AxiStreamSlaveArray(0 to 7);
       dmaTxObMaster    : AxiStreamMasterArray(0 to 7);

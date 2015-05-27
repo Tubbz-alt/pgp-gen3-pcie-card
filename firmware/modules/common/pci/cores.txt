@@ -1,1 +1,2 @@
-coregen/PcieCore4xA7.xci
+## Sourcing the .dcp file in the sources.txt
+#coregen/PcieCore4xA7.xci

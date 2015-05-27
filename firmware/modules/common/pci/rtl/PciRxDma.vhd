@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-03
--- Last update: 2014-08-18
+-- Last update: 2015-05-22
 -- Platform   : Vivado 2014.1
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -100,6 +100,7 @@ architecture rtl of PciRxDma is
       tranCnt : slv(8 downto 0);
 
    signal rxMaster : AxiStreamMasterType;
+   signal rxSlave  : AxiStreamSlaveType;
    signal txSlave  : AxiStreamSlaveType;
 
    -- attribute dont_touch      : string;
@@ -120,7 +121,7 @@ begin
          pciClk      => pciClk,
          pciRst      => pciRst,
          mAxisMaster => rxMaster,
-         mAxisSlave  => r.rxSlave,
+         mAxisSlave  => rxSlave,
          tranRd      => r.tranRd,
          tranValid   => tranValid,
          tranSubId   => tranSubId,
@@ -138,7 +139,12 @@ begin
       -- Reset strobing signals
       v.tranRd         := '0';
       v.rxSlave.tReady := '0';
-      ssiResetFlags(v.txMaster);
+
+      -- Update tValid register
+      if txSlave.tReady = '1' then
+         v.txMaster.tValid := '0';
+         v.txMaster.tLast  := '0';
+      end if;
 
       -- Status value
       v.dmaDescToPci.doneStatus(11 downto 8) := (others => '0');
@@ -151,7 +157,7 @@ begin
          ----------------------------------------------------------------------
          when IDLE_S =>
             -- Check for data in the transaction FIFO and data FIFO
-            if (tranValid = '1') and (r.tranRd = '0') and (rxMaster.tValid = '1') then
+            if (tranValid = '1') and (r.tranRd = '0') and (v.txMaster.tValid = '0') and (rxMaster.tValid = '1') then
                -- Check for start of frame bit
                if ssiGetUserSof(AXIS_CONFIG_C, rxMaster) = '1' then
                   -- Send a request to the descriptor
@@ -162,8 +168,14 @@ begin
                   -- Configure the FIFO to dump the data
                   v.rxSlave.tReady := '1';
                   v.dumpCnt        := toSlv(1, 9);
-                  -- Next state
-                  v.state          := DATA_DUMP_S;
+                  -- Check for tLast
+                  if rxMaster.tLast = '0' then
+                     -- Next state
+                     v.state := DATA_DUMP_S;
+                  else
+                     -- Read the transaction FIFO
+                     v.tranRd := '1';
+                  end if;
                end if;
             end if;
          ----------------------------------------------------------------------
@@ -171,17 +183,15 @@ begin
             -- Ready to readout the FIFO
             v.rxSlave.tReady := '1';
             -- Check for valid data 
-            if (r.rxSlave.tReady = '1') and (rxMaster.tValid = '1') then
+            if rxMaster.tValid = '1' then
                -- Increment the counter
                v.dumpCnt := r.dumpCnt + 1;
                -- Compare the dump counter and check the EOF bit
                if (r.dumpCnt = (tranCnt+1)) or (rxMaster.tLast = '1') then
                   -- Read the transaction FIFO
-                  v.tranRd         := '1';
-                  -- Stop Reading out the data FIFO
-                  v.rxSlave.tReady := '0';
+                  v.tranRd := '1';
                   -- Next state
-                  v.state          := IDLE_S;
+                  v.state  := IDLE_S;
                end if;
             end if;
          ----------------------------------------------------------------------
@@ -224,24 +234,22 @@ begin
             -- Wait for FIFO data Transaction FIFO
             if tranValid = '1' then
                -- Read the FIFO
-               v.tranRd         := '1';
+               v.tranRd     := '1';
                -- Latch the transaction length
-               v.tranSubId      := tranSubId;
-               v.tranEofe       := tranEofe;
-               v.tranLength     := '0' & tranLength;
-               v.tranCnt        := '0' & tranCnt;
-               v.cnt            := (others => '0');
-               -- Ready to readout the FIFO
-               v.rxSlave.tReady := txSlave.tReady;
+               v.tranSubId  := tranSubId;
+               v.tranEofe   := tranEofe;
+               v.tranLength := '0' & tranLength;
+               v.tranCnt    := '0' & tranCnt;
+               v.cnt        := (others => '0');
                -- Next state
-               v.state          := SEND_IO_REQ_HDR_S;
+               v.state      := SEND_IO_REQ_HDR_S;
             end if;
          ----------------------------------------------------------------------
          when SEND_IO_REQ_HDR_S =>
-            -- Ready to readout the FIFO
-            v.rxSlave.tReady := txSlave.tReady;
-            -- Check for valid data 
-            if (r.rxSlave.tReady = '1') and (rxMaster.tValid = '1') then
+            -- Check if we need to move data
+            if (v.txMaster.tValid = '0') and (rxMaster.tValid = '1') then
+               -- Ready for data
+               v.rxSlave.tReady                := '1';
                ------------------------------------------------------
                -- generated a TLP 3-DW data transfer with payload 
                --
@@ -302,9 +310,6 @@ begin
                   v.frameErr := '1';
                end if;
 
-               -- Set the SOF bit
-               ssiSetUserSof(AXIS_PCIE_CONFIG_C, v.txMaster, '1');
-
                -- Set AXIS tKeep
                v.txMaster.tKeep := x"FFFF";
 
@@ -312,8 +317,6 @@ begin
                if (r.frameErr = '1') or (r.dmaDescToPci.doneLength = r.maxFrameCheck(0)) then
                   -- Assert the end of TLP packet flag
                   v.txMaster.tLast       := '1';  --EOF 
-                  -- Ready to readout the FIFO
-                  v.rxSlave.tReady       := '0';
                   -- Let the descriptor know that we are done
                   v.dmaDescToPci.doneReq := '1';
                   -- Next state
@@ -322,8 +325,6 @@ begin
                elsif r.tranLength = 1 then
                   -- Assert the end of TLP packet flag
                   v.txMaster.tLast := '1';        --EOF 
-                  -- Ready to readout the FIFO
-                  v.rxSlave.tReady := '0';
                   -- Check if this is the end of frame
                   if rxMaster.tLast = '1' then
                      -- Let the descriptor know that we are done
@@ -341,10 +342,10 @@ begin
             end if;
          ----------------------------------------------------------------------
          when COLLECT_S =>
-            -- Ready to readout the FIFO
-            v.rxSlave.tReady := txSlave.tReady;
-            -- Check for valid data 
-            if (r.rxSlave.tReady = '1') and (rxMaster.tValid = '1') then
+            -- Check if we need to move data
+            if (v.txMaster.tValid = '0') and (rxMaster.tValid = '1') then
+               -- Ready for data
+               v.rxSlave.tReady  := '1';
                -- Write to FIFO
                v.txMaster.tValid := '1';
                v.txMaster.tData  := rxMaster.tData;
@@ -395,8 +396,6 @@ begin
                if r.cnt = r.tranCnt then
                   -- Assert the end of TLP packet flag
                   v.txMaster.tLast := '1';        --EOF 
-                  -- Ready to readout the FIFO
-                  v.rxSlave.tReady := '0';
                   --check if this is the end of frame
                   if rxMaster.tLast = '1' then
                      -- Let the descriptor know that we are done
@@ -431,6 +430,7 @@ begin
       rin <= v;
 
       -- Outputs
+      rxSlave      <= v.rxSlave;
       dmaDescToPci <= r.dmaDescToPci;
       
    end process comb;
@@ -442,17 +442,32 @@ begin
       end if;
    end process seq;
 
-   PciFifoSync_TX : entity work.PciFifoSync
+   FIFO_TX : entity work.AxiStreamFifo
       generic map (
-         TPD_G => TPD_G)   
+         -- General Configurations
+         TPD_G               => TPD_G,
+         PIPE_STAGES_G       => 0,
+         SLAVE_READY_EN_G    => true,
+         VALID_THOLD_G       => 1,
+         -- FIFO configurations
+         BRAM_EN_G           => false,
+         USE_BUILT_IN_G      => false,
+         GEN_SYNC_FIFO_G     => true,
+         CASCADE_SIZE_G      => 1,
+         FIFO_ADDR_WIDTH_G   => 4,
+         -- AXI Stream Port Configurations
+         SLAVE_AXI_CONFIG_G  => PCI_AXIS_CONFIG_C,
+         MASTER_AXI_CONFIG_G => PCI_AXIS_CONFIG_C)            
       port map (
-         pciClk      => pciClk,
-         pciRst      => pciRst,
          -- Slave Port
+         sAxisClk    => pciClk,
+         sAxisRst    => pciRst,
          sAxisMaster => r.txMaster,
          sAxisSlave  => txSlave,
          -- Master Port
+         mAxisClk    => pciClk,
+         mAxisRst    => pciRst,
          mAxisMaster => dmaIbMaster,
-         mAxisSlave  => dmaIbSlave);   
+         mAxisSlave  => dmaIbSlave);     
 
 end rtl;

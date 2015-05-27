@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2014-07-31
+-- Last update: 2015-05-21
 -- Platform   : Vivado 2014.1
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -27,21 +27,26 @@ entity PgpOpCode is
    generic (
       TPD_G : time := 1 ns);
    port (
+      -- Software OP-Code
+      pgpOpCodeEn : in  sl;
+      pgpOpCode   : in  slv(7 downto 0);
       -- Delay Configuration
-      runDelay    : in slv(31 downto 0);
-      acceptDelay : in slv(31 downto 0);
+      runDelay    : in  slv(31 downto 0);
+      acceptDelay : in  slv(31 downto 0);
       -- External Interfaces
-      evrToPgp   : in  EvrToPgpType;
+      evrToPgp    : in  EvrToPgpType;
       -- PGP core interface
-      pgpTxIn    : out Pgp2bTxInType;
+      pgpTxIn     : out Pgp2bTxInType;
       -- RX Virtual Channel Interface
-      trigLutIn  : in  TrigLutInArray(0 to 3);
-      trigLutOut : out TrigLutOutArray(0 to 3);
+      trigLutIn   : in  TrigLutInArray(0 to 3);
+      trigLutOut  : out TrigLutOutArray(0 to 3);
       -- Global Signals
-      pgpClk     : in  sl;
-      pgpRst     : in  sl;
-      evrClk     : in  sl;
-      evrRst     : in  sl);       
+      pciClk      : in  sl;
+      pciRst      : in  sl;
+      pgpClk      : in  sl;
+      pgpRst      : in  sl;
+      evrClk      : in  sl;
+      evrRst      : in  sl);       
 end PgpOpCode;
 
 architecture rtl of PgpOpCode is
@@ -58,17 +63,20 @@ architecture rtl of PgpOpCode is
    end record;
    
    constant REG_INIT_C : RegType := (
-      '0',
-      '0',
-      '0',
-      (others => '0'),
-      (others => '0'),
-      (others => '0'),
-      (others => '0'),
-      (others => '0'));   
+      ready     => '0',
+      valid     => '0',
+      we        => '0',
+      trigAddr  => (others => '0'),
+      waddr     => (others => '0'),
+      acceptCnt => (others => '0'),
+      seconds   => (others => '0'),
+      offset    => (others => '0'));   
 
    signal r   : RegType := REG_INIT_C;
    signal rin : RegType;
+
+   signal opCodeEn : sl;
+   signal opCode   : slv(7 downto 0);
 
    signal delay   : EvrToPgpType;
    signal fromEvr : EvrToPgpType;
@@ -106,15 +114,29 @@ begin
    -- Output Bus Mapping
    ------------------------------- 
    pgpTxIn.flush       <= '0';              -- not used
-   pgpTxIn.opCodeEn    <= fromEvr.run;
-   pgpTxIn.opCode      <= r.trigAddr;
+   pgpTxIn.opCodeEn    <= fromEvr.run or opCodeEn;
+   pgpTxIn.opCode      <= r.trigAddr when(opCodeEn = '0') else opCode;
    pgpTxIn.locData     <= (others => '0');  -- not used
    pgpTxIn.flowCntlDis <= '0';              -- Ignore flow control 
 
    -------------------------------
    -- Synchronization
    ------------------------------- 
-   SynchronizerFifo_Inst : entity work.SynchronizerFifo
+   SynchronizerFifo_0 : entity work.SynchronizerFifo
+      generic map(
+         DATA_WIDTH_G => 8)
+      port map(
+         -- Write Ports (wr_clk domain)
+         wr_clk => pciClk,
+         wr_en  => pgpOpCodeEn,
+         din    => pgpOpCode,
+         -- Read Ports (rd_clk domain)
+         rd_clk => pgpClk,
+         rd_en  => '1',
+         valid  => opCodeEn,
+         dout   => opCode);           
+
+   SynchronizerFifo_1 : entity work.SynchronizerFifo
       generic map(
          DATA_WIDTH_G => 64)
       port map(

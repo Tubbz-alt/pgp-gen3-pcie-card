@@ -16,11 +16,12 @@
 
 #define DEVNAME "/dev/PgpCardG3_0"
 
+#define PRINT_DATA false
+
 using namespace std;
 
 int main (int argc, char **argv) {
    int           s;
-   int           x;
    int           ret;
    uint          maxSize;
    uint          *data;
@@ -52,11 +53,13 @@ int main (int argc, char **argv) {
          cout << ", FifoErr=" << dec << fifoErr;
          cout << ", LengthErr=" << dec << lengthErr;
          cout << endl << "   ";
-
+#if PRINT_DATA
+         int x;
          for (x=0; x<ret; x++) {
             cout << " 0x" << setw(8) << setfill('0') << hex << data[x];
             if ( ((x+1)%10) == 0 ) cout << endl << "   ";
          }
+#endif
          cout << endl;
       }
    } while ( ret > 0 );

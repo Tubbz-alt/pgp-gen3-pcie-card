@@ -4,17 +4,19 @@ vhdl work rtl/PciCore.vhd
 vhdl work rtl/PciFlashBpi.vhd
 vhdl work rtl/PciFrontEnd.vhd
 vhdl work rtl/PciRegCtrl.vhd
+
 vhdl work rtl/PciRxDesc.vhd
 vhdl work rtl/PciRxDma.vhd
-vhdl work rtl/PciRxDmaEmpty.vhd
 vhdl work rtl/PciRxTransFifo.vhd
+
 vhdl work rtl/PciTlpCtrl.vhd
 vhdl work rtl/PciTlpInbound.vhd
 vhdl work rtl/PciTlpOutbound.vhd
+
 vhdl work rtl/PciTxDesc.vhd
 vhdl work rtl/PciTxDescFifo.vhd
 vhdl work rtl/PciTxDma.vhd
-vhdl work rtl/PciTxDmaEmpty.vhd
 vhdl work rtl/PciTxDmaMemReq.vhd
 vhdl work rtl/PciTxDmaFifoMux.vhd
-vhdl work rtl/PciFifoSync.vhd
+
+vhdl work coregen/PcieCore4xA7.dcp

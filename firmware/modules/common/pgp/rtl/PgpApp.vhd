@@ -45,6 +45,7 @@ entity PgpApp is
       pgpTxSlaves  : in  AxiStreamSlaveVectorArray(0 to 7, 0 to 3);
       -- Frame Receive Interface
       pgpRxMasters : in  AxiStreamMasterVectorArray(0 to 7, 0 to 3);
+      pgpRxSlaves  : out  AxiStreamSlaveVectorArray(0 to 7, 0 to 3);
       pgpRxCtrl    : out AxiStreamCtrlVectorArray(0 to 7, 0 to 3);
       -- PLL Status
       pllTxReady   : in  slv(1 downto 0);
@@ -220,6 +221,9 @@ begin
          generic map (
             TPD_G => TPD_G)
          port map (
+            -- Software OP-Code
+            pgpOpCodeEn   => pciToPgp.pgpOpCodeEn,
+            pgpOpCode     => pciToPgp.pgpOpCode,
             -- Delay Configuration
             runDelay      => runDelay(lane),
             acceptDelay   => acceptDelay(lane),
@@ -237,11 +241,13 @@ begin
             trigLutOut(2) => trigLutOut(lane, 2),
             trigLutOut(3) => trigLutOut(lane, 3),
             --Global Signals
+            pciClk        => pciClk,
+            pciRst        => pciRst,            
             pgpClk        => pgpClk,
             pgpRst        => pgpRst,
             evrClk        => evrClk,
-            evrRst        => evrRst);      
-
+            evrRst        => evrRst);     
+            
       -------------------------------
       -- Lane Status and Health
       ------------------------------- 
@@ -315,6 +321,10 @@ begin
             pgpRxMasters(1)  => pgpRxMasters(lane, 1),
             pgpRxMasters(2)  => pgpRxMasters(lane, 2),
             pgpRxMasters(3)  => pgpRxMasters(lane, 3),
+            pgpRxSlaves(0)   => pgpRxSlaves(lane, 0),
+            pgpRxSlaves(1)   => pgpRxSlaves(lane, 1),
+            pgpRxSlaves(2)   => pgpRxSlaves(lane, 2),
+            pgpRxSlaves(3)   => pgpRxSlaves(lane, 3),            
             pgpRxCtrl(0)     => pgpRxCtrls(lane, 0),
             pgpRxCtrl(1)     => pgpRxCtrls(lane, 1),
             pgpRxCtrl(2)     => pgpRxCtrls(lane, 2),
