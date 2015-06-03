@@ -4,9 +4,9 @@ use ieee.std_logic_1164.all;
 
 package Version is
 
-constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CEC83008"; -- MAKE_VERSION
+constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CEC83009"; -- MAKE_VERSION
 
-constant BUILD_STAMP_C : string := "PgpCardG3_2p500Gbps: Vivado v2015.1 (x86_64) Built Tue May 26 13:51:41 PDT 2015 by ruckman";
+constant BUILD_STAMP_C : string := "PgpCardG3_2p500Gbps: Vivado v2015.1 (x86_64) Built Wed Jun  3 08:21:58 PDT 2015 by ruckman";
 
 end Version;
 
@@ -29,5 +29,8 @@ end Version;
 --                          Registers added for per-lane enables of EVR functionality
 --
 -- 05/26/2015 (0xCEC83008): Added PgpOpCode register and fixed a bug in the DMA
+--
+-- 06/03/2015 (0xCEC83009): Added registers to the output of the LUT to help with timing
+--                          Fixed the non-fatal kernel error messaging
 --
 -------------------------------------------------------------------------------

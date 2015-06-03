@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-08-29
--- Last update: 2015-02-19
+-- Last update: 2015-05-29
 -- Platform   : Vivado 2014.1
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -27,10 +27,11 @@ use work.Pgp2bPkg.all;
 
 entity PgpVcRxBuffer is
    generic (
-      TPD_G      : time := 1 ns;
-      LANE_G     : natural;
-      VC_G       : natural;
-      PGP_RATE_G : real); 
+      TPD_G            : time := 1 ns;
+      CASCADE_SIZE_G   : natural;
+      SLAVE_READY_EN_G : boolean;
+      LANE_G           : natural;
+      VC_G             : natural); 
    port (
       -- EVR Trigger Interface
       enHeaderCheck : in  sl;
@@ -53,40 +54,40 @@ end PgpVcRxBuffer;
 architecture rtl of PgpVcRxBuffer is
 
    constant AXIS_CONFIG_C : AxiStreamConfigType := ssiAxiStreamConfig(4);  -- 32-bit interface
-   constant CLK_FREQ_C    : real                := getRealDiv(PGP_RATE_G, 20);
-   constant TIMEOUT_C     : slv(31 downto 0)    := toSlv(getTimeRatio(CLK_FREQ_C, 0.2E+0), 32);  -- 5 seconds
+   constant LUT_WAIT_C    : natural             := 7;
 
    type StateType is (
       IDLE_S,
       RD_HDR0_S,
       RD_HDR1_S,
-      LUT_WAIT0_S,
-      LUT_WAIT1_S,
-      LUT_WAIT2_S,
+      LUT_WAIT_S,
       CHECK_ACCEPT_S,
       WR_HDR0_S,
       WR_HDR1_S,
       RD_WR_HDR2_S,
       RD_WR_HDR3_S,
       RD_WR_HDR4_S,
-      SEND_SOF_S,
-      EOF_WAIT_S);    
+      FWD_PAYLOAD_S);    
 
    type RegType is record
-      timer      : slv(31 downto 0);
+      fifoError  : sl;
+      lutWaitCnt : natural range 0 to LUT_WAIT_C;
       hrdData    : Slv32Array(0 to 1);
       trigLutIn  : TrigLutInType;
       trigLutOut : TrigLutOutType;
+      trigLutDly : TrigLutOutArray(0 to 1);
       rxSlave    : AxiStreamSlaveType;
       txMaster   : AxiStreamMasterType;
       state      : StateType;
    end record RegType;
    
    constant REG_INIT_C : RegType := (
-      timer      => (others => '0'),
+      fifoError  => '0',
+      lutWaitCnt => 0,
       hrdData    => (others => (others => '0')),
       trigLutIn  => TRIG_LUT_IN_INIT_C,
       trigLutOut => TRIG_LUT_OUT_INIT_C,
+      trigLutDly => (others => TRIG_LUT_OUT_INIT_C),
       rxSlave    => AXI_STREAM_SLAVE_INIT_C,
       txMaster   => AXI_STREAM_MASTER_INIT_C,
       state      => IDLE_S);
@@ -95,35 +96,37 @@ architecture rtl of PgpVcRxBuffer is
    signal rin : RegType;
 
    signal rxMaster : AxiStreamMasterType;
+   signal rxSlave  : AxiStreamSlaveType;
+   
    signal txSlave  : AxiStreamSlaveType;
-   signal txCtrl   : AxiStreamCtrlType;
    signal axisCtrl : AxiStreamCtrlType;
    
 begin
    
    pgpRxCtrl <= axisCtrl;
-   fifoError <= axisCtrl.overflow;
 
-   SsiFifo_RX : entity work.SsiFifo
+   FIFO_RX : entity work.AxiStreamFifo
       generic map (
-         -- General Configurations         
+         -- General Configurations
          TPD_G               => TPD_G,
          PIPE_STAGES_G       => 0,
-         EN_FRAME_FILTER_G   => true,
+         SLAVE_READY_EN_G    => SLAVE_READY_EN_G,
          VALID_THOLD_G       => 1,
          -- FIFO configurations
-         CASCADE_SIZE_G      => 1,
          BRAM_EN_G           => true,
          XIL_DEVICE_G        => "7SERIES",
          USE_BUILT_IN_G      => false,
          GEN_SYNC_FIFO_G     => true,
          ALTERA_SYN_G        => false,
-         ALTERA_RAM_G        => "M9K",
-         FIFO_ADDR_WIDTH_G   => 9,
+         ALTERA_RAM_G        => "M9K",                  
+         CASCADE_SIZE_G      => CASCADE_SIZE_G,
+         FIFO_ADDR_WIDTH_G   => 10,
          FIFO_FIXED_THRESH_G => true,
-         FIFO_PAUSE_THRESH_G => 128,
+         FIFO_PAUSE_THRESH_G => 512,
+         CASCADE_PAUSE_SEL_G => (CASCADE_SIZE_G-1),         
+         -- AXI Stream Port Configurations
          SLAVE_AXI_CONFIG_G  => SSI_PGP2B_CONFIG_C,
-         MASTER_AXI_CONFIG_G => AXIS_CONFIG_C) 
+         MASTER_AXI_CONFIG_G => AXIS_CONFIG_C)        
       port map (
          -- Slave Port
          sAxisClk    => clk,
@@ -135,52 +138,48 @@ begin
          mAxisClk    => clk,
          mAxisRst    => rst,
          mAxisMaster => rxMaster,
-         mAxisSlave  => r.rxSlave);  
-
-
-   comb : process (enHeaderCheck, r, rst, rxMaster, trigLutOut, txCtrl, txSlave) is
+         mAxisSlave  => rxSlave);  
+                
+   comb : process (axisCtrl, enHeaderCheck, r, rst, rxMaster, trigLutOut, txSlave) is
       variable v : RegType;
    begin
       -- Latch the current value
       v := r;
 
+      -- Add registers to help with timing
+      v.fifoError     := axisCtrl.overflow;
+      v.trigLutDly(1) := trigLutOut;
+      v.trigLutDly(0) := r.trigLutDly(1);
+
       -- Reset strobing signals
       v.rxSlave.tReady := '0';
-      ssiResetFlags(v.txMaster);
 
-      -- Increment the counter
-      v.timer := r.timer + 1;
-
-      -- Check if we need to reset the timer
-      if (r.rxSlave.tReady = '1') and (rxMaster.tValid = '1') then
-         -- Reset the timer
-         v.timer := (others => '0');
+      -- Update tValid register
+      if txSlave.tReady = '1' then
+         v.txMaster.tValid := '0';
+         v.txMaster.tLast  := '0';
+         v.txMaster.tUser  := (others => '0');
+         v.txMaster.tDest  := toSlv(VC_G, 8);
       end if;
 
       case r.state is
          ----------------------------------------------------------------------
          when IDLE_S =>
-            -- Reset the timer
-            v.timer := (others => '0');
-            -- Check for valid data 
-            if (r.rxSlave.tReady = '0') and (rxMaster.tValid = '1') then
-               -- Check for start of frame bit
+            -- Check if ready to move data 
+            if (rxMaster.tValid = '1') then
+               -- Check for SOF
                if ssiGetUserSof(AXIS_CONFIG_C, rxMaster) = '1' then
                   -- Check we are are checking the header
                   if (enHeaderCheck = '1') then
-                     ----------------------------------------------------------------
-                     -- Note: We check the header before making a DMA request
-                     --       to prevent unnecessary DMA traffic
-                     ----------------------------------------------------------------
-                     -- Ready to readout the FIFO
+                     -- Next state
+                     v.state := RD_HDR0_S;
+                  elsif (v.txMaster.tValid = '0') then
+                     -- Accept the data
                      v.rxSlave.tReady := '1';
+                     -- Write to the FIFO         
+                     v.txMaster       := rxMaster;
                      -- Next state
-                     v.state          := RD_HDR0_S;
-                  else
-                     -- Ready to readout the FIFO
-                     v.rxSlave.tReady := not(txCtrl.pause);
-                     -- Next state
-                     v.state          := SEND_SOF_S;
+                     v.state          := FWD_PAYLOAD_S;
                   end if;
                else
                   -- Blow off the data
@@ -189,18 +188,16 @@ begin
             end if;
          ----------------------------------------------------------------------
          when RD_HDR0_S =>
-            -- Ready to readout the FIFO
-            v.rxSlave.tReady := '1';
-            -- Check for valid data 
-            if (r.rxSlave.tReady = '1') and (rxMaster.tValid = '1') then
+            -- Check for data
+            if rxMaster.tValid = '1' then
+               -- Accept the data
+               v.rxSlave.tReady := '1';
                -- Store the header locally
-               v.hrdData(0) := rxMaster.tData(31 downto 0);
+               v.hrdData(0)     := rxMaster.tData(31 downto 0);
                -- Check for EOF
                if rxMaster.tLast = '1' then
-                  -- Stop Reading out the FIFO
-                  v.rxSlave.tReady := '0';
                   -- Next state
-                  v.state          := IDLE_S;
+                  v.state := IDLE_S;
                else
                   -- Next state
                   v.state := RD_HDR1_S;
@@ -208,47 +205,40 @@ begin
             end if;
          ----------------------------------------------------------------------
          when RD_HDR1_S =>
-            -- Ready to readout the FIFO
-            v.rxSlave.tReady := '1';
-            -- Check for valid data 
-            if (r.rxSlave.tReady = '1') and (rxMaster.tValid = '1') then
-               -- Stop Reading out the FIFO
-               v.rxSlave.tReady  := '0';
+            -- Check for data
+            if rxMaster.tValid = '1' then
+               -- Accept the data
+               v.rxSlave.tReady  := '1';
                -- Store the header locally
                v.hrdData(1)      := rxMaster.tData(31 downto 0);
                -- Latch the OpCode, which is used to address the trigger LUT
                v.trigLutIn.raddr := rxMaster.tData(23 downto 16);
-               -- Check for EOF
-               if rxMaster.tLast = '1' then
-                  -- Next state
-                  v.state := IDLE_S;
-               -- Check for SOF
-               elsif ssiGetUserSof(AXIS_CONFIG_C, rxMaster) = '1' then
+               -- Check for EOF or SOF
+               if (rxMaster.tLast = '1') or (ssiGetUserSof(AXIS_CONFIG_C, rxMaster) = '1') then
                   -- Next state
                   v.state := IDLE_S;
                else
                   -- Next state
-                  v.state := LUT_WAIT0_S;
+                  v.state := LUT_WAIT_S;
                end if;
             end if;
          ----------------------------------------------------------------------
-         when LUT_WAIT0_S =>
-            -- Next state
-            v.state := LUT_WAIT1_S;
-         ----------------------------------------------------------------------
-         when LUT_WAIT1_S =>
-            -- Next state
-            v.state := LUT_WAIT2_S;
-         ----------------------------------------------------------------------
-         when LUT_WAIT2_S =>
-            -- Next state
-            v.state := CHECK_ACCEPT_S;
+         when LUT_WAIT_S =>
+            -- Increment the counter
+            v.lutWaitCnt := r.lutWaitCnt + 1;
+            -- Check the counter size
+            if r.lutWaitCnt = LUT_WAIT_C then
+               -- Reset the counter
+               v.lutWaitCnt := 0;
+               -- Next state
+               v.state      := CHECK_ACCEPT_S;
+            end if;
          ----------------------------------------------------------------------
          when CHECK_ACCEPT_S =>
             -- Check for a valid trigger address
-            if trigLutOut.accept = '1' then
+            if r.trigLutDly(0).accept = '1' then
                -- Latch the trigger LUT values
-               v.trigLutOut := trigLutOut;
+               v.trigLutOut := r.trigLutDly(0);
                -- Next state
                v.state      := WR_HDR0_S;
             else
@@ -258,7 +248,7 @@ begin
          ----------------------------------------------------------------------
          when WR_HDR0_S =>
             -- Check if FIFO is ready
-            if (txCtrl.pause = '0') then
+            if v.txMaster.tValid = '0' then
                -- Write to the FIFO
                v.txMaster.tValid             := '1';
                ssiSetUserSof(AXIS_CONFIG_C, v.txMaster, '1');
@@ -272,32 +262,28 @@ begin
          ----------------------------------------------------------------------
          when WR_HDR1_S =>
             -- Check if FIFO is ready
-            if (txCtrl.pause = '0') then
+            if v.txMaster.tValid = '0' then
                -- Write to the FIFO
                v.txMaster.tValid             := '1';
                v.txMaster.tData(31 downto 0) := r.hrdData(1);
-               -- Ready to readout the FIFO
-               v.rxSlave.tReady              := not(txCtrl.pause);
                -- Next state
                v.state                       := RD_WR_HDR2_S;
             end if;
          ----------------------------------------------------------------------
          when RD_WR_HDR2_S =>
-            -- Ready to readout the FIFO
-            v.rxSlave.tReady := not(txCtrl.pause);
-            -- Check for valid data 
-            if (r.rxSlave.tReady = '1') and (rxMaster.tValid = '1') then
+            -- Check if ready to move data 
+            if (v.txMaster.tValid = '0') and (rxMaster.tValid = '1') then
+               -- Ready for data
+               v.rxSlave.tReady              := '1';
                -- Write to the FIFO
                v.txMaster.tValid             := '1';
                v.txMaster.tData(31 downto 0) := r.trigLutOut.acceptCnt;
-               -- Check for EOF and SOF
-               if (rxMaster.tLast = '1') or (ssiGetUserSof(AXIS_CONFIG_C, rxMaster) = '1') then
+               -- Check for EOF
+               if rxMaster.tLast = '1' or (ssiGetUserSof(AXIS_CONFIG_C, rxMaster) = '1') then
                   -- Set the EOF bit
                   v.txMaster.tLast := '1';
                   -- Set the EOFE bit
                   ssiSetUserEofe(AXIS_CONFIG_C, v.txMaster, '1');
-                  -- Stop Reading out the FIFO
-                  v.rxSlave.tReady := '0';
                   -- Next state
                   v.state          := IDLE_S;
                else
@@ -307,21 +293,19 @@ begin
             end if;
          ----------------------------------------------------------------------
          when RD_WR_HDR3_S =>
-            -- Ready to readout the FIFO
-            v.rxSlave.tReady := not(txCtrl.pause);
-            -- Check for valid data 
-            if (r.rxSlave.tReady = '1') and (rxMaster.tValid = '1') then
+            -- Check if ready to move data 
+            if (v.txMaster.tValid = '0') and (rxMaster.tValid = '1') then
+               -- Ready for data
+               v.rxSlave.tReady              := '1';
                -- Write to the FIFO
                v.txMaster.tValid             := '1';
                v.txMaster.tData(31 downto 0) := r.trigLutOut.offset;
-               -- Check for EOF and SOF
-               if (rxMaster.tLast = '1') or (ssiGetUserSof(AXIS_CONFIG_C, rxMaster) = '1') then
+               -- Check for EOF
+               if rxMaster.tLast = '1' or (ssiGetUserSof(AXIS_CONFIG_C, rxMaster) = '1') then
                   -- Set the EOF bit
                   v.txMaster.tLast := '1';
                   -- Set the EOFE bit
                   ssiSetUserEofe(AXIS_CONFIG_C, v.txMaster, '1');
-                  -- Stop Reading out the FIFO
-                  v.rxSlave.tReady := '0';
                   -- Next state
                   v.state          := IDLE_S;
                else
@@ -331,82 +315,46 @@ begin
             end if;
          ----------------------------------------------------------------------
          when RD_WR_HDR4_S =>
-            -- Ready to readout the FIFO
-            v.rxSlave.tReady := not(txCtrl.pause);
-            -- Check for valid data 
-            if (r.rxSlave.tReady = '1') and (rxMaster.tValid = '1') then
+            -- Check if ready to move data 
+            if (v.txMaster.tValid = '0') and (rxMaster.tValid = '1') then
+               -- Ready for data
+               v.rxSlave.tReady              := '1';
                -- Write to the FIFO
                v.txMaster.tValid             := '1';
                v.txMaster.tData(31 downto 0) := r.trigLutOut.seconds;
-               -- Check for EOF and SOF
-               if (rxMaster.tLast = '1') or (ssiGetUserSof(AXIS_CONFIG_C, rxMaster) = '1') then
+               -- Check for EOF
+               if rxMaster.tLast = '1' or (ssiGetUserSof(AXIS_CONFIG_C, rxMaster) = '1') then
                   -- Set the EOF bit
                   v.txMaster.tLast := '1';
                   -- Set the EOFE bit
                   ssiSetUserEofe(AXIS_CONFIG_C, v.txMaster, '1');
-                  -- Stop Reading out the FIFO
-                  v.rxSlave.tReady := '0';
                   -- Next state
                   v.state          := IDLE_S;
                else
                   -- Next state
-                  v.state := EOF_WAIT_S;
+                  v.state := FWD_PAYLOAD_S;
                end if;
             end if;
          ----------------------------------------------------------------------
-         when SEND_SOF_S =>
-            -- Ready to readout the FIFO
-            v.rxSlave.tReady := not(txCtrl.pause);
-            -- Check for valid data 
-            if (r.rxSlave.tReady = '1') and (rxMaster.tValid = '1') then
-               -- Write to the FIFO
-               v.txMaster.tValid             := '1';
-               v.txMaster.tData(31 downto 0) := rxMaster.tData(31 downto 0);
-               ssiSetUserSof(AXIS_CONFIG_C, v.txMaster, '1');
-               -- Check for EOF
-               if rxMaster.tLast = '1' then
-                  -- Set the EOF bit
-                  v.txMaster.tLast := '1';
-                  -- Set the EOFE bit
-                  ssiSetUserEofe(AXIS_CONFIG_C, v.txMaster, ssiGetUserEofe(AXIS_CONFIG_C, rxMaster));
-                  -- Stop Reading out the FIFO
-                  v.rxSlave.tReady := '0';
-                  -- Next state
-                  v.state          := IDLE_S;
-               else
-                  -- Next state
-                  v.state := EOF_WAIT_S;
-               end if;
-            end if;
-         ----------------------------------------------------------------------
-         when EOF_WAIT_S =>
-            -- Ready to readout the FIFO
-            v.rxSlave.tReady := not(txCtrl.pause);
-            -- Check for valid data 
-            if (r.rxSlave.tReady = '1') and (rxMaster.tValid = '1') then
-               -- Write to the FIFO
-               v.txMaster.tValid             := '1';
-               v.txMaster.tData(31 downto 0) := rxMaster.tData(31 downto 0);
-               -- Check for EOF
-               if rxMaster.tLast = '1' then
-                  -- Set the EOF bit
-                  v.txMaster.tLast := '1';
-                  -- Set the EOFE bit
-                  ssiSetUserEofe(AXIS_CONFIG_C, v.txMaster, ssiGetUserEofe(AXIS_CONFIG_C, rxMaster));
-                  -- Stop Reading out the FIFO
-                  v.rxSlave.tReady := '0';
-                  -- Next state
-                  v.state          := IDLE_S;
-               -- Check for SOF
-               elsif ssiGetUserSof(AXIS_CONFIG_C, rxMaster) = '1' then
+         when FWD_PAYLOAD_S =>
+            -- Check if ready to move data 
+            if (v.txMaster.tValid = '0') and (rxMaster.tValid = '1') then
+               -- Ready for data
+               v.rxSlave.tReady := '1';
+               -- Write to the FIFO         
+               v.txMaster       := rxMaster;
+               -- Check for second SOF
+               if (ssiGetUserSof(AXIS_CONFIG_C, rxMaster) = '1') then
                   -- Set the EOF bit
                   v.txMaster.tLast := '1';
                   -- Set the EOFE bit
                   ssiSetUserEofe(AXIS_CONFIG_C, v.txMaster, '1');
-                  -- Stop Reading out the FIFO
-                  v.rxSlave.tReady := '0';
                   -- Next state
                   v.state          := IDLE_S;
+               -- Check for EOF
+               elsif rxMaster.tLast = '1' then
+                  -- Next state
+                  v.state := IDLE_S;
                end if;
             end if;
       ----------------------------------------------------------------------
@@ -417,27 +365,13 @@ begin
          v := REG_INIT_C;
       end if;
 
-      -- Check for timeout
-      if r.timer = TIMEOUT_C then
-         -- Reset the timer
-         v.timer           := (others => '0');
-         -- Terminate the frame
-         v.txMaster.tValid := txSlave.tReady;
-         -- Set the EOF bit
-         v.txMaster.tLast  := '1';
-         -- Set the EOFE bit
-         ssiSetUserEofe(AXIS_CONFIG_C, v.txMaster, '1');
-         -- Stop Reading out the FIFO
-         v.rxSlave.tReady  := '0';
-         -- Next state
-         v.state           := IDLE_S;
-      end if;
-
       -- Register the variable for next clock cycle
       rin <= v;
 
       -- Outputs
+      fifoError <= r.fifoError;
       trigLutIn <= r.trigLutIn;
+      rxSlave   <= v.rxSlave;
       
    end process comb;
 
@@ -448,37 +382,32 @@ begin
       end if;
    end process seq;
 
-   SsiFifo_TX : entity work.SsiFifo
+   FIFO_TX : entity work.AxiStreamFifo
       generic map (
-         -- General Configurations         
+         -- General Configurations
          TPD_G               => TPD_G,
          PIPE_STAGES_G       => 0,
-         EN_FRAME_FILTER_G   => false,
+         SLAVE_READY_EN_G    => true,
          VALID_THOLD_G       => 1,
          -- FIFO configurations
-         CASCADE_SIZE_G      => 1,
-         BRAM_EN_G           => true,
-         XIL_DEVICE_G        => "7SERIES",
+         BRAM_EN_G           => false,
          USE_BUILT_IN_G      => false,
          GEN_SYNC_FIFO_G     => true,
-         ALTERA_SYN_G        => false,
-         ALTERA_RAM_G        => "M9K",
-         FIFO_ADDR_WIDTH_G   => 9,
-         FIFO_FIXED_THRESH_G => true,
-         FIFO_PAUSE_THRESH_G => 500,
+         CASCADE_SIZE_G      => 1,
+         FIFO_ADDR_WIDTH_G   => 4,
+         -- AXI Stream Port Configurations
          SLAVE_AXI_CONFIG_G  => AXIS_CONFIG_C,
-         MASTER_AXI_CONFIG_G => AXIS_CONFIG_C) 
+         MASTER_AXI_CONFIG_G => AXIS_CONFIG_C)      
       port map (
          -- Slave Port
          sAxisClk    => clk,
          sAxisRst    => rst,
          sAxisMaster => r.txMaster,
          sAxisSlave  => txSlave,
-         sAxisCtrl   => txCtrl,
          -- Master Port
          mAxisClk    => clk,
          mAxisRst    => rst,
          mAxisMaster => mAxisMaster,
-         mAxisSlave  => mAxisSlave);    
+         mAxisSlave  => mAxisSlave);        
 
 end rtl;

@@ -135,7 +135,7 @@ begin
          ----------------------------------------------------------------------
          when CHECK_THRESH_S =>
             -- Check pending threshold
-            if (r.pendLength = 0) then
+            if (r.pendLength < (PCIE_MAX_TX_TRANS_LENGTH_C/2)) then
                -- Calculate the transaction length
                if r.reqLength < PCIE_MAX_TX_TRANS_LENGTH_C then
                   v.tranLength := r.reqLength(8 downto 0);

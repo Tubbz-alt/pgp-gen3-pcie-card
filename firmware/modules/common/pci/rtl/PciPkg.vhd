@@ -23,15 +23,15 @@ use work.SsiPkg.all;
 
 package PciPkg is
 
-   -- constant PCI_AXIS_CONFIG_C : AxiStreamConfigType := ssiAxiStreamConfig(16);
-   constant PCI_AXIS_CONFIG_C : AxiStreamConfigType := (
-      TSTRB_EN_C    => false,
-      TDATA_BYTES_C => 16,              -- 128 bit interface
-      TDEST_BITS_C  => 4,
-      TID_BITS_C    => 0,
-      TKEEP_MODE_C  => TKEEP_NORMAL_C,
-      TUSER_BITS_C  => 2,               -- SOF, EOFE
-      TUSER_MODE_C  => TUSER_NORMAL_C); 
+   constant PCI_AXIS_CONFIG_C : AxiStreamConfigType := ssiAxiStreamConfig(16);
+   -- constant PCI_AXIS_CONFIG_C : AxiStreamConfigType := (
+      -- TSTRB_EN_C    => false,
+      -- TDATA_BYTES_C => 16,              -- 128 bit interface
+      -- TDEST_BITS_C  => 4,
+      -- TID_BITS_C    => 0,
+      -- TKEEP_MODE_C  => TKEEP_NORMAL_C,
+      -- TUSER_BITS_C  => 2,               -- SOF, EOFE
+      -- TUSER_MODE_C  => TUSER_NORMAL_C); 
 
    -- Max transfer length, words
    constant PCIE_MAX_RX_TRANS_LENGTH_C : integer := 32;  -- 128 Bytes, smallest to ensure comparability

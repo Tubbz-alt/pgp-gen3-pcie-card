@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2015-03-24
+-- Last update: 2015-05-29
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -27,8 +27,10 @@ use work.PgpCardG3Pkg.all;
 
 entity PgpApp is
    generic (
-      TPD_G      : time := 1 ns;
-      PGP_RATE_G : real);
+      TPD_G            : time    := 1 ns;
+      CASCADE_SIZE_G   : natural := 1;
+      SLAVE_READY_EN_G : boolean := false;
+      PGP_RATE_G       : real    := 5.0E+9);
    port (
       -- External Interfaces     
       pciToPgp     : in  PciToPgpType;
@@ -45,7 +47,7 @@ entity PgpApp is
       pgpTxSlaves  : in  AxiStreamSlaveVectorArray(0 to 7, 0 to 3);
       -- Frame Receive Interface
       pgpRxMasters : in  AxiStreamMasterVectorArray(0 to 7, 0 to 3);
-      pgpRxSlaves  : out  AxiStreamSlaveVectorArray(0 to 7, 0 to 3);
+      pgpRxSlaves  : out AxiStreamSlaveVectorArray(0 to 7, 0 to 3);
       pgpRxCtrl    : out AxiStreamCtrlVectorArray(0 to 7, 0 to 3);
       -- PLL Status
       pllTxReady   : in  slv(1 downto 0);
@@ -242,12 +244,12 @@ begin
             trigLutOut(3) => trigLutOut(lane, 3),
             --Global Signals
             pciClk        => pciClk,
-            pciRst        => pciRst,            
+            pciRst        => pciRst,
             pgpClk        => pgpClk,
             pgpRst        => pgpRst,
             evrClk        => evrClk,
             evrRst        => evrRst);     
-            
+
       -------------------------------
       -- Lane Status and Health
       ------------------------------- 
@@ -289,9 +291,10 @@ begin
       ---------------
       PgpDmaLane_Inst : entity work.PgpDmaLane
          generic map (
-            TPD_G      => TPD_G,
-            LANE_G     => lane,
-            PGP_RATE_G => PGP_RATE_G)          
+            TPD_G            => TPD_G,
+            LANE_G           => lane,
+            CASCADE_SIZE_G   => CASCADE_SIZE_G,
+            SLAVE_READY_EN_G => SLAVE_READY_EN_G)          
          port map (
             -- DMA TX Interface
             dmaTxIbMaster    => PgpToPci.dmaTxIbMaster(lane),
@@ -324,7 +327,7 @@ begin
             pgpRxSlaves(0)   => pgpRxSlaves(lane, 0),
             pgpRxSlaves(1)   => pgpRxSlaves(lane, 1),
             pgpRxSlaves(2)   => pgpRxSlaves(lane, 2),
-            pgpRxSlaves(3)   => pgpRxSlaves(lane, 3),            
+            pgpRxSlaves(3)   => pgpRxSlaves(lane, 3),
             pgpRxCtrl(0)     => pgpRxCtrls(lane, 0),
             pgpRxCtrl(1)     => pgpRxCtrls(lane, 1),
             pgpRxCtrl(2)     => pgpRxCtrls(lane, 2),

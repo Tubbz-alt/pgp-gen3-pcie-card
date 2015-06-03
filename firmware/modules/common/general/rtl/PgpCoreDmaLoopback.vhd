@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2015-05-20
+-- Last update: 2015-05-29
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -44,7 +44,7 @@ architecture mapping of PgpCoreDmaLoopback is
    signal pgpRxSlaves  : AxiStreamSlaveVectorArray(0 to 7, 0 to 3);
 
    signal pgpRxOut : Pgp2bRxOutArray(0 to 7);
-   signal pgpTxOut : Pgp2bTxOutArray(0 to 7);   
+   signal pgpTxOut : Pgp2bTxOutArray(0 to 7);
    
 begin
 
@@ -84,23 +84,23 @@ begin
                mAxisSlave  => pgpRxSlaves(i, j));       
       end generate GEN_VC_CH;
 
-      pgpRxOut(i).phyRxReady    <= '1';
-      pgpRxOut(i).linkReady     <= '1';
-      pgpRxOut(i).linkPolarity  <= (others=>'0');
-      pgpRxOut(i).frameRx       <= '0';
-      pgpRxOut(i).frameRxErr    <= '0';
-      pgpRxOut(i).cellError     <= '0';
-      pgpRxOut(i).linkDown      <= '0';
-      pgpRxOut(i).linkError     <= '0';
-      pgpRxOut(i).opCodeEn      <= '0';
-      pgpRxOut(i).opCode        <= (others=>'0');
-      pgpRxOut(i).remLinkReady  <= '1';
-      pgpRxOut(i).remLinkData   <= (others=>'0');
-      pgpRxOut(i).remOverflow   <= (others=>'0');
-      pgpRxOut(i).remPause      <= (others=>'0');
-      
-      pgpTxOut(i).locOverflow <= (others=>'0');
-      pgpTxOut(i).locPause    <= (others=>'0');
+      pgpRxOut(i).phyRxReady   <= '1';
+      pgpRxOut(i).linkReady    <= '1';
+      pgpRxOut(i).linkPolarity <= (others => '0');
+      pgpRxOut(i).frameRx      <= '0';
+      pgpRxOut(i).frameRxErr   <= '0';
+      pgpRxOut(i).cellError    <= '0';
+      pgpRxOut(i).linkDown     <= '0';
+      pgpRxOut(i).linkError    <= '0';
+      pgpRxOut(i).opCodeEn     <= '0';
+      pgpRxOut(i).opCode       <= (others => '0');
+      pgpRxOut(i).remLinkReady <= '1';
+      pgpRxOut(i).remLinkData  <= (others => '0');
+      pgpRxOut(i).remOverflow  <= (others => '0');
+      pgpRxOut(i).remPause     <= (others => '0');
+
+      pgpTxOut(i).locOverflow <= (others => '0');
+      pgpTxOut(i).locPause    <= (others => '0');
       pgpTxOut(i).phyTxReady  <= '1';
       pgpTxOut(i).linkReady   <= '1';
       pgpTxOut(i).frameTx     <= '0';
@@ -110,7 +110,8 @@ begin
 
    PgpApp_Inst : entity work.PgpApp
       generic map (
-         PGP_RATE_G => (2.0E+9))
+         CASCADE_SIZE_G   => 1,
+         SLAVE_READY_EN_G => true)
       port map (
          -- External Interfaces
          PciToPgp     => PciToPgp,
