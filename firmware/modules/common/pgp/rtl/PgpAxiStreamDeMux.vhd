@@ -56,7 +56,7 @@ begin
 
    comb : process (axisRst, mAxisSlaves, r, sAxisMaster) is
       variable v   : RegType;
-      variable i   : natural;
+      variable i : natural;
       variable idx : natural;
    begin
       -- Latch the current value
@@ -64,9 +64,9 @@ begin
 
       -- Reset strobing signals   
       v.sAxisSlave.tReady := '0';
-
+      
       -- Decode destination
-      idx := conv_integer(sAxisMaster.tDest);
+      idx := conv_integer(sAxisMaster.tDest);      
 
       -- Loop through the channels
       for i in 0 to NUM_MASTERS_G-1 loop

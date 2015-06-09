@@ -23,7 +23,7 @@ use work.SsiPkg.all;
 
 package PciPkg is
 
-   constant PCI_AXIS_CONFIG_C : AxiStreamConfigType := ssiAxiStreamConfig(16);
+   constant PCI_AXIS_CONFIG_C : AxiStreamConfigType := ssiAxiStreamConfig(16,TKEEP_NORMAL_C,TUSER_NORMAL_C);
    -- constant PCI_AXIS_CONFIG_C : AxiStreamConfigType := (
       -- TSTRB_EN_C    => false,
       -- TDATA_BYTES_C => 16,              -- 128 bit interface

@@ -4,9 +4,9 @@ use ieee.std_logic_1164.all;
 
 package Version is
 
-constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CEC83009"; -- MAKE_VERSION
+constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CEC8300A"; -- MAKE_VERSION
 
-constant BUILD_STAMP_C : string := "PgpCardG3_5p000Gbps: Vivado v2015.1 (x86_64) Built Wed Jun  3 08:22:12 PDT 2015 by ruckman";
+constant BUILD_STAMP_C : string := "PgpCardG3_5p000Gbps: Vivado v2015.1 (x86_64) Built Mon Jun  8 13:50:04 PDT 2015 by ruckman";
 
 end Version;
 
@@ -32,5 +32,9 @@ end Version;
 --
 -- 06/03/2015 (0xCEC83009): Added registers to the output of the LUT to help with timing
 --                          Fixed the non-fatal kernel error messaging
+--
+-- 06/08/2015 (0xCEC8300A): Fixed a bug that inserts an extra word into the RX DMA when 
+--                          at the transition from not being back pressured to being
+--                          back pressured.
 --
 -------------------------------------------------------------------------------

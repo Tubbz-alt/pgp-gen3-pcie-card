@@ -16,3 +16,4 @@ vhdl work rtl/PgpLinkMon.vhd
 vhdl work rtl/PgpOpCode.vhd
 vhdl work rtl/PgpVcRxBuffer.vhd
 vhdl work rtl/PgpAxiStreamDeMux.vhd
+vhdl work rtl/PgpAxiStreamMux.vhd

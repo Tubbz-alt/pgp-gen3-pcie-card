@@ -112,7 +112,7 @@ begin
          mAxisMaster    => txMaster,
          mAxisSlave     => txSlave);
       
-   AxiStreamDeMux_Inst : entity work.AxiStreamDeMux
+   AxiStreamDeMux_Inst : entity work.PgpAxiStreamDeMux
       generic map (
          TPD_G         => TPD_G,
          NUM_MASTERS_G => 4)
@@ -198,7 +198,7 @@ begin
             rst           => pgpRxRst);          
    end generate GEN_VC_RX_BUFFER;
 
-   AxiStreamMux_Inst : entity work.AxiStreamMux
+   AxiStreamMux_Inst : entity work.PgpAxiStreamMux
       generic map (
          TPD_G        => TPD_G,
          NUM_SLAVES_G => 4)
