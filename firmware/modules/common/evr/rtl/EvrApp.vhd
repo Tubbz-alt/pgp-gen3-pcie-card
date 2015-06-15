@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2015-03-24
+-- Last update: 2015-06-15
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -45,7 +45,8 @@ end EvrApp;
 
 architecture rtl of EvrApp is
 
-   constant DELAY_C : integer := (2**EVR_ACCEPT_DELAY_C)-1;
+   constant EVR_OFFSET_CORRECTION_C : slv(31 downto 0) := toSlv(2, 32);
+   constant DELAY_C                 : integer          := (2**EVR_ACCEPT_DELAY_C)-1;
 
    type RegType is record
       eventStream : slv(7 downto 0);
@@ -59,7 +60,7 @@ architecture rtl of EvrApp is
    constant REG_INIT_C : RegType := (
       eventStream => (others => '0'),
       dataStream  => (others => '0'),
-      offset      => (others => '0'),
+      offset      => EVR_OFFSET_CORRECTION_C,
       secondsTmp  => (others => '0'),
       seconds     => (others => '0'),
       toPgp       => (others => EVR_TO_PGP_INIT_C),
@@ -109,8 +110,8 @@ begin
          dataOut => fromPci.enable);       
 
    SynchronizerFifo_Inst : entity work.SynchronizerFifo
-      generic map ( 
-         DATA_WIDTH_G => 8 )
+      generic map (
+         DATA_WIDTH_G => 8)
       port map (
          -- Write Ports (wr_clk domain)
          wr_clk => pciClk,
@@ -182,7 +183,7 @@ begin
             if r.eventStream = x"7D" then
                r.seconds    <= r.secondsTmp;
                r.secondsTmp <= (others => '0');
-               r.offset     <= (others => '0');
+               r.offset     <= EVR_OFFSET_CORRECTION_C;
             elsif r.eventStream = x"71" then
                r.secondsTmp <= r.secondsTmp(30 downto 0) & '1';
             elsif r.eventStream = x"70" then

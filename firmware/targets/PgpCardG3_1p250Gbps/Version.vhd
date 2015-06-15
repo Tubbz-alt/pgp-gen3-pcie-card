@@ -4,9 +4,9 @@ use ieee.std_logic_1164.all;
 
 package Version is
 
-constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CEC8300A"; -- MAKE_VERSION
+constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CEC8300B"; -- MAKE_VERSION
 
-constant BUILD_STAMP_C : string := "PgpCardG3_1p250Gbps: Vivado v2015.1 (x86_64) Built Mon Jun  8 15:30:00 PDT 2015 by ruckman";
+constant BUILD_STAMP_C : string := "PgpCardG3_1p250Gbps: Vivado v2015.1 (x86_64) Built Mon Jun 15 14:19:26 PDT 2015 by ruckman";
 
 end Version;
 
@@ -36,5 +36,7 @@ end Version;
 -- 06/08/2015 (0xCEC8300A): Fixed a bug that inserts an extra word into the RX DMA when 
 --                          at the transition from not being back pressured to being
 --                          back pressured.
+--
+-- 06/15/2015 (0xCEC8300B): For evr.offset, pre-set to 0x2 when OP-Code 0x7D is detected
 --
 -------------------------------------------------------------------------------
