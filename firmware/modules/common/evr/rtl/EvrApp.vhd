@@ -45,7 +45,7 @@ end EvrApp;
 
 architecture rtl of EvrApp is
 
-   constant EVR_OFFSET_CORRECTION_C : slv(31 downto 0) := toSlv(2, 32);
+   constant EVR_OFFSET_CORRECTION_C : slv(31 downto 0) := x"FFFFFFFE";
    constant DELAY_C                 : integer          := (2**EVR_ACCEPT_DELAY_C)-1;
 
    type RegType is record
