@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2015-03-24
+-- Last update: 2015-08-20
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -132,7 +132,7 @@ architecture rtl of PciApp is
    signal txDmaIrqReq : sl;
 
    --PGP Signals
-   signal pgpOpCodeEn : sl;
+   signal pgpOpCodeEn   : sl;
    signal enHeaderCheck : SlVectorArray(0 to 7, 0 to 3);
    signal rxCount       : Slv4VectorArray(0 to 7, 0 to 3);
    signal cellErrorCnt,
@@ -150,23 +150,18 @@ architecture rtl of PciApp is
       pllTxRst,
       pllRxRst : slv(1 downto 0);
    signal evrRunCnt : Slv32Array(7 downto 0);
-   
+
    --EVR Signals     
-   signal evrPllRst,
-      evrReset,
-      evrLinkUp,
-      evrEnable : sl;
-   signal evrEnableLane : slv(7 downto 0);
+   signal evrPllRst   : sl;
+   signal evrReset    : sl;
+   signal evrLinkUp   : sl;
+   signal evrEnable   : sl;
+   signal evrAsyncEn  : slv(7 downto 0);
+   signal evrSyncEn   : slv(7 downto 0);
    signal evrErrorCnt : slv(3 downto 0);
-   signal runCode,
-      acceptCode : Slv8Array(0 to 7);
-   
-   -- attribute KEEP_HIERARCHY : string;
-   -- attribute KEEP_HIERARCHY of
-      -- PciRegCtrl_Inst,
-      -- PciRxDesc_Inst,
-      -- PciTxDesc_Inst,
-      -- PciFlashBpi_Inst : label is "TRUE";
+   signal runCode     : Slv8Array(0 to 7);
+   signal acceptCode  : Slv8Array(0 to 7);
+   signal evrSyncWord : Slv32Array(0 to 7);
    
 begin
    
@@ -194,18 +189,20 @@ begin
          pciToPgp.pgpOpCodeEn   <= pgpOpCodeEn;
          pciToPgp.pgpOpCode     <= pgpOpCode;
          pciToPgp.enHeaderCheck <= enHeaderCheck;
+         pciToPgp.evrAsyncEn    <= evrAsyncEn;
+         pciToPgp.evrSyncEn     <= evrSyncEn;
 
-         pciToEvr.countRst   <= countRst or cardRst;
-         pciToEvr.pllRst     <= evrPllRst or cardRst;
-         pciToEvr.evrReset   <= evrReset or cardRst;
-         pciToEvr.enable     <= evrEnable;
+         pciToEvr.countRst <= countRst or cardRst;
+         pciToEvr.pllRst   <= evrPllRst or cardRst;
+         pciToEvr.evrReset <= evrReset or cardRst;
+         pciToEvr.enable   <= evrEnable;
 
          for i in 0 to DMA_SIZE_C-1 loop
-            pciToEvr.enableLane(i) <= evrEnableLane(i);
-            pciToEvr.runCode(i)    <= runCode(i);
-            pciToEvr.acceptCode(i) <= acceptCode(i);
-            pciToPgp.pgpRxRst(i)   <= pgpRxRst(i) or cardRst;
-            pciToPgp.pgpTxRst(i)   <= pgpTxRst(i) or cardRst;
+            pciToPgp.evrSyncWord(i) <= evrSyncWord(i);
+            pciToEvr.runCode(i)     <= runCode(i);
+            pciToEvr.acceptCode(i)  <= acceptCode(i);
+            pciToPgp.pgpRxRst(i)    <= pgpRxRst(i) or cardRst;
+            pciToPgp.pgpTxRst(i)    <= pgpTxRst(i) or cardRst;
          end loop;
       end if;
    end process;
@@ -479,7 +476,7 @@ begin
    begin
       if rising_edge(pciClk) then
          -- Reset the strobes
-         pgpOpCodeEn <= '0';      
+         pgpOpCodeEn <= '0';
          if pciRst = '1' then
             regLocRdData  <= (others => '0');
             scratchPad    <= (others => '0');
@@ -496,8 +493,10 @@ begin
             acceptCode    <= (others => x"00");
             runDelay      <= (others => (others => '0'));
             acceptDelay   <= (others => (others => '0'));
+            evrSyncWord   <= (others => (others => '0'));
             evrEnable     <= '0';
-            evrEnableLane <= (others => '0');
+            evrAsyncEn <= (others => '0');
+            evrSyncEn     <= (others => '0');
             evrReset      <= '0';
             evrPllRst     <= '0';
             enHeaderCheck <= (others => (others => '0'));
@@ -566,7 +565,7 @@ begin
                      if regWrEn = '1' then
                         pgpOpCodeEn <= '1';
                         pgpOpCode   <= regWrData(7 downto 0);
-                     end if;                     
+                     end if;
                   when x"0B" =>
                      regLocRdData(31 downto 16) <= cfgOut.command;
                      regLocRdData(15 downto 0)  <= cfgOut.Status;
@@ -590,15 +589,17 @@ begin
                      regLocRdData(4)          <= evrLinkUp;
                   when x"11" =>
                      -- EVR's Enable and Resets
-                     regLocRdData(0) <= evrEnable;
-                     regLocRdData(1) <= evrReset;
-                     regLocRdData(2) <= evrPllRst;
-                     regLocRdData(15 downto 8) <= evrEnableLane;
+                     regLocRdData(0)            <= evrEnable;
+                     regLocRdData(1)            <= evrReset;
+                     regLocRdData(2)            <= evrPllRst;
+                     regLocRdData(15 downto 8)  <= evrAsyncEn;
+                     regLocRdData(23 downto 16) <= evrSyncEn;
                      if regWrEn = '1' then
-                        evrEnable     <= regWrData(0);
-                        evrReset      <= regWrData(1);
-                        evrPllRst     <= regWrData(2);
-                        evrEnableLane <= regWrData(15 downto 8);
+                        evrEnable  <= regWrData(0);
+                        evrReset   <= regWrData(1);
+                        evrPllRst  <= regWrData(2);
+                        evrAsyncEn <= regWrData(15 downto 8);
+                        evrSyncEn  <= regWrData(23 downto 16);
                      end if;
                   when x"12" =>
                      --EVR's Lanes Masks
@@ -635,11 +636,21 @@ begin
                      regLocRdData(7 downto 0)  <= locLinkReady;
                      regLocRdData(15 downto 8) <= remLinkReady;
                   when others =>
+                     -------------------------------
+                     -- Misc. Array Registers
+                     -------------------------------                     
                      --regAddr: 0xC0-0xFF
                      if regAddr(9 downto 8) = "11" then
                         regLocRdData <= buildStampString(conv_integer(regAddr(7 downto 2)));
                      else
                         for lane in 0 to 7 loop
+                           --regAddr: 0x58-0x5F 
+                           if (regAddr(9 downto 2) = (88+lane)) then
+                              regLocRdData <= evrSyncWord(lane);
+                              if regWrEn = '1' then
+                                 evrSyncWord(lane) <= regWrData;
+                              end if;
+                           end if;
                            --regAddr: 0x60-0x67 
                            if (regAddr(9 downto 2) = (96+lane)) then
                               regLocRdData(7 downto 0) <= runCode(lane);

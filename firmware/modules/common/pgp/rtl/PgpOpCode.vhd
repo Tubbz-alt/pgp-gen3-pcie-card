@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2015-05-21
+-- Last update: 2015-08-20
 -- Platform   : Vivado 2014.1
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -30,9 +30,12 @@ entity PgpOpCode is
       -- Software OP-Code
       pgpOpCodeEn : in  sl;
       pgpOpCode   : in  slv(7 downto 0);
-      -- Delay Configuration
+      -- Configurations
       runDelay    : in  slv(31 downto 0);
       acceptDelay : in  slv(31 downto 0);
+      evrAsyncEn  : in  sl;
+      evrSyncEn   : in  sl;
+      evrSyncWord : in  slv(31 downto 0);
       -- External Interfaces
       evrToPgp    : in  EvrToPgpType;
       -- PGP core interface
@@ -52,6 +55,8 @@ end PgpOpCode;
 architecture rtl of PgpOpCode is
 
    type RegType is record
+      start     : sl;
+      evrSyncEn : sl;
       ready     : sl;
       valid     : sl;
       we        : sl;
@@ -63,6 +68,8 @@ architecture rtl of PgpOpCode is
    end record;
    
    constant REG_INIT_C : RegType := (
+      start     => '0',
+      evrSyncEn => '0',
       ready     => '0',
       valid     => '0',
       we        => '0',
@@ -75,6 +82,8 @@ architecture rtl of PgpOpCode is
    signal r   : RegType := REG_INIT_C;
    signal rin : RegType;
 
+   signal start    : sl;
+   signal evrEn    : sl;
    signal opCodeEn : sl;
    signal opCode   : slv(7 downto 0);
 
@@ -112,9 +121,10 @@ begin
 
    -------------------------------
    -- Output Bus Mapping
-   ------------------------------- 
+   -------------------------------
+   evrEn               <= fromEvr.run and (evrAsyncEn or r.evrSyncEn or start);
    pgpTxIn.flush       <= '0';              -- not used
-   pgpTxIn.opCodeEn    <= fromEvr.run or opCodeEn;
+   pgpTxIn.opCodeEn    <= evrEn or opCodeEn;
    pgpTxIn.opCode      <= r.trigAddr when(opCodeEn = '0') else opCode;
    pgpTxIn.locData     <= (others => '0');  -- not used
    pgpTxIn.flowCntlDis <= '0';              -- Ignore flow control 
@@ -189,7 +199,7 @@ begin
    -------------------------------
    -- Look Up Table Writing Process
    -------------------------------     
-   comb : process (fromEvr, pgpRst, r) is
+   comb : process (evrSyncEn, evrSyncWord, fromEvr, pgpRst, r) is
       variable v : RegType;
    begin
       -- Latch the current value
@@ -198,6 +208,7 @@ begin
       -- Reset the strobes
       v.we    := '0';
       v.valid := '0';
+      v.start := '0';
 
       -- Check for a trigger
       if fromEvr.run = '1' then
@@ -227,6 +238,13 @@ begin
          v.ready     := '0';
       end if;
 
+      -- Check if sync word detected
+      if evrSyncWord = fromEvr.seconds then
+         -- Update the registerd evrSyncEn
+         v.evrSyncEn := evrSyncEn;
+         v.start     := evrSyncEn;
+      end if;
+
       -- Reset
       if (pgpRst = '1') then
          v := REG_INIT_C;
@@ -234,6 +252,9 @@ begin
 
       -- Register the variable for next clock cycle
       rin <= v;
+
+      -- Outputs
+      start <= v.start;
       
    end process comb;
 

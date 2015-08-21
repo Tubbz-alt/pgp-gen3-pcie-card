@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2015-03-24
+-- Last update: 2015-08-20
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -81,6 +81,9 @@ package PgpCardG3Pkg is
       dmaRxTranFromPci : TranFromPciArray(0 to 7);
       runDelay         : Slv32Array(0 to 7);
       acceptDelay      : Slv32Array(0 to 7);
+      evrAsyncEn       : slv(7 downto 0);
+      evrSyncEn        : slv(7 downto 0);
+      evrSyncWord      : Slv32Array(0 to 7);
    end record;
 
    -- EVR -> PGP Parallel Interface
@@ -114,7 +117,6 @@ package PgpCardG3Pkg is
       pllRst     : sl;
       evrReset   : sl;
       enable     : sl;
-      enableLane : slv(0 to 7);
       runCode    : Slv8Array(0 to 7);
       acceptCode : Slv8Array(0 to 7);
    end record;
@@ -123,7 +125,6 @@ package PgpCardG3Pkg is
       pllRst     => '0',
       evrReset   => '0',
       enable     => '0',
-      enableLane => (others => '0'),
       runCode    => (others => x"00"),
       acceptCode => (others => x"00"));  
 

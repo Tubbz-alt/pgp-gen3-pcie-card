@@ -4,9 +4,9 @@ use ieee.std_logic_1164.all;
 
 package Version is
 
-constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CEC8300C"; -- MAKE_VERSION
+constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CEC8300D"; -- MAKE_VERSION
 
-constant BUILD_STAMP_C : string := "PgpCardG3_5p000Gbps: Vivado v2015.1 (x86_64) Built Tue Jun 16 08:53:20 PDT 2015 by ruckman";
+constant BUILD_STAMP_C : string := "PgpCardG3_5p000Gbps: Vivado v2015.2 (x86_64) Built Fri Aug 21 09:24:27 PDT 2015 by ruckman";
 
 end Version;
 
@@ -40,5 +40,9 @@ end Version;
 -- 06/15/2015 (0xCEC8300B): For evr.offset, pre-set to 0x2 when OP-Code 0x7D is detected
 --
 -- 06/16/2015 (0xCEC8300C): For evr.offset, pre-set to 0xFFFFFFFE when OP-Code 0x7D is detected
+--
+-- 08/20/2015 (0xCEC8300D): Added EVR sychronization mode feature:
+--                          1) Added EVR SYNC Enable (modified register @ 0x044)
+--                          1) Added EVR SYNC Detection Word (Added registers @ 0x17C:0x160)
 --
 -------------------------------------------------------------------------------

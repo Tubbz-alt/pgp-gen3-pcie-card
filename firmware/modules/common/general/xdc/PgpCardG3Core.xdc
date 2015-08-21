@@ -25,6 +25,7 @@ create_clock -name sysClk     -period 20.00 [get_ports sysClk]
 create_clock -name stableClk  -period 8.000 [get_pins {PgpCardG3Core_Inst/PgpCore_Inst/PgpClk_Inst/IBUFDS_GTE2_Inst/ODIV2}]
 
 create_generated_clock  -name pciClk [get_pins {PgpCardG3Core_Inst/PciCore_Inst/PciFrontEnd_Inst/PcieCore_Inst/U0/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/mmcm_i/CLKOUT3}]
+create_generated_clock  -name dnaClk [get_pins {PgpCardG3Core_Inst/PciCore_Inst/PciApp_Inst/DeviceDna_Inst/GEN_7SERIES.DeviceDna7Series_Inst/BUFR_Inst/O}]
 
 ##############################################
 # Crossing Domain Clocks: Timing Constraints #
@@ -37,7 +38,8 @@ set_clock_groups -asynchronous   -group [get_clocks {pgpTxClk}] \
                                  -group [get_clocks {evrRxClk}] 
 
 set_clock_groups -asynchronous   -group [get_clocks {pciClk}] -group [get_clocks {evrRxClk}]                                  
-set_clock_groups -asynchronous   -group [get_clocks {pciClk}] -group [get_clocks {pgpTxClk}]                                  
+set_clock_groups -asynchronous   -group [get_clocks {pciClk}] -group [get_clocks {pgpTxClk}] 
+set_clock_groups -asynchronous   -group [get_clocks {pciClk}] -group [get_clocks {dnaClk}]                                  
                                  
 ######################################
 # BITSTREAM: .bit file Configuration #

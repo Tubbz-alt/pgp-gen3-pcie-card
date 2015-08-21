@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2015-05-29
+-- Last update: 2015-08-20
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -75,14 +75,17 @@ architecture mapping of PgpApp is
       pgpTxRstDly,
       pgpRxRstDly,
       loopback,
+      evrSyncEn,
+      evrAsyncEn,
       fifoError : slv(7 downto 0);
 
    signal enHeaderCheck : SlVectorArray(0 to 7, 0 to 3);
    signal trigLutIn     : TrigLutInVectorArray(0 to 7, 0 to 3);
    signal trigLutOut    : TrigLutOutVectorArray(0 to 7, 0 to 3);
    signal pgpRxCtrls    : AxiStreamCtrlVectorArray(0 to 7, 0 to 3);
-   signal runDelay,
-      acceptDelay : Slv32Array(0 to 7);
+   signal runDelay      : Slv32Array(0 to 7);
+   signal acceptDelay   : Slv32Array(0 to 7);
+   signal evrSyncWord   : Slv32Array(0 to 7);
    
 begin
 
@@ -97,7 +100,6 @@ begin
 
    pgpToPci.pllTxReady <= pllTxReady;
    pgpToPci.pllRxReady <= pllRxReady;
-
 
    -------------------------------
    -- Synchronization
@@ -182,7 +184,16 @@ begin
          port map (
             clk     => pgpClk,
             dataIn  => PciToPgp.acceptDelay(i),
-            dataOut => acceptDelay(i));             
+            dataOut => acceptDelay(i)); 
+
+      SynchronizerVector_3 : entity work.SynchronizerVector
+         generic map (
+            TPD_G   => TPD_G,
+            WIDTH_G => 32)
+         port map (
+            clk     => pgpClk,
+            dataIn  => PciToPgp.evrSyncWord(i),
+            dataOut => evrSyncWord(i));             
 
    end generate GEN_SYNC_LANE;
 
@@ -194,14 +205,32 @@ begin
          asyncRst => PciToPgp.countRst,
          syncRst  => countRst);     
 
-   SynchronizerVector_3 : entity work.SynchronizerVector
+   SynchronizerVector_4 : entity work.SynchronizerVector
       generic map (
          TPD_G   => TPD_G,
          WIDTH_G => 8)
       port map (
          clk     => pgpClk,
          dataIn  => PciToPgp.loopback,
-         dataOut => loopback);    
+         dataOut => loopback);  
+
+   SynchronizerVector_5 : entity work.SynchronizerVector
+      generic map (
+         TPD_G   => TPD_G,
+         WIDTH_G => 8)
+      port map (
+         clk     => pgpClk,
+         dataIn  => PciToPgp.evrSyncEn,
+         dataOut => evrSyncEn);    
+
+   SynchronizerVector_6 : entity work.SynchronizerVector
+      generic map (
+         TPD_G   => TPD_G,
+         WIDTH_G => 8)
+      port map (
+         clk     => pgpClk,
+         dataIn  => PciToPgp.evrAsyncEn,
+         dataOut => evrAsyncEn);             
 
    -------------------
    -- PGP Lane Mapping
@@ -226,9 +255,12 @@ begin
             -- Software OP-Code
             pgpOpCodeEn   => pciToPgp.pgpOpCodeEn,
             pgpOpCode     => pciToPgp.pgpOpCode,
-            -- Delay Configuration
+            -- Configurations
             runDelay      => runDelay(lane),
             acceptDelay   => acceptDelay(lane),
+            evrAsyncEn    => evrAsyncEn(lane),
+            evrSyncEn     => evrSyncEn(lane),
+            evrSyncWord   => evrSyncWord(lane),
             -- External Interfaces
             evrToPgp      => evrToPgp(lane),
             --PGP Core interfaces
