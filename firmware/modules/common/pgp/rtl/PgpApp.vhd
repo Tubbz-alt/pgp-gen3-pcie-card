@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2015-08-20
+-- Last update: 2015-08-24
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -76,7 +76,7 @@ architecture mapping of PgpApp is
       pgpRxRstDly,
       loopback,
       evrSyncEn,
-      evrAsyncEn,
+      evrSyncSel,
       fifoError : slv(7 downto 0);
 
    signal enHeaderCheck : SlVectorArray(0 to 7, 0 to 3);
@@ -229,8 +229,8 @@ begin
          WIDTH_G => 8)
       port map (
          clk     => pgpClk,
-         dataIn  => PciToPgp.evrAsyncEn,
-         dataOut => evrAsyncEn);             
+         dataIn  => PciToPgp.evrSyncSel,
+         dataOut => evrSyncSel);             
 
    -------------------
    -- PGP Lane Mapping
@@ -258,9 +258,10 @@ begin
             -- Configurations
             runDelay      => runDelay(lane),
             acceptDelay   => acceptDelay(lane),
-            evrAsyncEn    => evrAsyncEn(lane),
+            evrSyncSel    => evrSyncSel(lane),
             evrSyncEn     => evrSyncEn(lane),
             evrSyncWord   => evrSyncWord(lane),
+            evrSyncStatus => pgpToPci.evrSyncStatus(lane),
             -- External Interfaces
             evrToPgp      => evrToPgp(lane),
             --PGP Core interfaces

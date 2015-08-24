@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2015-08-20
+-- Last update: 2015-08-24
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -152,16 +152,17 @@ architecture rtl of PciApp is
    signal evrRunCnt : Slv32Array(7 downto 0);
 
    --EVR Signals     
-   signal evrPllRst   : sl;
-   signal evrReset    : sl;
-   signal evrLinkUp   : sl;
-   signal evrEnable   : sl;
-   signal evrAsyncEn  : slv(7 downto 0);
-   signal evrSyncEn   : slv(7 downto 0);
-   signal evrErrorCnt : slv(3 downto 0);
-   signal runCode     : Slv8Array(0 to 7);
-   signal acceptCode  : Slv8Array(0 to 7);
-   signal evrSyncWord : Slv32Array(0 to 7);
+   signal evrPllRst     : sl;
+   signal evrReset      : sl;
+   signal evrLinkUp     : sl;
+   signal evrEnable     : sl;
+   signal evrSyncSel    : slv(7 downto 0);
+   signal evrSyncEn     : slv(7 downto 0);
+   signal evrSyncStatus : slv(7 downto 0);
+   signal evrErrorCnt   : slv(3 downto 0);
+   signal runCode       : Slv8Array(0 to 7);
+   signal acceptCode    : Slv8Array(0 to 7);
+   signal evrSyncWord   : Slv32Array(0 to 7);
    
 begin
    
@@ -189,7 +190,7 @@ begin
          pciToPgp.pgpOpCodeEn   <= pgpOpCodeEn;
          pciToPgp.pgpOpCode     <= pgpOpCode;
          pciToPgp.enHeaderCheck <= enHeaderCheck;
-         pciToPgp.evrAsyncEn    <= evrAsyncEn;
+         pciToPgp.evrSyncSel    <= evrSyncSel;
          pciToPgp.evrSyncEn     <= evrSyncEn;
 
          pciToEvr.countRst <= countRst or cardRst;
@@ -320,6 +321,12 @@ begin
                dout   => rxCount(lane, vc));          
       end generate GEN_SYNC_VC;
 
+      Synchronizer_Inst : entity work.Synchronizer
+         port map (
+            clk     => pciClk,
+            dataIn  => pgpToPci.evrSyncStatus(lane),
+            dataOut => evrSyncStatus(lane));          
+
       SynchronizerFifo_5 : entity work.SynchronizerFifo
          generic map(
             DATA_WIDTH_G => 32)
@@ -343,7 +350,7 @@ begin
          wr_clk => evrClk,
          din    => EvrToPci.errorCnt,
          rd_clk => pciClk,
-         dout   => evrErrorCnt);    
+         dout   => evrErrorCnt);             
 
    -------------------------------
    -- Controller Modules
@@ -495,7 +502,7 @@ begin
             acceptDelay   <= (others => (others => '0'));
             evrSyncWord   <= (others => (others => '0'));
             evrEnable     <= '0';
-            evrAsyncEn <= (others => '0');
+            evrSyncSel    <= (others => '0');
             evrSyncEn     <= (others => '0');
             evrReset      <= '0';
             evrPllRst     <= '0';
@@ -592,13 +599,14 @@ begin
                      regLocRdData(0)            <= evrEnable;
                      regLocRdData(1)            <= evrReset;
                      regLocRdData(2)            <= evrPllRst;
-                     regLocRdData(15 downto 8)  <= evrAsyncEn;
+                     regLocRdData(15 downto 8)  <= evrSyncSel;
                      regLocRdData(23 downto 16) <= evrSyncEn;
+                     regLocRdData(31 downto 24) <= evrSyncStatus;
                      if regWrEn = '1' then
                         evrEnable  <= regWrData(0);
                         evrReset   <= regWrData(1);
                         evrPllRst  <= regWrData(2);
-                        evrAsyncEn <= regWrData(15 downto 8);
+                        evrSyncSel <= regWrData(15 downto 8);
                         evrSyncEn  <= regWrData(23 downto 16);
                      end if;
                   when x"12" =>

@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2015-08-20
+-- Last update: 2015-08-24
 -- Platform   : Vivado 2014.1
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -28,28 +28,29 @@ entity PgpOpCode is
       TPD_G : time := 1 ns);
    port (
       -- Software OP-Code
-      pgpOpCodeEn : in  sl;
-      pgpOpCode   : in  slv(7 downto 0);
+      pgpOpCodeEn   : in  sl;
+      pgpOpCode     : in  slv(7 downto 0);
       -- Configurations
-      runDelay    : in  slv(31 downto 0);
-      acceptDelay : in  slv(31 downto 0);
-      evrAsyncEn  : in  sl;
-      evrSyncEn   : in  sl;
-      evrSyncWord : in  slv(31 downto 0);
+      runDelay      : in  slv(31 downto 0);
+      acceptDelay   : in  slv(31 downto 0);
+      evrSyncSel    : in  sl;
+      evrSyncEn     : in  sl;
+      evrSyncWord   : in  slv(31 downto 0);
+      evrSyncStatus : out sl;
       -- External Interfaces
-      evrToPgp    : in  EvrToPgpType;
+      evrToPgp      : in  EvrToPgpType;
       -- PGP core interface
-      pgpTxIn     : out Pgp2bTxInType;
+      pgpTxIn       : out Pgp2bTxInType;
       -- RX Virtual Channel Interface
-      trigLutIn   : in  TrigLutInArray(0 to 3);
-      trigLutOut  : out TrigLutOutArray(0 to 3);
+      trigLutIn     : in  TrigLutInArray(0 to 3);
+      trigLutOut    : out TrigLutOutArray(0 to 3);
       -- Global Signals
-      pciClk      : in  sl;
-      pciRst      : in  sl;
-      pgpClk      : in  sl;
-      pgpRst      : in  sl;
-      evrClk      : in  sl;
-      evrRst      : in  sl);       
+      pciClk        : in  sl;
+      pciRst        : in  sl;
+      pgpClk        : in  sl;
+      pgpRst        : in  sl;
+      evrClk        : in  sl;
+      evrRst        : in  sl);       
 end PgpOpCode;
 
 architecture rtl of PgpOpCode is
@@ -122,7 +123,7 @@ begin
    -------------------------------
    -- Output Bus Mapping
    -------------------------------
-   evrEn               <= fromEvr.run and (evrAsyncEn or r.evrSyncEn or start);
+   evrEn               <= fromEvr.run and (r.evrSyncEn or start);
    pgpTxIn.flush       <= '0';              -- not used
    pgpTxIn.opCodeEn    <= evrEn or opCodeEn;
    pgpTxIn.opCode      <= r.trigAddr when(opCodeEn = '0') else opCode;
@@ -199,7 +200,7 @@ begin
    -------------------------------
    -- Look Up Table Writing Process
    -------------------------------     
-   comb : process (evrSyncEn, evrSyncWord, fromEvr, pgpRst, r) is
+   comb : process (evrSyncEn, evrSyncSel, evrSyncWord, fromEvr, pgpRst, r) is
       variable v : RegType;
    begin
       -- Latch the current value
@@ -238,8 +239,8 @@ begin
          v.ready     := '0';
       end if;
 
-      -- Check if sync word detected
-      if evrSyncWord = fromEvr.seconds then
+      -- Check if sync word detected or ASYNC mode
+      if (evrSyncWord = fromEvr.seconds) or (evrSyncSel = '0') then
          -- Update the registerd evrSyncEn
          v.evrSyncEn := evrSyncEn;
          v.start     := evrSyncEn;
@@ -254,7 +255,8 @@ begin
       rin <= v;
 
       -- Outputs
-      start <= v.start;
+      start         <= v.start;
+      evrSyncStatus <= r.evrSyncEn;
       
    end process comb;
 
