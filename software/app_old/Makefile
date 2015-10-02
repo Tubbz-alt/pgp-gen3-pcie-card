@@ -1,14 +1,19 @@
+# Variables
+ARCH   := $(shell getconf LONG_BIT)
+CC     := g++
+CFLAGS := -Wall -m$(ARCH) -I$(PWD) -I "../PGP card G3 drive" -lpthread -lrt -lm
+
 all:
-	g++ -Wall -m32 -I "../PGP card G3 driver" xStatus.cpp -o xStatus
-	g++ -Wall -m32 -I "../PGP card G3 driver" xReset.cpp -o xReset
-	g++ -Wall -m32 -I "../PGP card G3 driver" xLoop.cpp -o xLoop
-	g++ -Wall -m32 -I "../PGP card G3 driver" xWrite.cpp -o xWrite
-	g++ -Wall -m32 -I "../PGP card G3 driver" xRead.cpp -o xRead
-	g++ -Wall -m32 -I "../PGP card G3 driver" xRate.cpp -o xRate -lpthread
-	g++ -c -Wall -m32 -I$(PWD) McsRead.cpp -o McsRead.o
-	g++ -c -Wall -m32 -I$(PWD) PgpCardG3Prom.cpp -o PgpCardG3Prom.o
-	g++ -Wall -m32 -I "../PGP card driver" McsRead.o PgpCardG3Prom.o xPromLoad.cpp -o xPromLoad -lrt -lm
-	g++ -Wall -m32 -I "../PGP card driver" McsRead.o PgpCardG3Prom.o xPromVerify.cpp -o xPromVerify -lrt -lm
+	$(CC) $(CFLAGS) xStatus.cpp -o xStatus
+	$(CC) $(CFLAGS) xReset.cpp -o xReset
+	$(CC) $(CFLAGS) xLoop.cpp -o xLoop
+	$(CC) $(CFLAGS) xWrite.cpp -o xWrite
+	$(CC) $(CFLAGS) xRead.cpp -o xRead
+	$(CC) $(CFLAGS) xRate.cpp -o xRate
+	$(CC) -c $(CFLAGS) McsRead.cpp -o McsRead.o
+	$(CC) -c $(CFLAGS) PgpCardG3Prom.cpp -o PgpCardG3Prom.o
+	$(CC) $(CFLAGS) McsRead.o PgpCardG3Prom.o xPromLoad.cpp -o xPromLoad
+	$(CC) $(CFLAGS) McsRead.o PgpCardG3Prom.o xPromVerify.cpp -o xPromVerify
 
 clean:
 	rm -f xStatus

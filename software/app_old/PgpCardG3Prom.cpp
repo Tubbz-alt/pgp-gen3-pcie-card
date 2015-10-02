@@ -42,9 +42,9 @@ PgpCardG3Prom::PgpCardG3Prom (void volatile *mapStart, string pathToFile ) {
    
    // Setup the register Mapping
    memVersion = mapStart;// firmware version
-   mapData    = (void volatile *)((__u32)mapStart+0xC00);//write cmd/data bus
-   mapAddress = (void volatile *)((__u32)mapStart+0xC04);//write/read address bus
-   mapRead    = (void volatile *)((__u32)mapStart+0xC08);// read data bus
+   mapData    = (void volatile *)((uint64_t)mapStart+0xC00);//write cmd/data bus
+   mapAddress = (void volatile *)((uint64_t)mapStart+0xC04);//write/read address bus
+   mapRead    = (void volatile *)((uint64_t)mapStart+0xC08);// read data bus
    
    // Setup the configuration Register
    writeToFlash(CONFIG_REG,0x60,0x03);
@@ -56,8 +56,8 @@ PgpCardG3Prom::~PgpCardG3Prom ( ) {
 
 //! Check for a valid firmware version  (true=valid firmware version)
 bool PgpCardG3Prom::checkFirmwareVersion ( ) {
-   __u32 firmwareVersion = *((__u32*)memVersion);
-   __u32 PgpCardGen = firmwareVersion >> 12;
+   uint32_t firmwareVersion = *((uint32_t*)memVersion);
+   uint32_t PgpCardGen = firmwareVersion >> 12;
 
    cout << "*******************************************************************" << endl;
    cout << "Current Firmware Version on the FPGA: 0x" << hex << firmwareVersion << endl;
@@ -94,7 +94,7 @@ void PgpCardG3Prom::rebootReminder ( ) {
 //! Erase the PROM
 void PgpCardG3Prom::eraseBootProm ( ) {
 
-   __u32 address = 0;
+   uint32_t address = 0;
    double size = double(PROM_SIZE);
 
    cout << "*******************************************************************" << endl;   
@@ -120,13 +120,13 @@ bool PgpCardG3Prom::bufferedWriteBootProm ( ) {
    McsRead mcsReader;
    McsReadData mem;
    
-   __u32 address = 0;  
-   __u16 fileData;
-   __u16 i;
+   uint32_t address = 0;  
+   uint16_t fileData;
+   uint16_t i;
    
-   __u32 bufAddr[256];  
-   __u16 bufData[256];   
-   __u16 bufSize = 0;
+   uint32_t bufAddr[256];  
+   uint16_t bufData[256];   
+   uint16_t bufSize = 0;
    
    double size = double(PROM_SIZE);
    double percentage;
@@ -156,10 +156,10 @@ bool PgpCardG3Prom::bufferedWriteBootProm ( ) {
       // Check if this is the upper or lower byte
       if(!toggle) {
          toggle = true;
-         fileData = (__u16)mem.data;
+         fileData = (uint16_t)mem.data;
       } else {
          toggle = false;
-         fileData |= ((__u16)mem.data << 8);
+         fileData |= ((uint16_t)mem.data << 8);
          
          // Latch the values
          bufAddr[bufSize] = address;
@@ -204,8 +204,8 @@ bool PgpCardG3Prom::verifyBootProm ( ) {
    McsRead mcsReader;
    McsReadData mem;
    
-   __u32 address = 0;  
-   __u16 promData,fileData;
+   uint32_t address = 0;  
+   uint16_t promData,fileData;
    double size = double(PROM_SIZE);
    double percentage;
    double skim = 5.0; 
@@ -234,10 +234,10 @@ bool PgpCardG3Prom::verifyBootProm ( ) {
       // Check if this is the upper or lower byte
       if(!toggle) {
          toggle = true;
-         fileData = (__u16)mem.data;
+         fileData = (uint16_t)mem.data;
       } else {
          toggle = false;
-         fileData |= ((__u16)mem.data << 8);
+         fileData |= ((uint16_t)mem.data << 8);
          promData = readWordCommand(address);                
          if(fileData != promData) {
             cout << "verifyBootProm error = ";
@@ -265,8 +265,8 @@ bool PgpCardG3Prom::verifyBootProm ( ) {
 }
 
 //! Erase Command
-void PgpCardG3Prom::eraseCommand(__u32 address) {
-   __u16 status = 0;
+void PgpCardG3Prom::eraseCommand(uint32_t address) {
+   uint16_t status = 0;
    
    // Unlock the Block
    writeToFlash(address,0x60,0xD0);
@@ -304,8 +304,8 @@ void PgpCardG3Prom::eraseCommand(__u32 address) {
 }
 
 //! Program Command
-void PgpCardG3Prom::programCommand(__u32 address, __u16 data) {
-   __u16 status = 0;
+void PgpCardG3Prom::programCommand(uint32_t address, uint16_t data) {
+   uint16_t status = 0;
    
    // Unlock the Block
    writeToFlash(address,0x60,0xD0);
@@ -343,9 +343,9 @@ void PgpCardG3Prom::programCommand(__u32 address, __u16 data) {
 }
 
 //! Buffered Program Command
-void PgpCardG3Prom::bufferedProgramCommand(__u32 *address, __u16 *data, __u16 size) {
-   __u16 status = 0;
-   __u16 i;
+void PgpCardG3Prom::bufferedProgramCommand(uint32_t *address, uint16_t *data, uint16_t size) {
+   uint16_t status = 0;
+   uint16_t i;
    
    // Unlock the Block
    writeToFlash(address[0],0x60,0xD0);
@@ -399,39 +399,39 @@ void PgpCardG3Prom::bufferedProgramCommand(__u32 *address, __u16 *data, __u16 si
 }
 
 //! Read FLASH memory Command
-__u16 PgpCardG3Prom::readWordCommand(__u32 address) {
+uint16_t PgpCardG3Prom::readWordCommand(uint32_t address) {
    return readFlash(address,0xFF);
 }
 
 //! Generate request word 
-__u32 PgpCardG3Prom::genReqWord(__u16 cmd, __u16 data) {
-   __u32 readReq;
-   readReq = ( ((__u32)cmd << 16) | ((__u32)data) );
+uint32_t PgpCardG3Prom::genReqWord(uint16_t cmd, uint16_t data) {
+   uint32_t readReq;
+   readReq = ( ((uint32_t)cmd << 16) | ((uint32_t)data) );
    return readReq;
 }
 
 //! Generic FLASH write Command 
-void PgpCardG3Prom::writeToFlash(__u32 address, __u16 cmd, __u16 data) {
+void PgpCardG3Prom::writeToFlash(uint32_t address, uint16_t cmd, uint16_t data) {
    // Set the data bus
-   *((__u32*)mapData) = genReqWord(cmd,data);
+   *((uint32_t*)mapData) = genReqWord(cmd,data);
    
    // Set the address bus and initiate the transfer
-   *((__u32*)mapAddress) = (~READ_MASK & address);
+   *((uint32_t*)mapAddress) = (~READ_MASK & address);
 }
 
 //! Generic FLASH read Command
-__u16 PgpCardG3Prom::readFlash(__u32 address, __u16 cmd) {
-   __u32 readReg;
+uint16_t PgpCardG3Prom::readFlash(uint32_t address, uint16_t cmd) {
+   uint32_t readReg;
       
    // Set the data bus
-   *((__u32*)mapData) = genReqWord(cmd,0xFF);
+   *((uint32_t*)mapData) = genReqWord(cmd,0xFF);
    
    // Set the address bus and initiate the transfer
-   *((__u32*)mapAddress) = (READ_MASK | address);   
+   *((uint32_t*)mapAddress) = (READ_MASK | address);   
    
    // Read the data register
-   readReg = *((__u32*)mapRead);
+   readReg = *((uint32_t*)mapRead);
    
    // return the readout data
-   return (__u16)(readReg&0xFFFF);
+   return (uint16_t)(readReg&0xFFFF);
 }
