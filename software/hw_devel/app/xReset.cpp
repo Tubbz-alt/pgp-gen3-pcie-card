@@ -10,8 +10,8 @@
 #include <iomanip>
 #include <iostream>
 
-#include "../include_old/PgpCardG3Mod.h"
-#include "../include_old/PgpCardG3Wrap.h"
+#include "../include/PgpCardG3Mod.h"
+#include "../include/PgpCardG3Wrap.h"
 
 #define DEVNAME "/dev/PgpCardG3_0"
 

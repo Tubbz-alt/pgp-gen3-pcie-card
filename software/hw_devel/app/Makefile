@@ -1,7 +1,7 @@
 # Variables
 ARCH   := $(shell getconf LONG_BIT)
 CC     := g++
-CFLAGS := -Wall -m$(ARCH) -I$(PWD) -I "../PGP card G3 drive" -lpthread -lrt -lm
+CFLAGS := -Wall -m$(ARCH) -I$(PWD) -lpthread -lrt -lm
 
 all:
 	$(CC) $(CFLAGS) xStatus.cpp -o xStatus

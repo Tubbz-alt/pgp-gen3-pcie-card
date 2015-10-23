@@ -12,8 +12,8 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "../include_old/PgpCardG3Mod.h"
-#include "../include_old/PgpCardG3Wrap.h"
+#include "../include/PgpCardG3Mod.h"
+#include "../include/PgpCardG3Wrap.h"
 
 #define DEVNAME "/dev/PgpCardG3_0"//need to pass to main
 

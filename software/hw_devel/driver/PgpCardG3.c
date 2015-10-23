@@ -22,7 +22,7 @@
 #include <linux/compat.h>
 #include <asm/uaccess.h>
 #include <linux/cdev.h>
-#include "../include_old/PgpCardG3Mod.h"
+#include "../include/PgpCardG3Mod.h"
 #include "PgpCardG3.h"
 #include <linux/types.h>
 
