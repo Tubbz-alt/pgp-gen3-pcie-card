@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2015-08-24
+-- Last update: 2015-11-09
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -162,7 +162,9 @@ architecture rtl of PciApp is
    signal evrErrorCnt   : slv(3 downto 0);
    signal runCode       : Slv8Array(0 to 7);
    signal acceptCode    : Slv8Array(0 to 7);
+   signal acceptCntRst  : slv(7 downto 0);
    signal evrSyncWord   : Slv32Array(0 to 7);
+   signal lutDropCnt    : Slv8VectorArray(0 to 7, 0 to 3);
    
 begin
    
@@ -174,42 +176,33 @@ begin
    irqIn.req    <= rxDmaIrqReq or txDmaIrqReq;
    irqIn.enable <= irqEnable;
    serNumber    <= serialNumber;
+   
+   pciToPgp.pllRxRst(0)   <= pllRxRst(0) or cardRst;
+   pciToPgp.pllRxRst(1)   <= pllRxRst(1) or cardRst;
+   pciToPgp.pllTxRst(0)   <= pllTxRst(0) or cardRst;
+   pciToPgp.pllTxRst(1)   <= pllTxRst(1) or cardRst;
+   pciToPgp.countRst      <= countRst or cardRst;
+   pciToPgp.loopBack      <= loopBack;
+   pciToPgp.pgpOpCodeEn   <= pgpOpCodeEn;
+   pciToPgp.pgpOpCode     <= pgpOpCode;
+   pciToPgp.enHeaderCheck <= enHeaderCheck;
+   pciToPgp.evrSyncSel    <= evrSyncSel;
+   pciToPgp.evrSyncEn     <= evrSyncEn;
+   pciToPgp.acceptCntRst  <= acceptCntRst;
 
-   -- Add registers to help with timing
-   process (pciClk)
-      variable i : integer;
-   begin
-      if rising_edge(pciClk) then
-         
-         pciToPgp.pllRxRst(0)   <= pllRxRst(0) or cardRst;
-         pciToPgp.pllRxRst(1)   <= pllRxRst(1) or cardRst;
-         pciToPgp.pllTxRst(0)   <= pllTxRst(0) or cardRst;
-         pciToPgp.pllTxRst(1)   <= pllTxRst(1) or cardRst;
-         pciToPgp.countRst      <= countRst or cardRst;
-         pciToPgp.loopBack      <= loopBack;
-         pciToPgp.pgpOpCodeEn   <= pgpOpCodeEn;
-         pciToPgp.pgpOpCode     <= pgpOpCode;
-         pciToPgp.enHeaderCheck <= enHeaderCheck;
-         pciToPgp.evrSyncSel    <= evrSyncSel;
-         pciToPgp.evrSyncEn     <= evrSyncEn;
-
-         pciToEvr.countRst <= countRst or cardRst;
-         pciToEvr.pllRst   <= evrPllRst or cardRst;
-         pciToEvr.evrReset <= evrReset or cardRst;
-         pciToEvr.enable   <= evrEnable;
-
-         for i in 0 to DMA_SIZE_C-1 loop
-            pciToPgp.evrSyncWord(i) <= evrSyncWord(i);
-            pciToEvr.runCode(i)     <= runCode(i);
-            pciToEvr.acceptCode(i)  <= acceptCode(i);
-            pciToPgp.pgpRxRst(i)    <= pgpRxRst(i) or cardRst;
-            pciToPgp.pgpTxRst(i)    <= pgpTxRst(i) or cardRst;
-         end loop;
-      end if;
-   end process;
+   pciToEvr.countRst <= countRst or cardRst;
+   pciToEvr.pllRst   <= evrPllRst or cardRst;
+   pciToEvr.evrReset <= evrReset or cardRst;
+   pciToEvr.enable   <= evrEnable;
 
    MAP_PGP_DMA_LANES :
    for lane in 0 to DMA_SIZE_C-1 generate
+   
+      pciToPgp.evrSyncWord(lane) <= evrSyncWord(lane);
+      pciToEvr.runCode(lane)     <= runCode(lane);
+      pciToEvr.acceptCode(lane)  <= acceptCode(lane);
+      pciToPgp.pgpRxRst(lane)    <= pgpRxRst(lane) or cardRst;
+      pciToPgp.pgpTxRst(lane)    <= pgpTxRst(lane) or cardRst;   
 
       -- Input buses
       dmaTxIbMaster(lane) <= pgpToPci.dmaTxIbMaster(lane);
@@ -311,6 +304,7 @@ begin
 
       GEN_SYNC_VC :
       for vc in 0 to 3 generate
+         
          SynchronizerFifo_4 : entity work.SynchronizerFifo
             generic map(
                DATA_WIDTH_G => 4)
@@ -318,7 +312,17 @@ begin
                wr_clk => pgpClk,
                din    => pgpToPci.rxCount(lane, vc),
                rd_clk => pciClk,
-               dout   => rxCount(lane, vc));          
+               dout   => rxCount(lane, vc));  
+
+         SynchronizerFifo_lutDropCnt : entity work.SynchronizerFifo
+            generic map(
+               DATA_WIDTH_G => 8)
+            port map(
+               wr_clk => pgpClk,
+               din    => pgpToPci.lutDropCnt(lane, vc),
+               rd_clk => pciClk,
+               dout   => lutDropCnt(lane, vc));                 
+
       end generate GEN_SYNC_VC;
 
       Synchronizer_Inst : entity work.Synchronizer
@@ -455,19 +459,57 @@ begin
    -- Register space
    -------------------------
    -- Decode address space
-   regLocCs   <= '1' when ((regBar = 0) and (regAddr(11 downto 10) = "00")) else '0';
-   regRxCs    <= '1' when ((regBar = 0) and (regAddr(11 downto 10) = "01")) else '0';
-   regTxCs    <= '1' when ((regBar = 0) and (regAddr(11 downto 10) = "10")) else '0';
-   regFlashCs <= '1' when ((regBar = 0) and (regAddr(11 downto 10) = "11")) else '0';
+   regLocCs   <= '1' when (regAddr(11 downto 10) = "00") else '0';
+   regRxCs    <= '1' when (regAddr(11 downto 10) = "01") else '0';
+   regTxCs    <= '1' when (regAddr(11 downto 10) = "10") else '0';
+   regFlashCs <= '1' when (regAddr(11 downto 10) = "11") else '0';
 
-   -- Select read data
-   regRdData <= regLocRdData when ((regBar = 0) and (regAddr(11 downto 10) = "00")) else
-                regRxRdData    when ((regBar = 0) and (regAddr(11 downto 10) = "01")) else
-                regTxRdData    when ((regBar = 0) and (regAddr(11 downto 10) = "10")) else
-                regFlashRdData when ((regBar = 0) and (regAddr(11 downto 10) = "11")) else
-                (others => '0');
-
-   regBusy <= flashBusy;
+   -- Register to help with timing
+   process (pciClk) is
+   begin
+      if rising_edge(pciClk) then
+         regBusy <= flashBusy;
+         if regAddr(11 downto 10) = "00" then
+            if regAddr(9 downto 8) = "11" then
+               regRdData <= buildStampString(conv_integer(regAddr(7 downto 2)));
+            elsif regAddr(9 downto 2) = x"00" then
+               -- Firmware Version
+               regRdData <= FPGA_VERSION_C;
+            elsif regAddr(9 downto 2) = x"01" then
+               -- Serial Number Version (lower word)
+               regRdData <= serialNumber(31 downto 0);
+            elsif regAddr(9 downto 2) = x"02" then
+               -- Serial Number Version (lower word)
+               regRdData <= serialNumber(63 downto 32);
+            elsif regAddr(9 downto 2) = x"06" then
+               -- PGP baud rate in units of Mbps
+               regRdData <= toSlv(getTimeRatio(PGP_RATE_G, 1.0E+6), 32);
+            elsif regAddr(9 downto 2) = x"0B" then
+               regRdData(31 downto 16) <= cfgOut.command;
+               regRdData(15 downto 0)  <= cfgOut.Status;
+            elsif regAddr(9 downto 2) = x"0C" then
+               regRdData(31 downto 16) <= cfgOut.dCommand;
+               regRdData(15 downto 0)  <= cfgOut.dStatus;
+            elsif regAddr(9 downto 2) = x"0D" then
+               regRdData(31 downto 16) <= cfgOut.lCommand;
+               regRdData(15 downto 0)  <= cfgOut.lStatus;
+            elsif regAddr(9 downto 2) = x"0E" then
+               regRdData(26 downto 24) <= cfgOut.linkState;
+               regRdData(18 downto 16) <= cfgOut.functionNumber;
+               regRdData(12 downto 8)  <= cfgOut.deviceNumber;
+               regRdData(7 downto 0)   <= cfgOut.busNumber;
+            else
+               regRdData <= regLocRdData;
+            end if;
+         elsif regAddr(11 downto 10) = "01" then
+            regRdData <= regRxRdData;
+         elsif regAddr(11 downto 10) = "10" then
+            regRdData <= regTxRdData;
+         else
+            regRdData <= regFlashRdData;
+         end if;
+      end if;
+   end process;
 
    Iprog7Series_Inst : entity work.Iprog7Series
       port map (
@@ -483,7 +525,8 @@ begin
    begin
       if rising_edge(pciClk) then
          -- Reset the strobes
-         pgpOpCodeEn <= '0';
+         pgpOpCodeEn  <= '0';
+         acceptCntRst <= (others => '0');
          if pciRst = '1' then
             regLocRdData  <= (others => '0');
             scratchPad    <= (others => '0');
@@ -527,15 +570,6 @@ begin
                   -------------------------------
                   -- System Registers
                   -------------------------------
-                  when x"00" =>
-                     -- Firmware Version
-                     regLocRdData <= FPGA_VERSION_C;
-                  when x"01" =>
-                     -- Serial Number Version (lower word)
-                     regLocRdData <= serialNumber(31 downto 0);
-                  when x"02" =>
-                     -- Serial Number Version (upper word)
-                     regLocRdData <= serialNumber(63 downto 32);
                   when x"03" =>
                      -- Scratch Pad
                      regLocRdData <= scratchPad;
@@ -557,9 +591,6 @@ begin
                      if regWrEn = '1' then
                         irqEnable <= regWrData(0);
                      end if;
-                  when x"06" =>
-                     -- PGP baud rate in units of Mbps
-                     regLocRdData <= toSlv(getTimeRatio(PGP_RATE_G, 1.0E+6), 32);
                   when x"07" =>
                      -- Reboot Enable
                      regLocRdData(0) <= rebootEn;
@@ -573,20 +604,6 @@ begin
                         pgpOpCodeEn <= '1';
                         pgpOpCode   <= regWrData(7 downto 0);
                      end if;
-                  when x"0B" =>
-                     regLocRdData(31 downto 16) <= cfgOut.command;
-                     regLocRdData(15 downto 0)  <= cfgOut.Status;
-                  when x"0C" =>
-                     regLocRdData(31 downto 16) <= cfgOut.dCommand;
-                     regLocRdData(15 downto 0)  <= cfgOut.dStatus;
-                  when x"0D" =>
-                     regLocRdData(31 downto 16) <= cfgOut.lCommand;
-                     regLocRdData(15 downto 0)  <= cfgOut.lStatus;
-                  when x"0E" =>
-                     regLocRdData(26 downto 24) <= cfgOut.linkState;
-                     regLocRdData(18 downto 16) <= cfgOut.functionNumber;
-                     regLocRdData(12 downto 8)  <= cfgOut.deviceNumber;
-                     regLocRdData(7 downto 0)   <= cfgOut.busNumber;
                   -------------------------------
                   -- EVR Registers
                   -------------------------------                        
@@ -594,6 +611,9 @@ begin
                      -- EVR's Link Status and Error counter
                      regLocRdData(3 downto 0) <= evrErrorCnt;
                      regLocRdData(4)          <= evrLinkUp;
+                     if regWrEn = '1' then
+                        acceptCntRst <= regWrData(15 downto 8);
+                     end if;
                   when x"11" =>
                      -- EVR's Enable and Resets
                      regLocRdData(0)            <= evrEnable;
@@ -647,67 +667,69 @@ begin
                      -------------------------------
                      -- Misc. Array Registers
                      -------------------------------                     
-                     --regAddr: 0xC0-0xFF
-                     if regAddr(9 downto 8) = "11" then
-                        regLocRdData <= buildStampString(conv_integer(regAddr(7 downto 2)));
-                     else
-                        for lane in 0 to 7 loop
-                           --regAddr: 0x58-0x5F 
-                           if (regAddr(9 downto 2) = (88+lane)) then
-                              regLocRdData <= evrSyncWord(lane);
-                              if regWrEn = '1' then
-                                 evrSyncWord(lane) <= regWrData;
-                              end if;
+                     for lane in 0 to 7 loop
+                        --regAddr: 0x58-0x5F 
+                        if (regAddr(9 downto 2) = (88+lane)) then
+                           regLocRdData <= evrSyncWord(lane);
+                           if regWrEn = '1' then
+                              evrSyncWord(lane) <= regWrData;
                            end if;
-                           --regAddr: 0x60-0x67 
-                           if (regAddr(9 downto 2) = (96+lane)) then
-                              regLocRdData(7 downto 0) <= runCode(lane);
-                              if regWrEn = '1' then
-                                 runCode(lane) <= regWrData(7 downto 0);
-                              end if;
+                        end if;
+                        --regAddr: 0x60-0x67 
+                        if (regAddr(9 downto 2) = (96+lane)) then
+                           regLocRdData(7 downto 0) <= runCode(lane);
+                           if regWrEn = '1' then
+                              runCode(lane) <= regWrData(7 downto 0);
                            end if;
-                           --regAddr: 0x68-0x6F 
-                           if (regAddr(9 downto 2) = (104+lane)) then
-                              regLocRdData(7 downto 0) <= acceptCode(lane);
-                              if regWrEn = '1' then
-                                 acceptCode(lane) <= regWrData(7 downto 0);
-                              end if;
+                        end if;
+                        --regAddr: 0x68-0x6F 
+                        if (regAddr(9 downto 2) = (104+lane)) then
+                           regLocRdData(7 downto 0) <= acceptCode(lane);
+                           if regWrEn = '1' then
+                              acceptCode(lane) <= regWrData(7 downto 0);
                            end if;
-                           --regAddr: 0x70-0x77 
-                           if (regAddr(9 downto 2) = (112+lane)) then
-                              regLocRdData <= runDelay(lane);
-                              if regWrEn = '1' then
-                                 runDelay(lane) <= regWrData;
-                              end if;
+                        end if;
+                        --regAddr: 0x70-0x77 
+                        if (regAddr(9 downto 2) = (112+lane)) then
+                           regLocRdData <= runDelay(lane);
+                           if regWrEn = '1' then
+                              runDelay(lane) <= regWrData;
                            end if;
-                           --regAddr: 0x78-0x7F 
-                           if (regAddr(9 downto 2) = (120+lane)) then
-                              regLocRdData <= acceptDelay(lane);
-                              if regWrEn = '1' then
-                                 acceptDelay(lane) <= regWrData;
-                              end if;
+                        end if;
+                        --regAddr: 0x78-0x7F 
+                        if (regAddr(9 downto 2) = (120+lane)) then
+                           regLocRdData <= acceptDelay(lane);
+                           if regWrEn = '1' then
+                              acceptDelay(lane) <= regWrData;
                            end if;
-                           --regAddr: 0x80-0x87 
-                           if (regAddr(9 downto 2) = (128+lane)) then
-                              regLocRdData(3 downto 0)   <= rxCount(lane, 0);
-                              regLocRdData(7 downto 4)   <= rxCount(lane, 1);
-                              regLocRdData(11 downto 8)  <= rxCount(lane, 2);
-                              regLocRdData(15 downto 12) <= rxCount(lane, 3);
-                              regLocRdData(19 downto 16) <= fifoErrorCnt(lane);
-                              regLocRdData(23 downto 20) <= cellErrorCnt(lane);
-                              regLocRdData(27 downto 24) <= linkDownCnt(lane);
-                              regLocRdData(31 downto 28) <= linkErrorCnt(lane);
-                           end if;
-                           --regAddr: 0x88-8F
-                           if (regAddr(9 downto 2) = (136+lane)) then
-                              regLocRdData(31 downto 0) <= evrRunCnt(lane);
-                           end if;
-                        end loop;
-                     end if;
+                        end if;
+                        --regAddr: 0x80-0x87 
+                        if (regAddr(9 downto 2) = (128+lane)) then
+                           regLocRdData(3 downto 0)   <= rxCount(lane, 0);
+                           regLocRdData(7 downto 4)   <= rxCount(lane, 1);
+                           regLocRdData(11 downto 8)  <= rxCount(lane, 2);
+                           regLocRdData(15 downto 12) <= rxCount(lane, 3);
+                           regLocRdData(19 downto 16) <= fifoErrorCnt(lane);
+                           regLocRdData(23 downto 20) <= cellErrorCnt(lane);
+                           regLocRdData(27 downto 24) <= linkDownCnt(lane);
+                           regLocRdData(31 downto 28) <= linkErrorCnt(lane);
+                        end if;
+                        --regAddr: 0x88-8F
+                        if (regAddr(9 downto 2) = (136+lane)) then
+                           regLocRdData(31 downto 0) <= evrRunCnt(lane);
+                        end if;
+                        --regAddr: 0x90-0x97 
+                        if (regAddr(9 downto 2) = (144+lane)) then
+                           regLocRdData(7 downto 0)   <= lutDropCnt(lane, 0);
+                           regLocRdData(15 downto 8)  <= lutDropCnt(lane, 1);
+                           regLocRdData(23 downto 16) <= lutDropCnt(lane, 2);
+                           regLocRdData(31 downto 24) <= lutDropCnt(lane, 3);
+                        end if;
+                     end loop;
                end case;
             end if;
          end if;
       end if;
    end process;
-   
+
 end rtl;

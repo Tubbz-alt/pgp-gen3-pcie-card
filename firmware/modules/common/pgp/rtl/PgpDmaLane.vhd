@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2015-05-29
+-- Last update: 2015-11-06
 -- Platform   : Vivado 2014.1
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -31,6 +31,7 @@ entity PgpDmaLane is
       SLAVE_READY_EN_G : boolean;
       LANE_G           : integer range 0 to 7 := 0);
    port (
+      countRst         : in  sl;
       -- DMA TX Interface
       dmaTxIbMaster    : out AxiStreamMasterType;
       dmaTxIbSlave     : in  AxiStreamSlaveType;
@@ -56,6 +57,7 @@ entity PgpDmaLane is
       enHeaderCheck    : in  slv(3 downto 0);
       trigLutOut       : in  TrigLutOutArray(0 to 3);
       trigLutIn        : out TrigLutInArray(0 to 3);
+      lutDropCnt       : out Slv8Array(0 to 3);
       -- FIFO Overflow Error Strobe
       fifoError        : out sl;
       -- Global Signals
@@ -111,7 +113,7 @@ begin
          mAxisRst       => pgpTxRst,
          mAxisMaster    => txMaster,
          mAxisSlave     => txSlave);
-      
+
    AxiStreamDeMux_Inst : entity work.PgpAxiStreamDeMux
       generic map (
          TPD_G         => TPD_G,
@@ -149,8 +151,8 @@ begin
             CASCADE_SIZE_G      => 1,
             FIFO_ADDR_WIDTH_G   => 4,
             -- AXI Stream Port Configurations
-         SLAVE_AXI_CONFIG_G  => ssiAxiStreamConfig(4),
-         MASTER_AXI_CONFIG_G => SSI_PGP2B_CONFIG_C)          
+            SLAVE_AXI_CONFIG_G  => ssiAxiStreamConfig(4),
+            MASTER_AXI_CONFIG_G => SSI_PGP2B_CONFIG_C)          
          port map (
             -- Slave Port
             sAxisClk    => pgpClk,
@@ -180,10 +182,12 @@ begin
             LANE_G           => LANE_G,
             VC_G             => vc)
          port map (
+            countRst      => countRst,
             -- EVR Trigger Interface
             enHeaderCheck => enHeaderCheck(vc),
             trigLutOut    => trigLutOut(vc),
             trigLutIn     => trigLutIn(vc),
+            lutDropCnt    => lutDropCnt(vc),
             -- 16-bit Streaming RX Interface
             pgpRxMaster   => pgpRxMasters(vc),
             pgpRxSlave    => pgpRxSlaves(vc),

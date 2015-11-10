@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2015-08-24
+-- Last update: 2015-11-06
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -39,6 +39,7 @@ package PgpCardG3Pkg is
       linkDownCnt    : Slv4Array(0 to 7);
       linkErrorCnt   : Slv4Array(0 to 7);
       fifoErrorCnt   : Slv4Array(0 to 7);
+      lutDropCnt     : Slv8VectorArray(0 to 7, 0 to 3);
       rxCount        : Slv4VectorArray(0 to 7, 0 to 3);
       dmaTxIbMaster  : AxiStreamMasterArray(0 to 7);
       dmaTxObSlave   : AxiStreamSlaveArray(0 to 7);
@@ -56,6 +57,7 @@ package PgpCardG3Pkg is
       linkDownCnt    => (others => (others => '0')),
       linkErrorCnt   => (others => (others => '0')),
       fifoErrorCnt   => (others => (others => '0')),
+      lutDropCnt     => (others => (others => (others => '0'))),
       rxCount        => (others => (others => (others => '0'))),
       dmaTxIbMaster  => (others => AXI_STREAM_MASTER_INIT_C),
       dmaTxObSlave   => (others => AXI_STREAM_SLAVE_INIT_C),
@@ -83,6 +85,7 @@ package PgpCardG3Pkg is
       dmaRxTranFromPci : TranFromPciArray(0 to 7);
       runDelay         : Slv32Array(0 to 7);
       acceptDelay      : Slv32Array(0 to 7);
+      acceptCntRst     : slv(7 downto 0);
       evrSyncSel       : slv(7 downto 0);
       evrSyncEn        : slv(7 downto 0);
       evrSyncWord      : Slv32Array(0 to 7);

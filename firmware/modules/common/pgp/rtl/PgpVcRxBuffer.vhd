@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-08-29
--- Last update: 2015-05-29
+-- Last update: 2015-11-06
 -- Platform   : Vivado 2014.1
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -33,10 +33,12 @@ entity PgpVcRxBuffer is
       LANE_G           : natural;
       VC_G             : natural); 
    port (
+      countRst      : in  sl;
       -- EVR Trigger Interface
       enHeaderCheck : in  sl;
       trigLutOut    : in  TrigLutOutType;
       trigLutIn     : out TrigLutInType;
+      lutDropCnt    : out slv(7 downto 0);
       -- 16-bit Streaming RX Interface
       pgpRxMaster   : in  AxiStreamMasterType;
       pgpRxSlave    : out AxiStreamSlaveType;
@@ -71,6 +73,7 @@ architecture rtl of PgpVcRxBuffer is
 
    type RegType is record
       fifoError  : sl;
+      lutDropCnt : slv(7 downto 0);
       lutWaitCnt : natural range 0 to LUT_WAIT_C;
       hrdData    : Slv32Array(0 to 1);
       trigLutIn  : TrigLutInType;
@@ -83,6 +86,7 @@ architecture rtl of PgpVcRxBuffer is
    
    constant REG_INIT_C : RegType := (
       fifoError  => '0',
+      lutDropCnt => (others => '0'),
       lutWaitCnt => 0,
       hrdData    => (others => (others => '0')),
       trigLutIn  => TRIG_LUT_IN_INIT_C,
@@ -97,7 +101,7 @@ architecture rtl of PgpVcRxBuffer is
 
    signal rxMaster : AxiStreamMasterType;
    signal rxSlave  : AxiStreamSlaveType;
-   
+
    signal txSlave  : AxiStreamSlaveType;
    signal axisCtrl : AxiStreamCtrlType;
    
@@ -118,12 +122,12 @@ begin
          USE_BUILT_IN_G      => false,
          GEN_SYNC_FIFO_G     => true,
          ALTERA_SYN_G        => false,
-         ALTERA_RAM_G        => "M9K",                  
+         ALTERA_RAM_G        => "M9K",
          CASCADE_SIZE_G      => CASCADE_SIZE_G,
          FIFO_ADDR_WIDTH_G   => 10,
          FIFO_FIXED_THRESH_G => true,
          FIFO_PAUSE_THRESH_G => 512,
-         CASCADE_PAUSE_SEL_G => (CASCADE_SIZE_G-1),         
+         CASCADE_PAUSE_SEL_G => (CASCADE_SIZE_G-1),
          -- AXI Stream Port Configurations
          SLAVE_AXI_CONFIG_G  => SSI_PGP2B_CONFIG_C,
          MASTER_AXI_CONFIG_G => AXIS_CONFIG_C)        
@@ -139,8 +143,8 @@ begin
          mAxisRst    => rst,
          mAxisMaster => rxMaster,
          mAxisSlave  => rxSlave);  
-                
-   comb : process (axisCtrl, enHeaderCheck, r, rst, rxMaster, trigLutOut, txSlave) is
+
+   comb : process (axisCtrl, countRst, enHeaderCheck, r, rst, rxMaster, trigLutOut, txSlave) is
       variable v : RegType;
    begin
       -- Latch the current value
@@ -242,6 +246,9 @@ begin
                -- Next state
                v.state      := WR_HDR0_S;
             else
+               if r.lutDropCnt /= x"FF" then
+                  v.lutDropCnt := r.lutDropCnt + 1;
+               end if;
                -- Next state
                v.state := IDLE_S;
             end if;
@@ -360,6 +367,10 @@ begin
       ----------------------------------------------------------------------
       end case;
 
+      if countRst = '1' then
+         v.lutDropCnt := x"00";
+      end if;
+
       -- Reset
       if (rst = '1') then
          v := REG_INIT_C;
@@ -369,9 +380,10 @@ begin
       rin <= v;
 
       -- Outputs
-      fifoError <= r.fifoError;
-      trigLutIn <= r.trigLutIn;
-      rxSlave   <= v.rxSlave;
+      fifoError  <= r.fifoError;
+      trigLutIn  <= r.trigLutIn;
+      lutDropCnt <= r.lutDropCnt;
+      rxSlave    <= v.rxSlave;
       
    end process comb;
 

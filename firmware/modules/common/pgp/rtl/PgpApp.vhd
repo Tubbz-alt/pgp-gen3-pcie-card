@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2015-08-24
+-- Last update: 2015-11-06
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -85,6 +85,7 @@ architecture mapping of PgpApp is
    signal pgpRxCtrls    : AxiStreamCtrlVectorArray(0 to 7, 0 to 3);
    signal runDelay      : Slv32Array(0 to 7);
    signal acceptDelay   : Slv32Array(0 to 7);
+   signal acceptCntRst  : slv(7 downto 0);
    signal evrSyncWord   : Slv32Array(0 to 7);
    
 begin
@@ -173,7 +174,7 @@ begin
             TPD_G   => TPD_G,
             WIDTH_G => 32)
          port map (
-            clk     => pgpClk,
+            clk     => evrClk,
             dataIn  => PciToPgp.runDelay(i),
             dataOut => runDelay(i)); 
 
@@ -182,7 +183,7 @@ begin
             TPD_G   => TPD_G,
             WIDTH_G => 32)
          port map (
-            clk     => pgpClk,
+            clk     => evrClk,
             dataIn  => PciToPgp.acceptDelay(i),
             dataOut => acceptDelay(i)); 
 
@@ -194,6 +195,14 @@ begin
             clk     => pgpClk,
             dataIn  => PciToPgp.evrSyncWord(i),
             dataOut => evrSyncWord(i));             
+
+      RstSync_0 : entity work.RstSync
+         generic map (
+            TPD_G => TPD_G)
+         port map (
+            clk      => pgpClk,
+            asyncRst => PciToPgp.acceptCntRst(i),
+            syncRst  => acceptCntRst(i));             
 
    end generate GEN_SYNC_LANE;
 
@@ -258,6 +267,7 @@ begin
             -- Configurations
             runDelay      => runDelay(lane),
             acceptDelay   => acceptDelay(lane),
+            acceptCntRst  => acceptCntRst(lane),
             evrSyncSel    => evrSyncSel(lane),
             evrSyncEn     => evrSyncEn(lane),
             evrSyncWord   => evrSyncWord(lane),
@@ -329,6 +339,7 @@ begin
             CASCADE_SIZE_G   => CASCADE_SIZE_G,
             SLAVE_READY_EN_G => SLAVE_READY_EN_G)          
          port map (
+            countRst         => countRst,
             -- DMA TX Interface
             dmaTxIbMaster    => PgpToPci.dmaTxIbMaster(lane),
             dmaTxIbSlave     => PciToPgp.dmaTxIbSlave(lane),
@@ -378,6 +389,10 @@ begin
             trigLutOut(1)    => trigLutOut(lane, 1),
             trigLutOut(2)    => trigLutOut(lane, 2),
             trigLutOut(3)    => trigLutOut(lane, 3),
+            lutDropCnt(0)    => PgpToPci.lutDropCnt(lane, 0),
+            lutDropCnt(1)    => PgpToPci.lutDropCnt(lane, 1),
+            lutDropCnt(2)    => PgpToPci.lutDropCnt(lane, 2),
+            lutDropCnt(3)    => PgpToPci.lutDropCnt(lane, 3),
             -- FIFO Overflow Error Strobe
             fifoError        => fifoError(lane),
             --Global Signals

@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2015-08-20
+-- Last update: 2015-11-09
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -49,6 +49,7 @@ architecture rtl of EvrApp is
    constant DELAY_C                 : integer          := (2**EVR_ACCEPT_DELAY_C)-1;
 
    type RegType is record
+      rxError     : sl;
       eventStream : slv(7 downto 0);
       dataStream  : slv(7 downto 0);
       offset      : slv(31 downto 0);
@@ -58,6 +59,7 @@ architecture rtl of EvrApp is
       toPci       : EvrToPciType;
    end record;
    constant REG_INIT_C : RegType := (
+      rxError     => '0',
       eventStream => (others => '0'),
       dataStream  => (others => '0'),
       offset      => EVR_OFFSET_CORRECTION_C,
@@ -139,11 +141,12 @@ begin
             r.toPci.linkUp <= rxLinkUp;
 
             -- Error Counting
-            if (fromPci.countRst = '1') or (rxLinkUp = '0') then
+            if (fromPci.countRst = '1') then
                r.toPci.errorCnt <= (others => '0');
-            elsif (rxError = '1') and (r.toPci.errorCnt /= x"F") then
+            elsif (r.rxError = '0') and (rxError = '1') and (r.toPci.errorCnt /= x"F") then
                r.toPci.errorCnt <= r.toPci.errorCnt + 1;
             end if;
+            r.rxError <= rxError;
 
             -- Counting valid run codes
             if (fromPci.countRst = '1') then

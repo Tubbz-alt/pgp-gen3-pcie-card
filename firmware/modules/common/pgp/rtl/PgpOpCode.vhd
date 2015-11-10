@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2015-08-24
+-- Last update: 2015-11-05
 -- Platform   : Vivado 2014.1
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -33,6 +33,7 @@ entity PgpOpCode is
       -- Configurations
       runDelay      : in  slv(31 downto 0);
       acceptDelay   : in  slv(31 downto 0);
+      acceptCntRst  : in  sl;
       evrSyncSel    : in  sl;
       evrSyncEn     : in  sl;
       evrSyncWord   : in  slv(31 downto 0);
@@ -200,7 +201,7 @@ begin
    -------------------------------
    -- Look Up Table Writing Process
    -------------------------------     
-   comb : process (evrSyncEn, evrSyncSel, evrSyncWord, fromEvr, pgpRst, r) is
+   comb : process (acceptCntRst, evrSyncEn, evrSyncSel, evrSyncWord, fromEvr, pgpRst, r) is
       variable v : RegType;
    begin
       -- Latch the current value
@@ -244,6 +245,11 @@ begin
          -- Update the registerd evrSyncEn
          v.evrSyncEn := evrSyncEn;
          v.start     := evrSyncEn;
+      end if;
+
+      -- Check for counter reset
+      if acceptCntRst = '1' then
+         v.acceptCnt := (others => '0');
       end if;
 
       -- Reset
