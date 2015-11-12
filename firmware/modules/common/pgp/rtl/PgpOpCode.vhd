@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2015-11-05
+-- Last update: 2015-11-12
 -- Platform   : Vivado 2014.1
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -38,6 +38,7 @@ entity PgpOpCode is
       evrSyncEn     : in  sl;
       evrSyncWord   : in  slv(31 downto 0);
       evrSyncStatus : out sl;
+      acceptCnt     : out slv(31 downto 0);
       -- External Interfaces
       evrToPgp      : in  EvrToPgpType;
       -- PGP core interface
@@ -164,11 +165,19 @@ begin
          dout(63 downto 32) => fromEvr.seconds,
          dout(31 downto 0)  => fromEvr.offset);
 
-   SynchronizerOneShot_Inst : entity work.SynchronizerOneShot
+   SynchronizerFifo_2 : entity work.SynchronizerFifo
+      generic map(
+         DATA_WIDTH_G => 1)
       port map(
-         clk     => pgpClk,
-         dataIn  => delay.accept,
-         dataOut => fromEvr.accept); 
+         -- Write Ports (wr_clk domain)
+         wr_clk  => evrClk,
+         wr_en   => delay.accept,
+         din(0)  => '0',
+         -- Read Ports (rd_clk domain)
+         rd_clk  => pgpClk,
+         rd_en   => '1',
+         valid   => fromEvr.accept,
+         dout(0) => open);         
 
    -------------------------------
    -- Look up Table
@@ -212,8 +221,15 @@ begin
       v.valid := '0';
       v.start := '0';
 
+      -- Check if sync word detected or ASYNC mode
+      if (evrSyncWord = fromEvr.seconds) or (evrSyncSel = '0') then
+         -- Update the registerd evrSyncEn
+         v.evrSyncEn := evrSyncEn;
+         v.start     := evrSyncEn;
+      end if;
+
       -- Check for a trigger
-      if fromEvr.run = '1' then
+      if (fromEvr.run = '1') and (v.evrSyncEn = '1') then
          -- Clear the trigLutOut.accept bit
          v.we       := '1';
          v.waddr    := r.trigAddr;
@@ -225,9 +241,9 @@ begin
          -- set the ready for accept flag
          v.ready    := '1';
       end if;
+
       -----------------------------------------------------------------
       -- Check for valid accept bit
-      --
       -- Note: The trigger bit must always comes before the accept bit.
       -----------------------------------------------------------------          
       if (fromEvr.accept = '1') and (r.ready = '1') then
@@ -238,13 +254,6 @@ begin
          v.acceptCnt := r.acceptCnt + 1;
          -- Clear the ready for accept flag
          v.ready     := '0';
-      end if;
-
-      -- Check if sync word detected or ASYNC mode
-      if (evrSyncWord = fromEvr.seconds) or (evrSyncSel = '0') then
-         -- Update the registerd evrSyncEn
-         v.evrSyncEn := evrSyncEn;
-         v.start     := evrSyncEn;
       end if;
 
       -- Check for counter reset
@@ -263,6 +272,7 @@ begin
       -- Outputs
       start         <= v.start;
       evrSyncStatus <= r.evrSyncEn;
+      acceptCnt     <= r.acceptCnt;
       
    end process comb;
 

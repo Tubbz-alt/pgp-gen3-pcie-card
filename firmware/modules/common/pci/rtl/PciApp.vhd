@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2015-11-09
+-- Last update: 2015-11-12
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -150,6 +150,7 @@ architecture rtl of PciApp is
       pllTxRst,
       pllRxRst : slv(1 downto 0);
    signal evrRunCnt : Slv32Array(7 downto 0);
+   signal acceptCnt : Slv32Array(7 downto 0);
 
    --EVR Signals     
    signal evrPllRst     : sl;
@@ -176,7 +177,7 @@ begin
    irqIn.req    <= rxDmaIrqReq or txDmaIrqReq;
    irqIn.enable <= irqEnable;
    serNumber    <= serialNumber;
-   
+
    pciToPgp.pllRxRst(0)   <= pllRxRst(0) or cardRst;
    pciToPgp.pllRxRst(1)   <= pllRxRst(1) or cardRst;
    pciToPgp.pllTxRst(0)   <= pllTxRst(0) or cardRst;
@@ -197,12 +198,12 @@ begin
 
    MAP_PGP_DMA_LANES :
    for lane in 0 to DMA_SIZE_C-1 generate
-   
+      
       pciToPgp.evrSyncWord(lane) <= evrSyncWord(lane);
       pciToEvr.runCode(lane)     <= runCode(lane);
       pciToEvr.acceptCode(lane)  <= acceptCode(lane);
       pciToPgp.pgpRxRst(lane)    <= pgpRxRst(lane) or cardRst;
-      pciToPgp.pgpTxRst(lane)    <= pgpTxRst(lane) or cardRst;   
+      pciToPgp.pgpTxRst(lane)    <= pgpTxRst(lane) or cardRst;
 
       -- Input buses
       dmaTxIbMaster(lane) <= pgpToPci.dmaTxIbMaster(lane);
@@ -339,6 +340,16 @@ begin
             din    => evrToPci.runCodeCnt(lane),
             rd_clk => pciClk,
             dout   => evrRunCnt(lane)); 
+
+      SynchronizerFifo_6 : entity work.SynchronizerFifo
+         generic map(
+            DATA_WIDTH_G => 32)
+         port map(
+            wr_clk => pgpClk,
+            din    => pgpToPci.acceptCnt(lane),
+            rd_clk => pciClk,
+            dout   => acceptCnt(lane)); 
+
    end generate GEN_SYNC_LANE;
 
    Synchronizer_Inst : entity work.Synchronizer
@@ -498,6 +509,25 @@ begin
                regRdData(18 downto 16) <= cfgOut.functionNumber;
                regRdData(12 downto 8)  <= cfgOut.deviceNumber;
                regRdData(7 downto 0)   <= cfgOut.busNumber;
+            elsif regAddr(9 downto 2) = x"21" then               
+               regRdData(7 downto 0)  <= locLinkReady;
+               regRdData(15 downto 8) <= remLinkReady;      
+            elsif regAddr(9 downto 2) = x"98" then               
+               regRdData(31 downto 0)  <= acceptCnt(0);               
+            elsif regAddr(9 downto 2) = x"99" then               
+               regRdData(31 downto 0)  <= acceptCnt(1);               
+            elsif regAddr(9 downto 2) = x"9A" then               
+               regRdData(31 downto 0)  <= acceptCnt(2);               
+            elsif regAddr(9 downto 2) = x"9B" then               
+               regRdData(31 downto 0)  <= acceptCnt(3); 
+            elsif regAddr(9 downto 2) = x"9C" then               
+               regRdData(31 downto 0)  <= acceptCnt(4);               
+            elsif regAddr(9 downto 2) = x"9D" then               
+               regRdData(31 downto 0)  <= acceptCnt(5);               
+            elsif regAddr(9 downto 2) = x"9E" then               
+               regRdData(31 downto 0)  <= acceptCnt(6);               
+            elsif regAddr(9 downto 2) = x"9F" then               
+               regRdData(31 downto 0)  <= acceptCnt(7);                
             else
                regRdData <= regLocRdData;
             end if;
@@ -659,10 +689,6 @@ begin
                         pllRxRst <= regWrData(25 downto 24);
                         pllTxRst <= regWrData(27 downto 26);
                      end if;
-                  when x"21" =>
-                     -- PGP's Link Status
-                     regLocRdData(7 downto 0)  <= locLinkReady;
-                     regLocRdData(15 downto 8) <= remLinkReady;
                   when others =>
                      -------------------------------
                      -- Misc. Array Registers

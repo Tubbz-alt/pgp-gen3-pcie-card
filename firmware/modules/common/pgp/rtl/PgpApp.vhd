@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2015-11-06
+-- Last update: 2015-11-12
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -272,6 +272,7 @@ begin
             evrSyncEn     => evrSyncEn(lane),
             evrSyncWord   => evrSyncWord(lane),
             evrSyncStatus => pgpToPci.evrSyncStatus(lane),
+            acceptCnt     => pgpToPci.acceptCnt(lane),
             -- External Interfaces
             evrToPgp      => evrToPgp(lane),
             --PGP Core interfaces

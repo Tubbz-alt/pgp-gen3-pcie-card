@@ -4,9 +4,9 @@ use ieee.std_logic_1164.all;
 
 package Version is
 
-constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CEC8300F"; -- MAKE_VERSION
+constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CEC83010"; -- MAKE_VERSION
 
-constant BUILD_STAMP_C : string := "PgpCardG3_5p000Gbps: Vivado v2015.2 (x86_64) Built Tue Nov 10 08:36:34 PST 2015 by ruckman";
+constant BUILD_STAMP_C : string := "PgpCardG3_5p000Gbps: Vivado v2015.2 (x86_64) Built Thu Nov 12 11:17:26 PST 2015 by ruckman";
 
 end Version;
 
@@ -46,5 +46,8 @@ end Version;
 -- 11/09/2015 (0xCEC8300F): Added AcceptCntRst Registers
 --                          Added LutDropCnt Registers
 --                          Prevent EvrLinkUp=0x0 from reseting EVR Link Error counter
+--
+-- 11/12/2015 (0xCEC83010): Added AcceptCnt Registers
+--                          Prevent AcceptCnt from counting if EVR lane is not enabled
 --
 -------------------------------------------------------------------------------

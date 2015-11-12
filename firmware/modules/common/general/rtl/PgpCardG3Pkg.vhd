@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2015-11-06
+-- Last update: 2015-11-12
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -30,6 +30,7 @@ package PgpCardG3Pkg is
 
    -- PGP -> PCIe Parallel Interface
    type PgpToPciType is record          -- pgpClk Domain 
+      acceptCnt      : Slv32Array(0 to 7);
       evrSyncStatus  : slv(7 downto 0);
       pllTxReady     : slv(1 downto 0);
       pllRxReady     : slv(1 downto 0);
@@ -48,6 +49,7 @@ package PgpCardG3Pkg is
       dmaRxDescToPci : DescToPciArray(0 to 7);
    end record;
    constant PGP_TO_PCI_INIT_C : PgpToPciType := (
+      acceptCnt      => (others => (others => '0')),
       evrSyncStatus  => (others => '0'),
       pllTxReady     => (others => '0'),
       pllRxReady     => (others => '0'),
