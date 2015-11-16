@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2015-11-09
+-- Last update: 2015-11-16
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -143,7 +143,7 @@ begin
             -- Error Counting
             if (fromPci.countRst = '1') then
                r.toPci.errorCnt <= (others => '0');
-            elsif (r.rxError = '0') and (rxError = '1') and (r.toPci.errorCnt /= x"F") then
+            elsif (r.rxError = '0') and (rxError = '1') and (r.toPci.errorCnt /= x"FFFFFFFF") then
                r.toPci.errorCnt <= r.toPci.errorCnt + 1;
             end if;
             r.rxError <= rxError;

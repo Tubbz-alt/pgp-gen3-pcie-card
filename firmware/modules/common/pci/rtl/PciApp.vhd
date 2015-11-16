@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2015-11-12
+-- Last update: 2015-11-16
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -160,7 +160,7 @@ architecture rtl of PciApp is
    signal evrSyncSel    : slv(7 downto 0);
    signal evrSyncEn     : slv(7 downto 0);
    signal evrSyncStatus : slv(7 downto 0);
-   signal evrErrorCnt   : slv(3 downto 0);
+   signal evrErrorCnt   : slv(31 downto 0);
    signal runCode       : Slv8Array(0 to 7);
    signal acceptCode    : Slv8Array(0 to 7);
    signal acceptCntRst  : slv(7 downto 0);
@@ -360,7 +360,7 @@ begin
 
    SynchronizerFifo_5 : entity work.SynchronizerFifo
       generic map(
-         DATA_WIDTH_G => 4)
+         DATA_WIDTH_G => 32)
       port map(
          wr_clk => evrClk,
          din    => EvrToPci.errorCnt,
@@ -509,25 +509,25 @@ begin
                regRdData(18 downto 16) <= cfgOut.functionNumber;
                regRdData(12 downto 8)  <= cfgOut.deviceNumber;
                regRdData(7 downto 0)   <= cfgOut.busNumber;
-            elsif regAddr(9 downto 2) = x"21" then               
+            elsif regAddr(9 downto 2) = x"21" then
                regRdData(7 downto 0)  <= locLinkReady;
-               regRdData(15 downto 8) <= remLinkReady;      
-            elsif regAddr(9 downto 2) = x"98" then               
-               regRdData(31 downto 0)  <= acceptCnt(0);               
-            elsif regAddr(9 downto 2) = x"99" then               
-               regRdData(31 downto 0)  <= acceptCnt(1);               
-            elsif regAddr(9 downto 2) = x"9A" then               
-               regRdData(31 downto 0)  <= acceptCnt(2);               
-            elsif regAddr(9 downto 2) = x"9B" then               
-               regRdData(31 downto 0)  <= acceptCnt(3); 
-            elsif regAddr(9 downto 2) = x"9C" then               
-               regRdData(31 downto 0)  <= acceptCnt(4);               
-            elsif regAddr(9 downto 2) = x"9D" then               
-               regRdData(31 downto 0)  <= acceptCnt(5);               
-            elsif regAddr(9 downto 2) = x"9E" then               
-               regRdData(31 downto 0)  <= acceptCnt(6);               
-            elsif regAddr(9 downto 2) = x"9F" then               
-               regRdData(31 downto 0)  <= acceptCnt(7);                
+               regRdData(15 downto 8) <= remLinkReady;
+            elsif regAddr(9 downto 2) = x"98" then
+               regRdData(31 downto 0) <= acceptCnt(0);
+            elsif regAddr(9 downto 2) = x"99" then
+               regRdData(31 downto 0) <= acceptCnt(1);
+            elsif regAddr(9 downto 2) = x"9A" then
+               regRdData(31 downto 0) <= acceptCnt(2);
+            elsif regAddr(9 downto 2) = x"9B" then
+               regRdData(31 downto 0) <= acceptCnt(3);
+            elsif regAddr(9 downto 2) = x"9C" then
+               regRdData(31 downto 0) <= acceptCnt(4);
+            elsif regAddr(9 downto 2) = x"9D" then
+               regRdData(31 downto 0) <= acceptCnt(5);
+            elsif regAddr(9 downto 2) = x"9E" then
+               regRdData(31 downto 0) <= acceptCnt(6);
+            elsif regAddr(9 downto 2) = x"9F" then
+               regRdData(31 downto 0) <= acceptCnt(7);
             else
                regRdData <= regLocRdData;
             end if;
@@ -638,8 +638,8 @@ begin
                   -- EVR Registers
                   -------------------------------                        
                   when x"10" =>
-                     -- EVR's Link Status and Error counter
-                     regLocRdData(3 downto 0) <= evrErrorCnt;
+                     -- EVR's Link Status and acceptCnt reset
+                     regLocRdData(3 downto 0) <= x"0";
                      regLocRdData(4)          <= evrLinkUp;
                      if regWrEn = '1' then
                         acceptCntRst <= regWrData(15 downto 8);
@@ -670,6 +670,9 @@ begin
                            end if;
                         end loop;
                      end loop;
+                  when x"13" =>
+                     -- EVR's Error counter
+                     regLocRdData(31 downto 0) <= evrErrorCnt;
                   -------------------------------
                   -- PGP Registers
                   -------------------------------   

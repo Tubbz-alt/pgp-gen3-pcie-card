@@ -4,9 +4,9 @@ use ieee.std_logic_1164.all;
 
 package Version is
 
-constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CEC83010"; -- MAKE_VERSION
+constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CEC83011"; -- MAKE_VERSION
 
-constant BUILD_STAMP_C : string := "PgpCardG3_4p760Gbps: Vivado v2015.2 (x86_64) Built Thu Nov 12 11:17:27 PST 2015 by ruckman";
+constant BUILD_STAMP_C : string := "PgpCardG3_4p760Gbps: Vivado v2015.2 (x86_64) Built Mon Nov 16 13:43:33 PST 2015 by ruckman";
 
 end Version;
 
@@ -50,4 +50,8 @@ end Version;
 -- 11/12/2015 (0xCEC83010): Added AcceptCnt Registers
 --                          Prevent AcceptCnt from counting if EVR lane is not enabled
 --
+-- 11/16/2015 (0xCEC83011): In EvrGtp7.vhd, mask off the eventcodes when the link is down
+--                          In PciApp.vhd, increased evrErrorCnt from 4-bits to 32-bits
+--                          and moved evrErrorCnt from 0x40 to 0x4C base address
+-- 
 -------------------------------------------------------------------------------

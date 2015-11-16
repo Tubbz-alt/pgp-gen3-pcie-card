@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-24
--- Last update: 2014-07-09
+-- Last update: 2015-11-16
 -- Platform   : Vivado 2014.1
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -41,7 +41,8 @@ entity EvrGtp7 is
       -- EVR Interface
       rxLinkUp         : out sl;
       rxError          : out sl;
-      rxData           : out slv(15 downto 0));
+      rxData           : out slv(15 downto 0);
+      rxDataK          : out slv(1 downto 0));
 end EvrGtp7;
 
 architecture mapping of EvrGtp7 is
@@ -54,6 +55,8 @@ architecture mapping of EvrGtp7 is
       dispErr : slv(1 downto 0);
    signal cnt      : slv(7 downto 0);
    signal gtRxData : slv(19 downto 0);
+   signal data     : slv(15 downto 0);
+   signal dataK    : slv(1 downto 0);
    
 begin
    -------------------------------
@@ -75,11 +78,13 @@ begin
          clk      => evrRxRecClk,
          rst      => gtRxResetDone,
          dataIn   => gtRxData,
-         dataOut  => rxData,
-         dataKOut => open,
+         dataOut  => data,
+         dataKOut => dataK,
          codeErr  => decErr,
          dispErr  => dispErr);
 
+   rxData    <= data  when(linkUp = '1') else (others => '0');
+   rxDataK   <= dataK when(linkUp = '1') else (others => '0');
    dataValid <= not (uOr(decErr) or uOr(dispErr));
 
    -- Link up watchdog process
@@ -195,5 +200,5 @@ begin
          loopbackIn       => (others => '0'),
          txPowerDown      => (others => '1'),
          rxPowerDown      => (others => '0'));         
-         
+
 end mapping;
