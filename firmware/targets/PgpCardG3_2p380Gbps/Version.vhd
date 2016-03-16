@@ -4,9 +4,9 @@ use ieee.std_logic_1164.all;
 
 package Version is
 
-constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CEC83011"; -- MAKE_VERSION
+constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CEC83012"; -- MAKE_VERSION
 
-constant BUILD_STAMP_C : string := "PgpCardG3_2p380Gbps: Vivado v2015.2 (x86_64) Built Mon Nov 16 12:57:15 PST 2015 by ruckman";
+constant BUILD_STAMP_C : string := "PgpCardG3_2p380Gbps: Vivado v2015.2 (x86_64) Built Wed Mar 16 10:54:26 PDT 2016 by ruckman";
 
 end Version;
 
@@ -53,5 +53,7 @@ end Version;
 -- 11/16/2015 (0xCEC83011): In EvrGtp7.vhd, mask off the eventcodes when the link is down
 --                          In PciApp.vhd, increased evrErrorCnt from 4-bits to 32-bits
 --                          and moved evrErrorCnt from 0x40 to 0x4C base address
+-- 
+-- 03/16/2016 (0xCEC83012): Changed BPI from ASYNC to SYNC mode (TYPE2) and config clock from 9 MHz to 50 MHz 
 -- 
 -------------------------------------------------------------------------------
