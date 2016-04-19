@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2015-11-16
+-- Last update: 2016-04-18
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -111,11 +111,13 @@ package PgpCardG3Pkg is
    type EvrToPciType is record          --evrClk Domain
       linkUp     : sl;
       errorCnt   : slv(31 downto 0);
+      seconds    : slv(31 downto 0);
       runCodeCnt : Slv32Array(0 to 7);
    end record;
    constant EVR_TO_PCI_INIT_C : EvrToPciType := (
       linkUp     => '0',
       errorCnt   => (others => '0'),
+      seconds    => (others => '0'),
       runCodeCnt => (others => (others => '0')));
 
    -- PCIe -> EVR Parallel Interface

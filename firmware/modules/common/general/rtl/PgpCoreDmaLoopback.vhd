@@ -59,7 +59,7 @@ begin
          LOOPBACK_FIFO : entity work.AxiStreamFifo
             generic map (
                -- General Configurations
-               PIPE_STAGES_G       => 0,
+               PIPE_STAGES_G       => 1,
                SLAVE_READY_EN_G    => true,
                VALID_THOLD_G       => 1,
                -- FIFO configurations

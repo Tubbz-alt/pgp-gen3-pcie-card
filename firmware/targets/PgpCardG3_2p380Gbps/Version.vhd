@@ -4,9 +4,9 @@ use ieee.std_logic_1164.all;
 
 package Version is
 
-constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CEC83012"; -- MAKE_VERSION
+constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CEC83013"; -- MAKE_VERSION
 
-constant BUILD_STAMP_C : string := "PgpCardG3_2p380Gbps: Vivado v2015.2 (x86_64) Built Wed Mar 16 10:54:26 PDT 2016 by ruckman";
+constant BUILD_STAMP_C : string := "PgpCardG3_2p380Gbps: Vivado v2015.2 (x86_64) Built Mon Apr 18 08:39:20 PDT 2016 by ruckman";
 
 end Version;
 
@@ -55,5 +55,7 @@ end Version;
 --                          and moved evrErrorCnt from 0x40 to 0x4C base address
 -- 
 -- 03/16/2016 (0xCEC83012): Changed BPI from ASYNC to SYNC mode (TYPE2) and config clock from 9 MHz to 50 MHz 
+-- 
+-- 04/18/2016 (0xCEC83013): Added EvrSecond (A.K.A. "EvrStat[4]" or "Fiducial") register
 -- 
 -------------------------------------------------------------------------------

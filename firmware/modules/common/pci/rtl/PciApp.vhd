@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2015-11-16
+-- Last update: 2016-04-18
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -161,6 +161,7 @@ architecture rtl of PciApp is
    signal evrSyncEn     : slv(7 downto 0);
    signal evrSyncStatus : slv(7 downto 0);
    signal evrErrorCnt   : slv(31 downto 0);
+   signal evrSeconds    : slv(31 downto 0);
    signal runCode       : Slv8Array(0 to 7);
    signal acceptCode    : Slv8Array(0 to 7);
    signal acceptCntRst  : slv(7 downto 0);
@@ -363,9 +364,18 @@ begin
          DATA_WIDTH_G => 32)
       port map(
          wr_clk => evrClk,
+         din    => EvrToPci.seconds,
+         rd_clk => pciClk,
+         dout   => evrSeconds); 
+
+   SynchronizerFifo_6 : entity work.SynchronizerFifo
+      generic map(
+         DATA_WIDTH_G => 32)
+      port map(
+         wr_clk => evrClk,
          din    => EvrToPci.errorCnt,
          rd_clk => pciClk,
-         dout   => evrErrorCnt);             
+         dout   => evrErrorCnt);          
 
    -------------------------------
    -- Controller Modules
@@ -673,6 +683,9 @@ begin
                   when x"13" =>
                      -- EVR's Error counter
                      regLocRdData(31 downto 0) <= evrErrorCnt;
+                  when x"14" =>
+                     -- EVR's Seconds
+                     regLocRdData(31 downto 0) <= evrSeconds;
                   -------------------------------
                   -- PGP Registers
                   -------------------------------   

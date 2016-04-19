@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2015-11-16
+-- Last update: 2016-04-18
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -172,9 +172,10 @@ begin
             ----------------------------------------------
             r.offset <= r.offset + 1;
             if r.eventStream = x"7D" then
-               r.seconds    <= r.secondsTmp;
-               r.secondsTmp <= (others => '0');
-               r.offset     <= EVR_OFFSET_CORRECTION_C;
+               r.toPci.seconds <= r.secondsTmp;
+               r.seconds       <= r.secondsTmp;
+               r.secondsTmp    <= (others => '0');
+               r.offset        <= EVR_OFFSET_CORRECTION_C;
             elsif r.eventStream = x"71" then
                r.secondsTmp <= r.secondsTmp(30 downto 0) & '1';
             elsif r.eventStream = x"70" then
