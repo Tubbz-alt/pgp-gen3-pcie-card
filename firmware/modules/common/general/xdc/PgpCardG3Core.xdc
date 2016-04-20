@@ -7,14 +7,14 @@ set_property ASYNC_REG TRUE [get_cells -hierarchical *crossDomainSyncReg_reg*]
 # PGP: Physical Constraints #
 #############################
 
-create_pblock PGP_WEST_GRP; add_cells_to_pblock [get_pblocks PGP_WEST_GRP] [get_cells [list PgpCardG3Core_Inst/PgpCore_Inst/PgpFrontEnd_Inst/GEN_WEST*]]
-resize_pblock [get_pblocks PGP_WEST_GRP] -add {CLOCKREGION_X0Y0:CLOCKREGION_X0Y1}
+# create_pblock PGP_WEST_GRP; add_cells_to_pblock [get_pblocks PGP_WEST_GRP] [get_cells [list PgpCardG3Core_Inst/PgpCore_Inst/PgpFrontEnd_Inst/GEN_WEST*]]
+# resize_pblock [get_pblocks PGP_WEST_GRP] -add {CLOCKREGION_X0Y0:CLOCKREGION_X0Y1}
 
-create_pblock PGP_EAST_GRP; add_cells_to_pblock [get_pblocks PGP_EAST_GRP] [get_cells [list PgpCardG3Core_Inst/PgpCore_Inst/PgpFrontEnd_Inst/GEN_EAST*]]
-resize_pblock [get_pblocks PGP_EAST_GRP] -add {CLOCKREGION_X1Y0:CLOCKREGION_X1Y1}
+# create_pblock PGP_EAST_GRP; add_cells_to_pblock [get_pblocks PGP_EAST_GRP] [get_cells [list PgpCardG3Core_Inst/PgpCore_Inst/PgpFrontEnd_Inst/GEN_EAST*]]
+# resize_pblock [get_pblocks PGP_EAST_GRP] -add {CLOCKREGION_X1Y0:CLOCKREGION_X1Y1}
 
-create_pblock PGP_APP_GRP; add_cells_to_pblock [get_pblocks PGP_APP_GRP] [get_cells [list PgpCardG3Core_Inst/PgpCore_Inst/PgpApp_Inst]]
-resize_pblock [get_pblocks PGP_APP_GRP] -add {CLOCKREGION_X0Y1:CLOCKREGION_X1Y3}
+# create_pblock PGP_APP_GRP; add_cells_to_pblock [get_pblocks PGP_APP_GRP] [get_cells [list PgpCardG3Core_Inst/PgpCore_Inst/PgpApp_Inst]]
+# resize_pblock [get_pblocks PGP_APP_GRP] -add {CLOCKREGION_X0Y1:CLOCKREGION_X1Y3}
 
 ######################
 # Timing Constraints #

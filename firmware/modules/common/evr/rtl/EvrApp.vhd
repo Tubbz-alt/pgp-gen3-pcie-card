@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2016-04-18
+-- Last update: 2016-04-19
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -183,12 +183,12 @@ begin
             end if;
 
             for i in 0 to 7 loop
+               r.toPgp(i).seconds <= r.seconds;
+               r.toPgp(i).offset  <= r.offset;
                -- Check for run code event 
                if (fromPci.enable = '1') and (r.eventStream = fromPci.runCode(i)) and (rxLinkUp = '1') then
                   -- Latch the seconds and offset
-                  r.toPgp(i).run     <= '1';
-                  r.toPgp(i).seconds <= r.seconds;
-                  r.toPgp(i).offset  <= r.offset;
+                  r.toPgp(i).run <= '1';
                end if;
                -- Check for accept code event 
                if (fromPci.enable = '1') and (r.eventStream = fromPci.acceptCode(i)) and (rxLinkUp = '1') then

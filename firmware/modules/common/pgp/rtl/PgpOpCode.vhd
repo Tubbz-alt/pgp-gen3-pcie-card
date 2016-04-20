@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2015-11-12
+-- Last update: 2016-04-19
 -- Platform   : Vivado 2014.1
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -89,6 +89,7 @@ architecture rtl of PgpOpCode is
    signal evrEn    : sl;
    signal opCodeEn : sl;
    signal opCode   : slv(7 downto 0);
+   signal seconds  : slv(31 downto 0);
 
    signal delay   : EvrToPgpType;
    signal fromEvr : EvrToPgpType;
@@ -177,7 +178,18 @@ begin
          rd_clk  => pgpClk,
          rd_en   => '1',
          valid   => fromEvr.accept,
-         dout(0) => open);         
+         dout(0) => open);    
+
+   SynchronizerFifo_3 : entity work.SynchronizerFifo
+      generic map(
+         DATA_WIDTH_G => 32)
+      port map(
+         -- Write Ports (wr_clk domain)
+         wr_clk => evrClk,
+         din    => evrToPgp.seconds,
+         -- Read Ports (rd_clk domain)
+         rd_clk => pgpClk,
+         dout   => seconds);         
 
    -------------------------------
    -- Look up Table
@@ -210,7 +222,7 @@ begin
    -------------------------------
    -- Look Up Table Writing Process
    -------------------------------     
-   comb : process (acceptCntRst, evrSyncEn, evrSyncSel, evrSyncWord, fromEvr, pgpRst, r) is
+   comb : process (acceptCntRst, evrSyncEn, evrSyncSel, evrSyncWord, fromEvr, pgpRst, r, seconds) is
       variable v : RegType;
    begin
       -- Latch the current value
@@ -222,7 +234,7 @@ begin
       v.start := '0';
 
       -- Check if sync word detected or ASYNC mode
-      if (evrSyncWord = fromEvr.seconds) or (evrSyncSel = '0') then
+      if (evrSyncWord = seconds) or (evrSyncSel = '0') then
          -- Update the registerd evrSyncEn
          v.evrSyncEn := evrSyncEn;
          v.start     := evrSyncEn;
