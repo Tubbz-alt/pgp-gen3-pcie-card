@@ -4,9 +4,9 @@ use ieee.std_logic_1164.all;
 
 package Version is
 
-constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CEC83014"; -- MAKE_VERSION
+constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CEC83015"; -- MAKE_VERSION
 
-constant BUILD_STAMP_C : string := "PgpCardG3_4p760Gbps: Vivado v2015.2 (x86_64) Built Tue Apr 19 21:31:30 PDT 2016 by ruckman";
+constant BUILD_STAMP_C : string := "PgpCardG3_4p760Gbps: Vivado v2015.2 (x86_64) Built Mon Apr 25 19:30:50 PDT 2016 by ruckman";
 
 end Version;
 
@@ -59,5 +59,7 @@ end Version;
 -- 04/18/2016 (0xCEC83013): Added EvrSecond (A.K.A. "EvrStat[4]" or "Fiducial") register
 -- 
 -- 04/19/2016 (0xCEC83014): Fixed bug in PgpOpCode.vhd for using evrSyncWord with (evrSyncSel = '1')
+-- 
+-- 04/25/2016 (0xCEC83015): PgpOpCode.vhd, changed to "pgpTxIn.opCodeEn <= fromEvr.run or opCodeEn;"
 -- 
 -------------------------------------------------------------------------------

@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2016-04-19
+-- Last update: 2016-04-25
 -- Platform   : Vivado 2014.1
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -58,7 +58,6 @@ end PgpOpCode;
 architecture rtl of PgpOpCode is
 
    type RegType is record
-      start     : sl;
       evrSyncEn : sl;
       ready     : sl;
       valid     : sl;
@@ -71,7 +70,6 @@ architecture rtl of PgpOpCode is
    end record;
    
    constant REG_INIT_C : RegType := (
-      start     => '0',
       evrSyncEn => '0',
       ready     => '0',
       valid     => '0',
@@ -85,8 +83,6 @@ architecture rtl of PgpOpCode is
    signal r   : RegType := REG_INIT_C;
    signal rin : RegType;
 
-   signal start    : sl;
-   signal evrEn    : sl;
    signal opCodeEn : sl;
    signal opCode   : slv(7 downto 0);
    signal seconds  : slv(31 downto 0);
@@ -126,12 +122,11 @@ begin
    -------------------------------
    -- Output Bus Mapping
    -------------------------------
-   evrEn               <= fromEvr.run and (r.evrSyncEn or start);
-   pgpTxIn.flush       <= '0';              -- not used
-   pgpTxIn.opCodeEn    <= evrEn or opCodeEn;
+   pgpTxIn.opCodeEn    <= fromEvr.run or opCodeEn;
    pgpTxIn.opCode      <= r.trigAddr when(opCodeEn = '0') else opCode;
    pgpTxIn.locData     <= (others => '0');  -- not used
    pgpTxIn.flowCntlDis <= '0';              -- Ignore flow control 
+   pgpTxIn.flush       <= '0';              -- not used
 
    -------------------------------
    -- Synchronization
@@ -231,17 +226,15 @@ begin
       -- Reset the strobes
       v.we    := '0';
       v.valid := '0';
-      v.start := '0';
 
       -- Check if sync word detected or ASYNC mode
       if (evrSyncWord = seconds) or (evrSyncSel = '0') then
-         -- Update the registerd evrSyncEn
+         -- Update the evrSyncEn
          v.evrSyncEn := evrSyncEn;
-         v.start     := evrSyncEn;
       end if;
 
       -- Check for a trigger
-      if (fromEvr.run = '1') and (v.evrSyncEn = '1') then
+      if (fromEvr.run = '1') then
          -- Clear the trigLutOut.accept bit
          v.we       := '1';
          v.waddr    := r.trigAddr;
@@ -250,8 +243,8 @@ begin
          v.offset   := fromEvr.offset;
          -- Increment the trigAddr
          v.trigAddr := r.trigAddr + 1;
-         -- set the ready for accept flag
-         v.ready    := '1';
+         -- Set the ready for accept flag
+         v.ready    := v.evrSyncEn;
       end if;
 
       -----------------------------------------------------------------
@@ -282,7 +275,6 @@ begin
       rin <= v;
 
       -- Outputs
-      start         <= v.start;
       evrSyncStatus <= r.evrSyncEn;
       acceptCnt     <= r.acceptCnt;
       
