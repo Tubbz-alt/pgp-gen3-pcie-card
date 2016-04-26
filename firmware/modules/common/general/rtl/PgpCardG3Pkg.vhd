@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2016-04-18
+-- Last update: 2016-04-26
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -88,6 +88,7 @@ package PgpCardG3Pkg is
       runDelay         : Slv32Array(0 to 7);
       acceptDelay      : Slv32Array(0 to 7);
       acceptCntRst     : slv(7 downto 0);
+      evrOpCodeMask    : slv(7 downto 0);
       evrSyncSel       : slv(7 downto 0);
       evrSyncEn        : slv(7 downto 0);
       evrSyncWord      : Slv32Array(0 to 7);

@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2016-04-18
+-- Last update: 2016-04-26
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -165,6 +165,7 @@ architecture rtl of PciApp is
    signal runCode       : Slv8Array(0 to 7);
    signal acceptCode    : Slv8Array(0 to 7);
    signal acceptCntRst  : slv(7 downto 0);
+   signal evrOpCodeMask : slv(7 downto 0);
    signal evrSyncWord   : Slv32Array(0 to 7);
    signal lutDropCnt    : Slv8VectorArray(0 to 7, 0 to 3);
    
@@ -191,6 +192,7 @@ begin
    pciToPgp.evrSyncSel    <= evrSyncSel;
    pciToPgp.evrSyncEn     <= evrSyncEn;
    pciToPgp.acceptCntRst  <= acceptCntRst;
+   pciToPgp.evrOpCodeMask <= evrOpCodeMask;
 
    pciToEvr.countRst <= countRst or cardRst;
    pciToEvr.pllRst   <= evrPllRst or cardRst;
@@ -593,6 +595,7 @@ begin
             reboot        <= '0';
             rebootEn      <= '0';
             rebootTimer   <= (others => '0');
+            evrOpCodeMask <= (others => '0');
          else
 
             -- Check for enabled timer
@@ -649,10 +652,12 @@ begin
                   -------------------------------                        
                   when x"10" =>
                      -- EVR's Link Status and acceptCnt reset
-                     regLocRdData(3 downto 0) <= x"0";
-                     regLocRdData(4)          <= evrLinkUp;
+                     regLocRdData(3 downto 0)   <= x"0";
+                     regLocRdData(4)            <= evrLinkUp;
+                     regLocRdData(23 downto 16) <= evrOpCodeMask;
                      if regWrEn = '1' then
-                        acceptCntRst <= regWrData(15 downto 8);
+                        acceptCntRst  <= regWrData(15 downto 8);
+                        evrOpCodeMask <= regWrData(23 downto 16);
                      end if;
                   when x"11" =>
                      -- EVR's Enable and Resets

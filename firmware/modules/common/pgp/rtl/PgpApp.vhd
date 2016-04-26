@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2015-11-12
+-- Last update: 2016-04-26
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -86,6 +86,7 @@ architecture mapping of PgpApp is
    signal runDelay      : Slv32Array(0 to 7);
    signal acceptDelay   : Slv32Array(0 to 7);
    signal acceptCntRst  : slv(7 downto 0);
+   signal evrOpCodeMask : slv(7 downto 0);
    signal evrSyncWord   : Slv32Array(0 to 7);
    
 begin
@@ -239,7 +240,16 @@ begin
       port map (
          clk     => pgpClk,
          dataIn  => PciToPgp.evrSyncSel,
-         dataOut => evrSyncSel);             
+         dataOut => evrSyncSel);           
+
+   SynchronizerVector_7 : entity work.SynchronizerVector
+      generic map (
+         TPD_G   => TPD_G,
+         WIDTH_G => 8)
+      port map (
+         clk     => pgpClk,
+         dataIn  => PciToPgp.evrOpCodeMask,
+         dataOut => evrOpCodeMask);              
 
    -------------------
    -- PGP Lane Mapping
@@ -268,6 +278,7 @@ begin
             runDelay      => runDelay(lane),
             acceptDelay   => acceptDelay(lane),
             acceptCntRst  => acceptCntRst(lane),
+            evrOpCodeMask => evrOpCodeMask(lane),
             evrSyncSel    => evrSyncSel(lane),
             evrSyncEn     => evrSyncEn(lane),
             evrSyncWord   => evrSyncWord(lane),

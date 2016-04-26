@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2016-04-25
+-- Last update: 2016-04-26
 -- Platform   : Vivado 2014.1
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -34,6 +34,7 @@ entity PgpOpCode is
       runDelay      : in  slv(31 downto 0);
       acceptDelay   : in  slv(31 downto 0);
       acceptCntRst  : in  sl;
+      evrOpCodeMask : in  sl;
       evrSyncSel    : in  sl;
       evrSyncEn     : in  sl;
       evrSyncWord   : in  slv(31 downto 0);
@@ -83,6 +84,7 @@ architecture rtl of PgpOpCode is
    signal r   : RegType := REG_INIT_C;
    signal rin : RegType;
 
+   signal runTrig  : sl;
    signal opCodeEn : sl;
    signal opCode   : slv(7 downto 0);
    signal seconds  : slv(31 downto 0);
@@ -122,7 +124,8 @@ begin
    -------------------------------
    -- Output Bus Mapping
    -------------------------------
-   pgpTxIn.opCodeEn    <= fromEvr.run or opCodeEn;
+   runTrig             <= fromEvr.run and not(evrOpCodeMask);
+   pgpTxIn.opCodeEn    <= runTrig or opCodeEn;
    pgpTxIn.opCode      <= r.trigAddr when(opCodeEn = '0') else opCode;
    pgpTxIn.locData     <= (others => '0');  -- not used
    pgpTxIn.flowCntlDis <= '0';              -- Ignore flow control 
