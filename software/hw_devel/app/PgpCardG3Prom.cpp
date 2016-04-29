@@ -20,6 +20,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <iomanip> 
+#include <math.h>
 
 #include "PgpCardG3Prom.h"
 #include "McsRead.h"
@@ -96,19 +97,19 @@ void PgpCardG3Prom::eraseBootProm ( ) {
 
    uint32_t address = 0;
    double size = double(PROM_SIZE);
+   double percentage;
+   double skim = 5.0;    
 
    cout << "*******************************************************************" << endl;   
    cout << "Starting Erasing ..." << endl; 
    while(address<=PROM_SIZE) {       
-      // Print the status to screen
-      cout << hex << "Erasing PROM from 0x" << address << " to 0x" << (address+PROM_BLOCK_SIZE-1);
-      cout << setprecision(3) << " ( " << ((double(address))/size)*100 << " percent done )" << endl;      
-      
-      // execute the erase command
       eraseCommand(address);
-      
-      //increment the address pointer
       address += PROM_BLOCK_SIZE;
+      percentage = (((double)address)/size)*100;
+      if(percentage>=skim) {
+         skim += 5.0;
+         cout << "Erasing the PROM: " << floor(percentage) << " percent done" << endl;
+      }               
    }   
    cout << "Erasing completed" << endl;
 }
@@ -177,7 +178,7 @@ bool PgpCardG3Prom::bufferedWriteBootProm ( ) {
          percentage *= 2.0;//factor of two from two 8-bit reads for every write 16 bit write
          if(percentage>=skim) {
             skim += 5.0;
-            cout << "Writing the PROM: " << percentage << " percent done" << endl;
+            cout << "Writing the PROM: " << floor(percentage) << " percent done" << endl;
          }         
       }
    }
@@ -253,7 +254,7 @@ bool PgpCardG3Prom::verifyBootProm ( ) {
          percentage *= 2.0;//factore of two from two 8-bit reads for every write 16 bit write
          if(percentage>=skim) {
             skim += 5.0;
-            cout << "Verifying the PROM: " << percentage << " percent done" << endl;
+            cout << "Verifying the PROM: " << floor(percentage) << " percent done" << endl;
          }         
       }
    }
@@ -412,8 +413,13 @@ uint32_t PgpCardG3Prom::genReqWord(uint16_t cmd, uint16_t data) {
 
 //! Generic FLASH write Command 
 void PgpCardG3Prom::writeToFlash(uint32_t address, uint16_t cmd, uint16_t data) {
+   
+   asm("nop");//no operation function      
+         
    // Set the data bus
    *((uint32_t*)mapData) = genReqWord(cmd,data);
+   
+   asm("nop");//no operation function   
    
    // Set the address bus and initiate the transfer
    *((uint32_t*)mapAddress) = (~READ_MASK & address);
@@ -422,12 +428,18 @@ void PgpCardG3Prom::writeToFlash(uint32_t address, uint16_t cmd, uint16_t data) 
 //! Generic FLASH read Command
 uint16_t PgpCardG3Prom::readFlash(uint32_t address, uint16_t cmd) {
    uint32_t readReg;
+   
+   asm("nop");//no operation function      
       
    // Set the data bus
    *((uint32_t*)mapData) = genReqWord(cmd,0xFF);
    
+   asm("nop");//no operation function   
+   
    // Set the address bus and initiate the transfer
    *((uint32_t*)mapAddress) = (READ_MASK | address);   
+   
+   asm("nop");//no operation function   
    
    // Read the data register
    readReg = *((uint32_t*)mapRead);
