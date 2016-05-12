@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2016-04-26
+-- Last update: 2016-05-11
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -557,7 +557,8 @@ begin
       port map (
          clk         => pciClk,
          rst         => pciRst,
-         start       => reboot,
+         -- start       => reboot,
+         start       => '0',  -- Prevent soft reload of firmware because it sometimes crashes the Linux kernel
          bootAddress => X"00000000");   
 
    -- Local register space
