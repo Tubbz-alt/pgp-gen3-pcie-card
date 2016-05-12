@@ -21,7 +21,6 @@ int main (int argc, char **argv) {
 
    int fd;
    void volatile *mapStart;
-   void volatile *reboot;
    PgpCardG3Prom *prom;
    string filePath;
    string devName = "/dev/PgpCardG3_0";
@@ -51,9 +50,6 @@ int main (int argc, char **argv) {
       close(fd);
       return(1);   
    }
-   
-   // Mapping the reboot register
-   reboot = (void volatile *)((uint64_t)mapStart+0x01C);
    
    // Create the PgpCardG3Prom object
    prom = new PgpCardG3Prom(mapStart,filePath);
@@ -94,9 +90,6 @@ int main (int argc, char **argv) {
       
    // Display Reminder
    prom->rebootReminder();
-
-   // Start the FPGA's 1 second reboot timer
-   *((__u32*)reboot) = 0xBABECAFE;   
    
 	// Close all the devices
    delete prom;

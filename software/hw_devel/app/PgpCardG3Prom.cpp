@@ -83,10 +83,8 @@ void PgpCardG3Prom::rebootReminder ( ) {
    cout << "\n\n\n\n\n";
    cout << "***************************************" << endl;
    cout << "***************************************" << endl;
-   cout << "The new data written in the PROM has " << endl;
-   cout << "has been loaded into the FPGA. " << endl<< endl;
-   cout << "A reboot or power cycle is required " << endl;
-   cout << "to re-enumerate the PCIe card." << endl;
+   cout << "A cold reboot or power cycle is required " << endl;
+   cout << "to load the new firmware." << endl;
    cout << "***************************************" << endl;
    cout << "***************************************" << endl;
    cout << "\n\n\n\n\n";
