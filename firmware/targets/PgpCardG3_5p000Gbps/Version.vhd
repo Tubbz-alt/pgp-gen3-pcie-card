@@ -4,9 +4,9 @@ use ieee.std_logic_1164.all;
 
 package Version is
 
-constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CEC83015"; -- MAKE_VERSION
+constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CEC83018"; -- MAKE_VERSION
 
-constant BUILD_STAMP_C : string := "PgpCardG3_5p000Gbps: Vivado v2015.2 (x86_64) Built Mon Apr 25 19:30:51 PDT 2016 by ruckman";
+constant BUILD_STAMP_C : string := "PgpCardG3_5p000Gbps: Vivado v2015.2 (x86_64) Built Tue May 24 08:33:37 PDT 2016 by ruckman";
 
 end Version;
 
@@ -60,6 +60,12 @@ end Version;
 -- 
 -- 04/19/2016 (0xCEC83014): Fixed bug in PgpOpCode.vhd for using evrSyncWord with (evrSyncSel = '1')
 -- 
--- 04/25/2016 (0xCEC83015): PgpOpCode.vhd, changed to "pgpTxIn.opCodeEn <= fromEvr.run or opCodeEn;"
+-- 04/25/2016 (0xCEC83015): In PgpOpCode.vhd, changed to "pgpTxIn.opCodeEn <= fromEvr.run or opCodeEn;"
+-- 
+-- 04/26/2016 (0xCEC83016): Added evrOpCodeMask register
+-- 
+-- 04/26/2016 (0xCEC83017): Fixed bug of PGP RX reset causing the PCI RX DMA engine to hang
+-- 
+-- 05/11/2016 (0xCEC83018): Prevent soft reload of firmware because it sometimes crashes the Linux kernel
 -- 
 -------------------------------------------------------------------------------
