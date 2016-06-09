@@ -57,6 +57,7 @@ architecture rtl of PciRegCtrl is
       IDLE_S,
       PIPE0_WAIT_S,
       PIPE1_WAIT_S,
+      PIPE2_WAIT_S,
       ACK_HDR_S);   
 
    type RegType is record
@@ -141,7 +142,11 @@ begin
          ----------------------------------------------------------------------
          when PIPE1_WAIT_S =>
             -- Next state
-            v.state := ACK_HDR_S;            
+            v.state := PIPE2_WAIT_S;   
+         ----------------------------------------------------------------------
+         when PIPE2_WAIT_S =>
+            -- Next state
+            v.state := ACK_HDR_S;               
          ----------------------------------------------------------------------
          when ACK_HDR_S =>
             -- Check if target is ready for data

@@ -117,10 +117,10 @@ architecture rtl of PciApp is
       regRdData,
       regRxRdData,
       regTxRdData,
-      regLocRdData,
       regFlashRdData,
       rebootTimer,
       scratchPad : slv(31 downto 0);
+   signal regLocRdData : Slv32Array(0 to 1);
    signal runDelay,
       acceptDelay : Slv32Array(0 to 7);
 
@@ -540,8 +540,10 @@ begin
                regRdData(31 downto 0) <= acceptCnt(6);
             elsif regAddr(9 downto 2) = x"9F" then
                regRdData(31 downto 0) <= acceptCnt(7);
+            elsif regAddr(9 downto 2) <= x"20" then
+               regRdData <= regLocRdData(0);
             else
-               regRdData <= regLocRdData;
+               regRdData <= regLocRdData(1);
             end if;
          elsif regAddr(11 downto 10) = "01" then
             regRdData <= regRxRdData;
@@ -571,7 +573,8 @@ begin
          pgpOpCodeEn  <= '0';
          acceptCntRst <= (others => '0');
          if pciRst = '1' then
-            regLocRdData  <= (others => '0');
+            regLocRdData(0) <= (others => '0');
+            regLocRdData(1) <= (others => '0');
             scratchPad    <= (others => '0');
             irqEnable     <= '0';
             countRst      <= '0';
@@ -609,41 +612,42 @@ begin
             end if;
             -- Write
             if regLocCs = '1' then
-               regLocRdData <= (others => '0');
+               regLocRdData(0) <= (others => '0');
+               regLocRdData(1) <= (others => '0');
                case regAddr(9 downto 2) is
                   -------------------------------
                   -- System Registers
                   -------------------------------
                   when x"03" =>
                      -- Scratch Pad
-                     regLocRdData <= scratchPad;
+                     regLocRdData(0) <= scratchPad;
                      if regWrEn = '1' then
                         scratchPad <= regWrData;
                      end if;
                   when x"04" =>
                      -- Reset Counters
-                     regLocRdData(0) <= countRst;
-                     regLocRdData(1) <= cardRst;
+                     regLocRdData(0)(0) <= countRst;
+                     regLocRdData(0)(1) <= cardRst;
                      if regWrEn = '1' then
                         countRst <= regWrData(0);
                         cardRst  <= regWrData(1);
                      end if;
                   when x"05" =>
                      -- IRQ Enable
-                     regLocRdData(1) <= irqOut.activeFlag;
-                     regLocRdData(0) <= irqEnable;
+                     regLocRdData(0)(1) <= irqOut.activeFlag;
+                     regLocRdData(0)(0) <= irqEnable;
                      if regWrEn = '1' then
                         irqEnable <= regWrData(0);
                      end if;
                   when x"07" =>
                      -- Reboot Enable
-                     regLocRdData(0) <= rebootEn;
+                     regLocRdData(0)(0) <= rebootEn;
                      if (regWrEn = '1') and (regWrData = x"BABECAFE") then
                         rebootEn <= '1';
                      end if;
                   when x"08" =>
                      -- PGP OP-Code
-                     regLocRdData(7 downto 0) <= pgpOpCode;
+                     regLocRdData(0)(7 downto 0) <= pgpOpCode;
                      if regWrEn = '1' then
                         pgpOpCodeEn <= '1';
                         pgpOpCode   <= regWrData(7 downto 0);
@@ -653,21 +657,21 @@ begin
                   -------------------------------                        
                   when x"10" =>
                      -- EVR's Link Status and acceptCnt reset
-                     regLocRdData(3 downto 0)   <= x"0";
-                     regLocRdData(4)            <= evrLinkUp;
-                     regLocRdData(23 downto 16) <= evrOpCodeMask;
+                     regLocRdData(0)(3 downto 0)   <= x"0";
+                     regLocRdData(0)(4)            <= evrLinkUp;
+                     regLocRdData(0)(23 downto 16) <= evrOpCodeMask;
                      if regWrEn = '1' then
                         acceptCntRst  <= regWrData(15 downto 8);
                         evrOpCodeMask <= regWrData(23 downto 16);
                      end if;
                   when x"11" =>
                      -- EVR's Enable and Resets
-                     regLocRdData(0)            <= evrEnable;
-                     regLocRdData(1)            <= evrReset;
-                     regLocRdData(2)            <= evrPllRst;
-                     regLocRdData(15 downto 8)  <= evrSyncSel;
-                     regLocRdData(23 downto 16) <= evrSyncEn;
-                     regLocRdData(31 downto 24) <= evrSyncStatus;
+                     regLocRdData(0)(0)            <= evrEnable;
+                     regLocRdData(0)(1)            <= evrReset;
+                     regLocRdData(0)(2)            <= evrPllRst;
+                     regLocRdData(0)(15 downto 8)  <= evrSyncSel;
+                     regLocRdData(0)(23 downto 16) <= evrSyncEn;
+                     regLocRdData(0)(31 downto 24) <= evrSyncStatus;
                      if regWrEn = '1' then
                         evrEnable  <= regWrData(0);
                         evrReset   <= regWrData(1);
@@ -680,7 +684,7 @@ begin
                      for lane in 0 to 7 loop
                         --EVR's VC Masks
                         for vc in 0 to 3 loop
-                           regLocRdData((4*lane)+vc) <= enHeaderCheck(lane, vc);
+                           regLocRdData(0)((4*lane)+vc) <= enHeaderCheck(lane, vc);
                            if regWrEn = '1' then
                               enHeaderCheck(lane, vc) <= regWrData((4*lane)+vc);
                            end if;
@@ -688,22 +692,22 @@ begin
                      end loop;
                   when x"13" =>
                      -- EVR's Error counter
-                     regLocRdData(31 downto 0) <= evrErrorCnt;
+                     regLocRdData(0)(31 downto 0) <= evrErrorCnt;
                   when x"14" =>
                      -- EVR's Seconds
-                     regLocRdData(31 downto 0) <= evrSeconds;
+                     regLocRdData(0)(31 downto 0) <= evrSeconds;
                   -------------------------------
                   -- PGP Registers
                   -------------------------------   
                   when x"20" =>
                      -- PGP's Loop Back Testing and Resets
-                     regLocRdData(7 downto 0)   <= loopBack;
-                     regLocRdData(15 downto 8)  <= pgpRxRst;
-                     regLocRdData(23 downto 16) <= pgpTxRst;
-                     regLocRdData(25 downto 24) <= pllRxRst;
-                     regLocRdData(27 downto 26) <= pllTxRst;
-                     regLocRdData(29 downto 28) <= pllRxReady;
-                     regLocRdData(31 downto 30) <= pllTxReady;
+                     regLocRdData(0)(7 downto 0)   <= loopBack;
+                     regLocRdData(0)(15 downto 8)  <= pgpRxRst;
+                     regLocRdData(0)(23 downto 16) <= pgpTxRst;
+                     regLocRdData(0)(25 downto 24) <= pllRxRst;
+                     regLocRdData(0)(27 downto 26) <= pllTxRst;
+                     regLocRdData(0)(29 downto 28) <= pllRxReady;
+                     regLocRdData(0)(31 downto 30) <= pllTxReady;
                      if regWrEn = '1' then
                         loopBack <= regWrData(7 downto 0);
                         pgpRxRst <= regWrData(15 downto 8);
@@ -718,60 +722,60 @@ begin
                      for lane in 0 to 7 loop
                         --regAddr: 0x58-0x5F 
                         if (regAddr(9 downto 2) = (88+lane)) then
-                           regLocRdData <= evrSyncWord(lane);
+                           regLocRdData(1) <= evrSyncWord(lane);
                            if regWrEn = '1' then
                               evrSyncWord(lane) <= regWrData;
                            end if;
                         end if;
                         --regAddr: 0x60-0x67 
                         if (regAddr(9 downto 2) = (96+lane)) then
-                           regLocRdData(7 downto 0) <= runCode(lane);
+                           regLocRdData(1)(7 downto 0) <= runCode(lane);
                            if regWrEn = '1' then
                               runCode(lane) <= regWrData(7 downto 0);
                            end if;
                         end if;
                         --regAddr: 0x68-0x6F 
                         if (regAddr(9 downto 2) = (104+lane)) then
-                           regLocRdData(7 downto 0) <= acceptCode(lane);
+                           regLocRdData(1)(7 downto 0) <= acceptCode(lane);
                            if regWrEn = '1' then
                               acceptCode(lane) <= regWrData(7 downto 0);
                            end if;
                         end if;
                         --regAddr: 0x70-0x77 
                         if (regAddr(9 downto 2) = (112+lane)) then
-                           regLocRdData <= runDelay(lane);
+                           regLocRdData(1) <= runDelay(lane);
                            if regWrEn = '1' then
                               runDelay(lane) <= regWrData;
                            end if;
                         end if;
                         --regAddr: 0x78-0x7F 
                         if (regAddr(9 downto 2) = (120+lane)) then
-                           regLocRdData <= acceptDelay(lane);
+                           regLocRdData(1) <= acceptDelay(lane);
                            if regWrEn = '1' then
                               acceptDelay(lane) <= regWrData;
                            end if;
                         end if;
                         --regAddr: 0x80-0x87 
                         if (regAddr(9 downto 2) = (128+lane)) then
-                           regLocRdData(3 downto 0)   <= rxCount(lane, 0);
-                           regLocRdData(7 downto 4)   <= rxCount(lane, 1);
-                           regLocRdData(11 downto 8)  <= rxCount(lane, 2);
-                           regLocRdData(15 downto 12) <= rxCount(lane, 3);
-                           regLocRdData(19 downto 16) <= fifoErrorCnt(lane);
-                           regLocRdData(23 downto 20) <= cellErrorCnt(lane);
-                           regLocRdData(27 downto 24) <= linkDownCnt(lane);
-                           regLocRdData(31 downto 28) <= linkErrorCnt(lane);
+                           regLocRdData(1)(3 downto 0)   <= rxCount(lane, 0);
+                           regLocRdData(1)(7 downto 4)   <= rxCount(lane, 1);
+                           regLocRdData(1)(11 downto 8)  <= rxCount(lane, 2);
+                           regLocRdData(1)(15 downto 12) <= rxCount(lane, 3);
+                           regLocRdData(1)(19 downto 16) <= fifoErrorCnt(lane);
+                           regLocRdData(1)(23 downto 20) <= cellErrorCnt(lane);
+                           regLocRdData(1)(27 downto 24) <= linkDownCnt(lane);
+                           regLocRdData(1)(31 downto 28) <= linkErrorCnt(lane);
                         end if;
                         --regAddr: 0x88-8F
                         if (regAddr(9 downto 2) = (136+lane)) then
-                           regLocRdData(31 downto 0) <= evrRunCnt(lane);
+                           regLocRdData(1)(31 downto 0) <= evrRunCnt(lane);
                         end if;
                         --regAddr: 0x90-0x97 
                         if (regAddr(9 downto 2) = (144+lane)) then
-                           regLocRdData(7 downto 0)   <= lutDropCnt(lane, 0);
-                           regLocRdData(15 downto 8)  <= lutDropCnt(lane, 1);
-                           regLocRdData(23 downto 16) <= lutDropCnt(lane, 2);
-                           regLocRdData(31 downto 24) <= lutDropCnt(lane, 3);
+                           regLocRdData(1)(7 downto 0)   <= lutDropCnt(lane, 0);
+                           regLocRdData(1)(15 downto 8)  <= lutDropCnt(lane, 1);
+                           regLocRdData(1)(23 downto 16) <= lutDropCnt(lane, 2);
+                           regLocRdData(1)(31 downto 24) <= lutDropCnt(lane, 3);
                         end if;
                      end loop;
                end case;
