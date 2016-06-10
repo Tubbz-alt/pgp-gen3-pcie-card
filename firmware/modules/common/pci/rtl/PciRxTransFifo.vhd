@@ -5,8 +5,8 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2014-06-23
--- Last update: 2014-08-18
--- Platform   : Vivado 2014.1
+-- Last update: 2016-06-10
+-- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
 -- Description: 
@@ -55,6 +55,7 @@ architecture rtl of PciRxTransFifo is
       SEND_S);  
 
    type RegType is record
+      sof        : sl;
       tranWr     : sl;
       tranSubId  : slv(3 downto 0);
       tranCnt    : slv(8 downto 0);
@@ -68,20 +69,22 @@ architecture rtl of PciRxTransFifo is
    end record RegType;
    
    constant REG_INIT_C : RegType := (
-      '0',
-      (others => '0'),
-      (others => '0'),
-      (others => '0'),
-      '0',
-      toSlv(1, 9),
-      toSlv(1, 9),
-      AXI_STREAM_SLAVE_INIT_C,
-      AXI_STREAM_MASTER_INIT_C,
-      IDLE_S);
+      sof        => '1',
+      tranWr     => '0',
+      tranSubId  => (others => '0'),
+      tranCnt    => (others => '0'),
+      tranLength => (others => '0'),
+      tranEofe   => '0',
+      cnt        => toSlv(1, 9),
+      size       => toSlv(1, 9),
+      sAxisSlave => AXI_STREAM_SLAVE_INIT_C,
+      axisMaster => AXI_STREAM_MASTER_INIT_C,
+      state      => IDLE_S);
 
    signal r   : RegType := REG_INIT_C;
    signal rin : RegType;
 
+   signal reset      : sl;
    signal tranAFull  : sl;
    signal axisMaster : AxiStreamMasterType;
    signal axisCtrl   : AxiStreamCtrlType;
@@ -91,7 +94,7 @@ architecture rtl of PciRxTransFifo is
    
 begin
 
-   comb : process (axisCtrl, r, sAxisMaster, sAxisRst, tranAFull) is
+   comb : process (axisCtrl, r, reset, sAxisMaster, tranAFull) is
       variable v : RegType;
    begin
       -- Latch the current value
@@ -102,38 +105,71 @@ begin
       ssiResetFlags(v.axisMaster);
 
       -- Set the ready flag
-      v.sAxisSlave.tReady := not(axisCtrl.pause) and not(tranAFull);
+      v.sAxisSlave.tReady := sAxisMaster.tValid and not(axisCtrl.pause) and not(tranAFull);
 
-      -- Check for valid data 
-      if (r.sAxisSlave.tReady = '1') and (sAxisMaster.tValid = '1') then
+      -- Check if moving data
+      if v.sAxisSlave.tReady = '1' then
          -- Latch the transaction data
          v.tranSubId  := sAxisMaster.tDest(3 downto 0);
          v.tranEofe   := ssiGetUserEofe(AXIS_CONFIG_C, sAxisMaster);
          v.tranLength := r.cnt;
-         -- Increment the counter
-         v.cnt        := r.cnt + 1;
          -- State Machine
          case r.state is
             ----------------------------------------------------------------------
             when IDLE_S =>
-               -- Latch the FIFO data
-               v.axisMaster := sAxisMaster;
-               -- Check tLast
-               if sAxisMaster.tLast = '1' then
-                  -- Write to the transaction FIFO
-                  v.tranWr := '1';
-                  -- Reset the counter
-                  v.cnt    := toSlv(1, 9);
+               -- Check the flag
+               if r.sof = '1' then
+                  -- Check for start of frame bit
+                  if ssiGetUserSof(AXIS_CONFIG_C, sAxisMaster) = '1' then
+                     -- Reset the flag
+                     v.sof        := '0';
+                     -- Latch the FIFO data
+                     v.axisMaster := sAxisMaster;
+                     -- Check tLast
+                     if sAxisMaster.tLast = '1' then
+                        -- Write to the transaction FIFO
+                        v.tranWr := '1';
+                        -- Preset the counter
+                        v.cnt    := toSlv(1, 9);
+                        -- Set the flag
+                        v.sof    := '1';
+                     else
+                        -- Reset the counter              
+                        v.tranCnt          := (others => '0');
+                        -- Reset the tKeep
+                        v.axisMaster.tKeep := x"FFFF";
+                        -- Preset the counter
+                        v.cnt              := toSlv(2, 9);
+                        -- Next State
+                        v.state            := SEND_S;
+                     end if;
+                  end if;
                else
-                  -- Reset the counter              
-                  v.tranCnt          := (others => '0');
-                  -- Reset the tKeep
-                  v.axisMaster.tKeep := x"FFFF";
-                  -- Next State
-                  v.state            := SEND_S;
+                  -- Latch the FIFO data
+                  v.axisMaster := sAxisMaster;
+                  -- Check tLast
+                  if sAxisMaster.tLast = '1' then
+                     -- Write to the transaction FIFO
+                     v.tranWr := '1';
+                     -- Preset the counter
+                     v.cnt    := toSlv(1, 9);
+                     -- Set the flag
+                     v.sof    := '1';
+                  else
+                     -- Reset the counter              
+                     v.tranCnt          := (others => '0');
+                     -- Reset the tKeep
+                     v.axisMaster.tKeep := x"FFFF";
+                     -- Preset the counter
+                     v.cnt              := toSlv(2, 9);
+                     -- Next State
+                     v.state            := SEND_S;
+                  end if;
                end if;
             ----------------------------------------------------------------------
             when SEND_S =>
+               -- Increment the counter
+               v.cnt := r.cnt + 1;
                -- MUX the data bus
                if r.axisMaster.tKeep = x"FFFF" then
                   -- Latch DW0
@@ -164,9 +200,11 @@ begin
                end if;
                -- Check the counter and tLast
                if (r.cnt = PCIE_MAX_RX_TRANS_LENGTH_C) or (sAxisMaster.tLast = '1') then
+                  -- Set the flag
+                  v.sof               := sAxisMaster.tLast;
                   -- Write to the transaction FIFO
                   v.tranWr            := '1';
-                  -- Reset the counter
+                  -- Preset the counter
                   v.cnt               := toSlv(1, 9);
                   -- Write the to FIFO
                   v.axisMaster.tValid := '1';
@@ -182,7 +220,7 @@ begin
       end if;
 
       -- Reset
-      if (sAxisRst = '1') then
+      if (reset = '1') then
          v := REG_INIT_C;
       end if;
 
@@ -190,7 +228,7 @@ begin
       rin <= v;
 
       -- Outputs
-      sAxisSlave <= r.sAxisSlave;
+      sAxisSlave <= v.sAxisSlave;
       axisMaster <= reverseOrderPcie(r.axisMaster);
       
    end process comb;
@@ -201,6 +239,14 @@ begin
          r <= rin after TPD_G;
       end if;
    end process seq;
+
+   U_RstSync : entity work.RstSync
+      generic map (
+         TPD_G => TPD_G)
+      port map (
+         clk      => sAxisClk,
+         asyncRst => pciRst,
+         syncRst  => reset);   
 
    FIFO_DATA : entity work.AxiStreamFifo
       generic map (
@@ -225,7 +271,7 @@ begin
       port map (
          -- Slave Port
          sAxisClk    => sAxisClk,
-         sAxisRst    => sAxisRst,
+         sAxisRst    => reset,
          sAxisMaster => axisMaster,
          sAxisCtrl   => axisCtrl,
          -- Master Port
@@ -242,7 +288,7 @@ begin
          DATA_WIDTH_G => 23,
          ADDR_WIDTH_G => 10)
       port map (
-         rst                => sAxisRst,
+         rst                => reset,
          --Write Ports (wr_clk domain)
          wr_clk             => sAxisClk,
          wr_en              => r.tranWr,

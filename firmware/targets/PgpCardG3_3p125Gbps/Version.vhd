@@ -4,9 +4,9 @@ use ieee.std_logic_1164.all;
 
 package Version is
 
-constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CEC83019"; -- MAKE_VERSION
+constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CEC8301A"; -- MAKE_VERSION
 
-constant BUILD_STAMP_C : string := "PgpCardG3_3p125Gbps: Vivado v2016.1 (x86_64) Built Thu Jun  9 12:12:36 PDT 2016 by ruckman";
+constant BUILD_STAMP_C : string := "PgpCardG3_3p125Gbps: Vivado v2016.1 (x86_64) Built Fri Jun 10 08:52:37 PDT 2016 by ruckman";
 
 end Version;
 
@@ -69,5 +69,7 @@ end Version;
 -- 05/11/2016 (0xCEC83018): Prevent soft reload of firmware because it sometimes crashes the Linux kernel
 -- 
 -- 06/09/2016 (0xCEC83019): Upgraded PCIe IP core to v3.3 (Vivado 2016.1)
+-- 
+-- 06/10/2016 (0xCEC8301A): Fixed a bug when recovering from a RX packet that's too big
 -- 
 -------------------------------------------------------------------------------

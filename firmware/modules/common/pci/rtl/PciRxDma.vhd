@@ -5,8 +5,8 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-03
--- Last update: 2015-05-22
--- Platform   : Vivado 2014.1
+-- Last update: 2016-06-10
+-- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
 -- Description: 
@@ -50,7 +50,6 @@ architecture rtl of PciRxDma is
 
    type StateType is (
       IDLE_S,
-      DATA_DUMP_S,
       ACK_WAIT_S,
       READ_TRANS_S,
       SEND_IO_REQ_HDR_S,
@@ -58,6 +57,7 @@ architecture rtl of PciRxDma is
       TR_DONE_S);    
 
    type RegType is record
+      rst           : sl;
       tranRd        : sl;
       frameErr      : sl;
       tranEofe      : sl;
@@ -75,20 +75,21 @@ architecture rtl of PciRxDma is
    end record RegType;
    
    constant REG_INIT_C : RegType := (
-      '0',
-      '0',
-      '0',
-      (others => '0'),
-      (others => '0'),
-      (others => '0'),
-      (others => '0'),
-      (others => '0'),
-      (others => '0'),
-      (others => (others => '0')),
-      DESC_TO_PCI_INIT_C,
-      AXI_STREAM_SLAVE_INIT_C,
-      AXI_STREAM_MASTER_INIT_C,
-      IDLE_S);
+      rst           => '1',
+      tranRd        => '0',
+      frameErr      => '0',
+      tranEofe      => '0',
+      tranSubId     => (others => '0'),
+      tranLength    => (others => '0'),
+      tranCnt       => (others => '0'),
+      cnt           => (others => '0'),
+      dumpCnt       => (others => '0'),
+      newAddr       => (others => '0'),
+      maxFrameCheck => (others => (others => '0')),
+      dmaDescToPci  => DESC_TO_PCI_INIT_C,
+      rxSlave       => AXI_STREAM_SLAVE_INIT_C,
+      txMaster      => AXI_STREAM_MASTER_INIT_C,
+      state         => IDLE_S);
 
    signal r   : RegType := REG_INIT_C;
    signal rin : RegType;
@@ -119,7 +120,7 @@ begin
          sAxisSlave  => sAxisSlave,
          -- Streaming RX Interface
          pciClk      => pciClk,
-         pciRst      => pciRst,
+         pciRst      => r.rst,
          mAxisMaster => rxMaster,
          mAxisSlave  => rxSlave,
          tranRd      => r.tranRd,
@@ -137,6 +138,7 @@ begin
       v := r;
 
       -- Reset strobing signals
+      v.rst            := '0';
       v.tranRd         := '0';
       v.rxSlave.tReady := '0';
 
@@ -157,7 +159,7 @@ begin
          ----------------------------------------------------------------------
          when IDLE_S =>
             -- Check for data in the transaction FIFO and data FIFO
-            if (tranValid = '1') and (r.tranRd = '0') and (v.txMaster.tValid = '0') and (rxMaster.tValid = '1') then
+            if (tranValid = '1') and (r.rst = '0') and (v.txMaster.tValid = '0') and (rxMaster.tValid = '1') then
                -- Check for start of frame bit
                if ssiGetUserSof(AXIS_CONFIG_C, rxMaster) = '1' then
                   -- Send a request to the descriptor
@@ -165,33 +167,8 @@ begin
                   -- Next state
                   v.state               := ACK_WAIT_S;
                else
-                  -- Configure the FIFO to dump the data
+                  -- Blowoff data
                   v.rxSlave.tReady := '1';
-                  v.dumpCnt        := toSlv(1, 9);
-                  -- Check for tLast
-                  if rxMaster.tLast = '0' then
-                     -- Next state
-                     v.state := DATA_DUMP_S;
-                  else
-                     -- Read the transaction FIFO
-                     v.tranRd := '1';
-                  end if;
-               end if;
-            end if;
-         ----------------------------------------------------------------------
-         when DATA_DUMP_S =>
-            -- Ready to readout the FIFO
-            v.rxSlave.tReady := '1';
-            -- Check for valid data 
-            if rxMaster.tValid = '1' then
-               -- Increment the counter
-               v.dumpCnt := r.dumpCnt + 1;
-               -- Compare the dump counter and check the EOF bit
-               if (r.dumpCnt = (tranCnt+1)) or (rxMaster.tLast = '1') then
-                  -- Read the transaction FIFO
-                  v.tranRd := '1';
-                  -- Next state
-                  v.state  := IDLE_S;
                end if;
             end if;
          ----------------------------------------------------------------------
@@ -396,8 +373,8 @@ begin
                if r.cnt = r.tranCnt then
                   -- Assert the end of TLP packet flag
                   v.txMaster.tLast := '1';        --EOF 
-                  --check if this is the end of frame
-                  if rxMaster.tLast = '1' then
+                  -- Check if this is the end of frame or error
+                  if (rxMaster.tLast = '1') or (v.frameErr = '1') then
                      -- Let the descriptor know that we are done
                      v.dmaDescToPci.doneReq := '1';
                      -- Next state
@@ -411,6 +388,8 @@ begin
             end if;
          ----------------------------------------------------------------------
          when TR_DONE_S =>
+            -- Reset if error detected
+            v.rst := r.frameErr;
             -- Wait for descriptor to ACK signal
             if dmaDescFromPci.doneAck = '1' then
                -- Reset flag

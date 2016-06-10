@@ -5,8 +5,8 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2016-04-27
--- Platform   : Vivado 2014.1
+-- Last update: 2016-06-10
+-- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
 -- Description: 
@@ -229,8 +229,7 @@ begin
       port map (
          -- 32-bit Streaming RX Interface
          sAxisClk       => pgpClk,
-         -- sAxisRst       => pgpRxRst,
-         sAxisRst       => '0',         -- Don't forward reset because corrupts RX DMA engine state
+         sAxisRst       => pgpRxRst,
          sAxisMaster    => rxMaster,
          sAxisSlave     => rxSlave,
          -- 128-bit Streaming TX Interface
