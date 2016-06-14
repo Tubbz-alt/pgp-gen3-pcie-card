@@ -6,7 +6,7 @@ package Version is
 
 constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CEC8301C"; -- MAKE_VERSION
 
-constant BUILD_STAMP_C : string := "PgpCardG3_DmaLoopback: Vivado v2016.1 (x86_64) Built Tue Jun 14 11:55:56 PDT 2016 by ruckman";
+constant BUILD_STAMP_C : string := "PgpCardG3_DmaLoopback: Vivado v2016.1 (x86_64) Built Tue Jun 14 12:02:37 PDT 2016 by ruckman";
 
 end Version;
 

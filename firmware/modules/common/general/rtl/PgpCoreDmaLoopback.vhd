@@ -110,7 +110,6 @@ begin
 
    PgpApp_Inst : entity work.PgpApp
       generic map (
-         CASCADE_SIZE_G   => 1,
          SLAVE_READY_EN_G => true)
       port map (
          -- External Interfaces
