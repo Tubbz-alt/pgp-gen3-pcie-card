@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2016-04-26
+-- Last update: 2016-06-14
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -28,7 +28,6 @@ use work.PgpCardG3Pkg.all;
 entity PgpApp is
    generic (
       TPD_G            : time    := 1 ns;
-      CASCADE_SIZE_G   : natural := 1;
       SLAVE_READY_EN_G : boolean := false;
       PGP_RATE_G       : real    := 5.0E+9);
    port (
@@ -348,7 +347,6 @@ begin
          generic map (
             TPD_G            => TPD_G,
             LANE_G           => lane,
-            CASCADE_SIZE_G   => CASCADE_SIZE_G,
             SLAVE_READY_EN_G => SLAVE_READY_EN_G)          
          port map (
             countRst         => countRst,

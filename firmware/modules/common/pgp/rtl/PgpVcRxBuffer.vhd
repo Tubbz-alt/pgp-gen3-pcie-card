@@ -5,8 +5,8 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-08-29
--- Last update: 2015-11-06
--- Platform   : Vivado 2014.1
+-- Last update: 2016-06-14
+-- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
 -- Description: 
@@ -394,32 +394,16 @@ begin
       end if;
    end process seq;
 
-   FIFO_TX : entity work.AxiStreamFifo
+   U_Pipeline : entity work.AxiStreamPipeline
       generic map (
-         -- General Configurations
-         TPD_G               => TPD_G,
-         PIPE_STAGES_G       => 1,
-         SLAVE_READY_EN_G    => true,
-         VALID_THOLD_G       => 1,
-         -- FIFO configurations
-         BRAM_EN_G           => false,
-         USE_BUILT_IN_G      => false,
-         GEN_SYNC_FIFO_G     => true,
-         CASCADE_SIZE_G      => 1,
-         FIFO_ADDR_WIDTH_G   => 4,
-         -- AXI Stream Port Configurations
-         SLAVE_AXI_CONFIG_G  => AXIS_CONFIG_C,
-         MASTER_AXI_CONFIG_G => AXIS_CONFIG_C)      
+         TPD_G         => TPD_G,
+         PIPE_STAGES_G => 1)
       port map (
-         -- Slave Port
-         sAxisClk    => clk,
-         sAxisRst    => rst,
+         axisClk     => clk,
+         axisRst     => rst,
          sAxisMaster => r.txMaster,
          sAxisSlave  => txSlave,
-         -- Master Port
-         mAxisClk    => clk,
-         mAxisRst    => rst,
          mAxisMaster => mAxisMaster,
-         mAxisSlave  => mAxisSlave);        
+         mAxisSlave  => mAxisSlave);          
 
 end rtl;

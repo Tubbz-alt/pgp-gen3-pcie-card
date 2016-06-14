@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2016-06-10
+-- Last update: 2016-06-14
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -27,7 +27,6 @@ use work.PgpCardG3Pkg.all;
 entity PgpDmaLane is
    generic (
       TPD_G            : time                 := 1 ns;
-      CASCADE_SIZE_G   : natural;
       SLAVE_READY_EN_G : boolean;
       LANE_G           : integer range 0 to 7 := 0);
    port (
@@ -114,9 +113,10 @@ begin
          mAxisMaster    => txMaster,
          mAxisSlave     => txSlave);
 
-   AxiStreamDeMux_Inst : entity work.PgpAxiStreamDeMux
+   AxiStreamDeMux_Inst : entity work.AxiStreamDeMux
       generic map (
          TPD_G         => TPD_G,
+         PIPE_STAGES_G => 1,
          NUM_MASTERS_G => 4)
       port map (
          -- Clock and reset
@@ -177,7 +177,7 @@ begin
       PgpVcRxBuffer_Inst : entity work.PgpVcRxBuffer
          generic map (
             TPD_G            => TPD_G,
-            CASCADE_SIZE_G   => CASCADE_SIZE_G,
+            CASCADE_SIZE_G   => 4,
             SLAVE_READY_EN_G => SLAVE_READY_EN_G,
             LANE_G           => LANE_G,
             VC_G             => vc)
@@ -202,10 +202,11 @@ begin
             rst           => pgpRxRst);          
    end generate GEN_VC_RX_BUFFER;
 
-   AxiStreamMux_Inst : entity work.PgpAxiStreamMux
+   AxiStreamMux_Inst : entity work.AxiStreamMux
       generic map (
-         TPD_G        => TPD_G,
-         NUM_SLAVES_G => 4)
+         TPD_G         => TPD_G,
+         PIPE_STAGES_G => 1,
+         NUM_SLAVES_G  => 4)
       port map (
          -- Clock and reset
          axisClk         => pgpClk,

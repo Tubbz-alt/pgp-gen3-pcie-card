@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2016-05-11
+-- Last update: 2016-06-14
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -100,8 +100,6 @@ architecture rtl of PciApp is
    -- Register Controller
    signal cardRst,
       countRst,
-      reboot,
-      rebootEn,
       regWrEn,
       regRdEn,
       regRxCs,
@@ -118,9 +116,8 @@ architecture rtl of PciApp is
       regRxRdData,
       regTxRdData,
       regFlashRdData,
-      rebootTimer,
       scratchPad : slv(31 downto 0);
-   signal regLocRdData : Slv32Array(0 to 1);
+   signal regLocRdData : Slv32Array(0 to 2);
    signal runDelay,
       acceptDelay : Slv32Array(0 to 7);
 
@@ -542,8 +539,10 @@ begin
                regRdData(31 downto 0) <= acceptCnt(7);
             elsif regAddr(9 downto 2) <= x"20" then
                regRdData <= regLocRdData(0);
-            else
+            elsif regAddr(9 downto 2) < x"80" then
                regRdData <= regLocRdData(1);
+            else
+               regRdData <= regLocRdData(2);
             end if;
          elsif regAddr(11 downto 10) = "01" then
             regRdData <= regRxRdData;
@@ -555,14 +554,6 @@ begin
       end if;
    end process;
 
-   Iprog7Series_Inst : entity work.Iprog7Series
-      port map (
-         clk         => pciClk,
-         rst         => pciRst,
-         -- start       => reboot,
-         start       => '0',  -- Prevent soft reload of firmware because it sometimes crashes the Linux kernel
-         bootAddress => X"00000000");   
-
    -- Local register space
    process (pciClk)
       variable lane : integer;
@@ -573,8 +564,7 @@ begin
          pgpOpCodeEn  <= '0';
          acceptCntRst <= (others => '0');
          if pciRst = '1' then
-            regLocRdData(0) <= (others => '0');
-            regLocRdData(1) <= (others => '0');
+            regLocRdData  <= (others => (others => '0'));
             scratchPad    <= (others => '0');
             irqEnable     <= '0';
             countRst      <= '0';
@@ -596,24 +586,11 @@ begin
             evrReset      <= '0';
             evrPllRst     <= '0';
             enHeaderCheck <= (others => (others => '0'));
-            reboot        <= '0';
-            rebootEn      <= '0';
-            rebootTimer   <= (others => '0');
             evrOpCodeMask <= (others => '0');
          else
-
-            -- Check for enabled timer
-            if rebootEn = '1' then
-               if rebootTimer = toSlv(getTimeRatio(125.0E+6, 1.0), 32) then
-                  reboot <= '1';
-               else
-                  rebootTimer <= rebootTimer + 1;
-               end if;
-            end if;
             -- Write
             if regLocCs = '1' then
-               regLocRdData(0) <= (others => '0');
-               regLocRdData(1) <= (others => '0');
+               regLocRdData <= (others => (others => '0'));
                case regAddr(9 downto 2) is
                   -------------------------------
                   -- System Registers
@@ -638,12 +615,6 @@ begin
                      regLocRdData(0)(0) <= irqEnable;
                      if regWrEn = '1' then
                         irqEnable <= regWrData(0);
-                     end if;
-                  when x"07" =>
-                     -- Reboot Enable
-                     regLocRdData(0)(0) <= rebootEn;
-                     if (regWrEn = '1') and (regWrData = x"BABECAFE") then
-                        rebootEn <= '1';
                      end if;
                   when x"08" =>
                      -- PGP OP-Code
@@ -757,25 +728,25 @@ begin
                         end if;
                         --regAddr: 0x80-0x87 
                         if (regAddr(9 downto 2) = (128+lane)) then
-                           regLocRdData(1)(3 downto 0)   <= rxCount(lane, 0);
-                           regLocRdData(1)(7 downto 4)   <= rxCount(lane, 1);
-                           regLocRdData(1)(11 downto 8)  <= rxCount(lane, 2);
-                           regLocRdData(1)(15 downto 12) <= rxCount(lane, 3);
-                           regLocRdData(1)(19 downto 16) <= fifoErrorCnt(lane);
-                           regLocRdData(1)(23 downto 20) <= cellErrorCnt(lane);
-                           regLocRdData(1)(27 downto 24) <= linkDownCnt(lane);
-                           regLocRdData(1)(31 downto 28) <= linkErrorCnt(lane);
+                           regLocRdData(2)(3 downto 0)   <= rxCount(lane, 0);
+                           regLocRdData(2)(7 downto 4)   <= rxCount(lane, 1);
+                           regLocRdData(2)(11 downto 8)  <= rxCount(lane, 2);
+                           regLocRdData(2)(15 downto 12) <= rxCount(lane, 3);
+                           regLocRdData(2)(19 downto 16) <= fifoErrorCnt(lane);
+                           regLocRdData(2)(23 downto 20) <= cellErrorCnt(lane);
+                           regLocRdData(2)(27 downto 24) <= linkDownCnt(lane);
+                           regLocRdData(2)(31 downto 28) <= linkErrorCnt(lane);
                         end if;
                         --regAddr: 0x88-8F
                         if (regAddr(9 downto 2) = (136+lane)) then
-                           regLocRdData(1)(31 downto 0) <= evrRunCnt(lane);
+                           regLocRdData(2)(31 downto 0) <= evrRunCnt(lane);
                         end if;
                         --regAddr: 0x90-0x97 
                         if (regAddr(9 downto 2) = (144+lane)) then
-                           regLocRdData(1)(7 downto 0)   <= lutDropCnt(lane, 0);
-                           regLocRdData(1)(15 downto 8)  <= lutDropCnt(lane, 1);
-                           regLocRdData(1)(23 downto 16) <= lutDropCnt(lane, 2);
-                           regLocRdData(1)(31 downto 24) <= lutDropCnt(lane, 3);
+                           regLocRdData(2)(7 downto 0)   <= lutDropCnt(lane, 0);
+                           regLocRdData(2)(15 downto 8)  <= lutDropCnt(lane, 1);
+                           regLocRdData(2)(23 downto 16) <= lutDropCnt(lane, 2);
+                           regLocRdData(2)(31 downto 24) <= lutDropCnt(lane, 3);
                         end if;
                      end loop;
                end case;
