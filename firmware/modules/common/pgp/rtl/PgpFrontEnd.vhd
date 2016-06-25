@@ -94,7 +94,13 @@ begin
             TX_BUF_ADDR_MODE_G => "FAST",
             -- Configure PLL sources
             TX_PLL_G           => "PLL0",
-            RX_PLL_G           => "PLL1")            
+            RX_PLL_G           => "PLL1",
+            -- PGP Settings
+            VC_INTERLEAVE_G   => 0,
+            PAYLOAD_CNT_TOP_G => 7,
+            NUM_VC_EN_G       => 4,
+            TX_ENABLE_G       => true,
+            RX_ENABLE_G       => true)
          port map (
             -- GT Clocking
             stableClk        => stableClk,
@@ -167,7 +173,13 @@ begin
             TX_BUF_ADDR_MODE_G => "FAST",
             -- Configure PLL sources
             TX_PLL_G           => "PLL0",
-            RX_PLL_G           => "PLL1")  
+            RX_PLL_G           => "PLL1",
+            -- PGP Settings
+            VC_INTERLEAVE_G   => 0,
+            PAYLOAD_CNT_TOP_G => 7,
+            NUM_VC_EN_G       => 4,
+            TX_ENABLE_G       => true,
+            RX_ENABLE_G       => true)
          port map (
             -- GT Clocking
             stableClk        => stableClk,

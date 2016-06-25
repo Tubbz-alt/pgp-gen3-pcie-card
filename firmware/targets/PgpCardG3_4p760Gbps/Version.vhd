@@ -4,9 +4,9 @@ use ieee.std_logic_1164.all;
 
 package Version is
 
-constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CEC8301C"; -- MAKE_VERSION
+constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CEC8301D"; -- MAKE_VERSION
 
-constant BUILD_STAMP_C : string := "PgpCardG3_4p760Gbps: Vivado v2016.1 (x86_64) Built Tue Jun 14 10:51:53 PDT 2016 by ruckman";
+constant BUILD_STAMP_C : string := "PgpCardG3_4p760Gbps: Vivado v2016.1 (x86_64) Built Fri Jun 24 17:25:29 PDT 2016 by ruckman";
 
 end Version;
 
@@ -75,5 +75,7 @@ end Version;
 -- 06/13/2016 (0xCEC8301B): In PgpDmaLane, changed CASCADE_SIZE_G from 1 to 4
 --
 -- 06/14/2016 (0xCEC8301C): Added pipelining to improve performance for 5.0 Gbps PGP build
+--
+-- 06/24/2016 (0xCEC8301D): Setting VC_INTERLEAVE_G = 0 (no VC interleaving
 -- 
 -------------------------------------------------------------------------------
