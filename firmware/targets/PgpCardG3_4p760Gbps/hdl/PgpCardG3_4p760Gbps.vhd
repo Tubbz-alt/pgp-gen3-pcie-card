@@ -5,8 +5,8 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2014-03-28
--- Last update: 2014-03-28
--- Platform   : Vivado 2013.3
+-- Last update: 2016-06-27
+-- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
 -- Description: 
@@ -27,16 +27,16 @@ use work.Pgp4p760GbpsPkg.all;
 entity PgpCardG3_4p760Gbps is
    port (
       -- FLASH Interface 
-      flashAddr : out   slv(25 downto 0);
-      flashData : inout slv(15 downto 0);
-      flashAdv  : out   sl;
-      flashCe   : out   sl;
-      flashOe   : out   sl;
-      flashWe   : out   sl;
+      flashAddr  : out   slv(25 downto 0);
+      flashData  : inout slv(15 downto 0);
+      flashAdv   : out   sl;
+      flashCe    : out   sl;
+      flashOe    : out   sl;
+      flashWe    : out   sl;
       -- System Signals
-      sysClk     : in  sl;       -- 50 MHz
-      led        : out slv(7 downto 0);
-      tieToGnd   : out   slv(3 downto 0);
+      sysClk     : in    sl;            -- 50 MHz
+      led        : out   slv(7 downto 0);
+      tieToGnd   : out   slv(5 downto 0);
       tieToVdd   : out   slv(0 downto 0);
       -- PCIe Ports
       pciRstL    : in    sl;

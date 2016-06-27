@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2014-03-29
--- Last update: 2015-03-24
+-- Last update: 2016-06-27
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -20,7 +20,7 @@ use ieee.std_logic_1164.all;
 use work.StdRtlPkg.all;
 use work.PgpCardG3Pkg.all;
 
-entity PgpCardG3DmaLoopbackCore is  
+entity PgpCardG3DmaLoopbackCore is
    port (
       -- FLASH Interface 
       flashAddr  : out   slv(25 downto 0);
@@ -32,7 +32,7 @@ entity PgpCardG3DmaLoopbackCore is
       -- System Signals
       sysClk     : in    sl;
       led        : out   slv(7 downto 0);
-      tieToGnd   : out   slv(3 downto 0);
+      tieToGnd   : out   slv(5 downto 0);
       tieToVdd   : out   slv(0 downto 0);
       -- PCIe Ports
       pciRstL    : in    sl;
@@ -46,16 +46,16 @@ end PgpCardG3DmaLoopbackCore;
 
 architecture rtl of PgpCardG3DmaLoopbackCore is
 
-   signal pciClk: sl;
-   signal pciRst: sl;
-   signal pciLinkUp: sl;
-   signal pgpToPci : PgpToPciType;
-   signal pciToPgp : PciToPgpType;
+   signal pciClk    : sl;
+   signal pciRst    : sl;
+   signal pciLinkUp : sl;
+   signal pgpToPci  : PgpToPciType;
+   signal pciToPgp  : PciToPgpType;
 
 begin
 
    led(7 downto 1) <= (others => '0');
-   led(0) <= pciLinkUp;
+   led(0)          <= pciLinkUp;
 
    tieToGnd <= (others => '0');
    tieToVdd <= (others => '1');
@@ -66,11 +66,11 @@ begin
    PgpCore_Inst : entity work.PgpCoreDmaLoopback
       port map (
          -- Parallel Interface
-         pciToPgp   => pciToPgp,
-         pgpToPci   => pgpToPci,
+         pciToPgp => pciToPgp,
+         pgpToPci => pgpToPci,
          -- Global Signals
-         pciClk     => pciClk,
-         pciRst     => pciRst);       
+         pciClk   => pciClk,
+         pciRst   => pciRst);       
 
    ------------
    -- PCIe Core

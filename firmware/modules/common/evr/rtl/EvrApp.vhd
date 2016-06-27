@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2016-04-19
+-- Last update: 2016-06-27
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -77,7 +77,11 @@ architecture rtl of EvrApp is
 
 begin
 
-   evrToPci <= r.toPci;
+   evrToPci.linkUp     <= rxLinkUp;
+   evrToPci.errorCnt   <= r.toPci.errorCnt;
+   evrToPci.seconds    <= r.toPci.seconds;
+   evrToPci.runCodeCnt <= r.toPci.runCodeCnt;
+
    evrToPgp <= r.toPgp;
 
    evrRst <= fromPci.evrReset;

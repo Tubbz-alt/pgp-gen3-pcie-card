@@ -90,6 +90,14 @@ set_property IOSTANDARD LVCMOS33 [get_ports tieToGnd[2]]
 set_property PACKAGE_PIN AJ31    [get_ports tieToGnd[3]]
 set_property IOSTANDARD LVCMOS33 [get_ports tieToGnd[3]]
 
+# Grounding: "EVR_SEL0"
+set_property PACKAGE_PIN V24     [get_ports tieToGnd[4]]
+set_property IOSTANDARD LVCMOS25 [get_ports tieToGnd[4]]
+
+# Grounding: "EVR_SEL1"
+set_property PACKAGE_PIN T24     [get_ports tieToGnd[5]]
+set_property IOSTANDARD LVCMOS25 [get_ports tieToGnd[5]]
+
 # VDD-ing: "FLASH_RS0"
 set_property PACKAGE_PIN P34     [get_ports tieToVdd[0]]
 set_property IOSTANDARD LVCMOS25 [get_ports tieToVdd[0]]

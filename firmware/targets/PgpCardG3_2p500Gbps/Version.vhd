@@ -4,9 +4,9 @@ use ieee.std_logic_1164.all;
 
 package Version is
 
-constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CEC8301D"; -- MAKE_VERSION
+constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CEC8301E"; -- MAKE_VERSION
 
-constant BUILD_STAMP_C : string := "PgpCardG3_2p500Gbps: Vivado v2016.1 (x86_64) Built Fri Jun 24 16:30:13 PDT 2016 by ruckman";
+constant BUILD_STAMP_C : string := "PgpCardG3_2p500Gbps: Vivado v2016.1 (x86_64) Built Mon Jun 27 11:42:21 PDT 2016 by ruckman";
 
 end Version;
 
@@ -76,6 +76,9 @@ end Version;
 --
 -- 06/14/2016 (0xCEC8301C): Added pipelining to improve performance for 5.0 Gbps PGP build
 --
--- 06/24/2016 (0xCEC8301D): Setting VC_INTERLEAVE_G = 0 (no VC interleaving
+-- 06/24/2016 (0xCEC8301D): Setting VC_INTERLEAVE_G = 0 (no VC interleaving)
+--
+-- 06/27/2016 (0xCEC8301E): Fixed a bug where EvrReady shows 0x1 when cable disconnected
+--                          Driving EVR_SEL[1:0] to "00"
 -- 
 -------------------------------------------------------------------------------

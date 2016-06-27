@@ -17,7 +17,7 @@
 
 #define DEVNAME "/dev/PgpCardG3_0"//need to pass to main
 
-#define PRINT_MISC true
+#define PRINT_MISC false
 
 using namespace std;
 
@@ -35,6 +35,8 @@ int main (int argc, char **argv) {
 
    cout << "Setting debug level" << endl;
    pgpcard_setDebug(s, 5);
+   //pgpcard_enableEvr(s);
+   pgpcard_disableEvr(s);
 
    memset(&status,0,sizeof(PgpCardStatus));
    ret = pgpcard_status(s, &status);   
@@ -134,8 +136,12 @@ int main (int argc, char **argv) {
    } 
    cout << endl;        
    
+   cout << "              EvrEnable: 0x" << setw(1) << setfill('0') << status.EvrEnable << endl;   
+   cout << "               EvrReady: 0x" << setw(1) << setfill('0') << status.EvrReady << endl;   
+   cout << "               EvrReset: 0x" << setw(1) << setfill('0') << status.EvrReset << endl;   
+   cout << "              EvrPllRst: 0x" << setw(1) << setfill('0') << status.EvrPllRst << endl;   
+   cout << "              EvrErrCnt: 0x" << setw(1) << setfill('0') << status.EvrErrCnt << endl;   
 #if PRINT_MISC
-
    cout << "          EvrRunCode[0]: 0x" << setw(2) << setfill('0') << status.EvrRunCode[0] << endl;
    cout << "          EvrRunCode[1]: 0x" << setw(2) << setfill('0') << status.EvrRunCode[1] << endl;
    cout << "          EvrRunCode[2]: 0x" << setw(2) << setfill('0') << status.EvrRunCode[2] << endl;
@@ -168,11 +174,6 @@ int main (int argc, char **argv) {
    cout << "      EvrAcceptDelay[5]: 0x" << setw(8) << setfill('0') << status.EvrAcceptDelay[5] << endl;   
    cout << "      EvrAcceptDelay[6]: 0x" << setw(8) << setfill('0') << status.EvrAcceptDelay[6] << endl;   
    cout << "      EvrAcceptDelay[7]: 0x" << setw(8) << setfill('0') << status.EvrAcceptDelay[7] << endl;   
-   cout << "              EvrEnable: 0x" << setw(1) << setfill('0') << status.EvrEnable << endl;   
-   cout << "               EvrReady: 0x" << setw(1) << setfill('0') << status.EvrReady << endl;   
-   cout << "               EvrReset: 0x" << setw(1) << setfill('0') << status.EvrReset << endl;   
-   cout << "              EvrPllRst: 0x" << setw(1) << setfill('0') << status.EvrPllRst << endl;   
-   cout << "              EvrErrCnt: 0x" << setw(1) << setfill('0') << status.EvrErrCnt << endl;   
    for(x=0;x<8;x++){ 
       cout << "  EvrEnHdrCheck["<<  setw(1) << setfill('0') << 7-x <<"][3:0]: ";        
       for(y=0;y<4;y++){   

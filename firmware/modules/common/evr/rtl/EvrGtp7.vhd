@@ -5,8 +5,8 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-24
--- Last update: 2015-11-16
--- Platform   : Vivado 2014.1
+-- Last update: 2016-06-27
+-- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
 -- Description: 
@@ -53,7 +53,7 @@ architecture mapping of EvrGtp7 is
       linkUp : sl;
    signal decErr,
       dispErr : slv(1 downto 0);
-   signal cnt      : slv(7 downto 0);
+   signal cnt      : slv(23 downto 0);
    signal gtRxData : slv(19 downto 0);
    signal data     : slv(15 downto 0);
    signal dataK    : slv(1 downto 0);
@@ -88,18 +88,16 @@ begin
    dataValid <= not (uOr(decErr) or uOr(dispErr));
 
    -- Link up watchdog process
-   process(evrRxRecClk)
+   process(evrRxRecClk, gtQPllLock, gtRxResetDone)
    begin
-      if rising_edge(evrRxRecClk) then
-         if gtRxResetDone = '0' then
-            cnt    <= (others => '0');
-            linkUp <= '0';
+      if (gtRxResetDone = '0') or (gtQPllLock(1) = '0') then
+         cnt    <= (others => '0');
+         linkUp <= '0';
+      elsif rising_edge(evrRxRecClk) then
+         if cnt = x"FFFFFF" then
+            linkUp <= '1';
          else
-            if cnt = x"FF" then
-               linkUp <= '1';
-            else
-               cnt <= cnt + 1;
-            end if;
+            cnt <= cnt + 1;
          end if;
       end if;
    end process;

@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2014-03-29
--- Last update: 2015-03-24
+-- Last update: 2016-06-27
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -52,7 +52,7 @@ entity PgpCardG3Core is
       -- System Signals
       sysClk     : in    sl;
       led        : out   slv(7 downto 0);
-      tieToGnd   : out   slv(3 downto 0);
+      tieToGnd   : out   slv(5 downto 0);
       tieToVdd   : out   slv(0 downto 0);
       -- PCIe Ports
       pciRstL    : in    sl;
