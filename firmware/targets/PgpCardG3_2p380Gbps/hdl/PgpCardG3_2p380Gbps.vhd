@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2014-03-28
--- Last update: 2016-06-27
+-- Last update: 2016-08-10
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -68,6 +68,7 @@ begin
 
    PgpCardG3Core_Inst : entity work.PgpCardG3Core
       generic map (
+         LSST_MODE_G          => false,
          -- PGP Configurations
          PGP_RATE_G           => PGP_RATE_C,
          -- MGT Configurations

@@ -4,9 +4,9 @@ use ieee.std_logic_1164.all;
 
 package Version is
 
-constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CEC8301E"; -- MAKE_VERSION
+constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CEC8301F"; -- MAKE_VERSION
 
-constant BUILD_STAMP_C : string := "PgpCardG3_4p760Gbps: Vivado v2016.1 (x86_64) Built Mon Jun 27 12:41:02 PDT 2016 by ruckman";
+constant BUILD_STAMP_C : string := "PgpCardG3_4p760Gbps: Vivado v2016.2 (x86_64) Built Wed Aug 10 12:52:40 PDT 2016 by ruckman";
 
 end Version;
 
@@ -80,5 +80,7 @@ end Version;
 --
 -- 06/27/2016 (0xCEC8301E): Fixed a bug where EvrReady shows 0x1 when cable disconnected
 --                          Driving EVR_SEL[1:0] to "00"
+-- 
+-- 08/10/2016 (0xCEC8301F): Adding LSST_MODE_G generic
 -- 
 -------------------------------------------------------------------------------
