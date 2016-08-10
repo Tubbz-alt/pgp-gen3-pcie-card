@@ -5,8 +5,8 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2014-07-31
--- Platform   : Vivado 2014.1
+-- Last update: 2016-08-10
+-- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
 -- Description:
@@ -27,7 +27,8 @@ use work.PgpCardG3Pkg.all;
 
 entity PciCore is
    generic (
-      PGP_RATE_G : real);
+      LSST_MODE_G : boolean;
+      PGP_RATE_G  : real);
    port (
       -- FLASH Interface 
       flashAddr  : out   slv(25 downto 0);
@@ -87,8 +88,8 @@ architecture mapping of PciCore is
 
    -- attribute KEEP_HIERARCHY : string;
    -- attribute KEEP_HIERARCHY of
-      -- PciFrontEnd_Inst,
-      -- PciApp_Inst : label is "TRUE";
+   -- PciFrontEnd_Inst,
+   -- PciApp_Inst : label is "TRUE";
    
 begin
 
@@ -142,7 +143,8 @@ begin
 
    PciApp_Inst : entity work.PciApp
       generic map (
-         PGP_RATE_G => PGP_RATE_G)     
+         LSST_MODE_G => LSST_MODE_G,
+         PGP_RATE_G  => PGP_RATE_G)     
       port map (
          -- FLASH Interface 
          flashAddr        => flashAddr,

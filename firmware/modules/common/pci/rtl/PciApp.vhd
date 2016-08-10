@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2016-06-14
+-- Last update: 2016-08-10
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -28,8 +28,8 @@ use work.Version.all;
 
 entity PciApp is
    generic (
-      -- PGP Configurations
-      PGP_RATE_G : real);
+      LSST_MODE_G : boolean;
+      PGP_RATE_G  : real);
    port (
       -- FLASH Interface 
       flashAddr        : out   slv(25 downto 0);
@@ -504,6 +504,12 @@ begin
             elsif regAddr(9 downto 2) = x"06" then
                -- PGP baud rate in units of Mbps
                regRdData <= toSlv(getTimeRatio(PGP_RATE_G, 1.0E+6), 32);
+            elsif regAddr(9 downto 2) = x"07" then
+               if LSST_MODE_G then
+                  regRdData <= toSlv(1, 32);
+               else
+                  regRdData <= toSlv(0, 32);
+               end if;
             elsif regAddr(9 downto 2) = x"0B" then
                regRdData(31 downto 16) <= cfgOut.command;
                regRdData(15 downto 0)  <= cfgOut.Status;

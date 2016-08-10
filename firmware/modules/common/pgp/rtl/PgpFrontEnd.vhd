@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2015-01-30
+-- Last update: 2016-08-10
 -- Platform   : Vivado 2014.1
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -23,6 +23,7 @@ use work.AxiStreamPkg.all;
 
 entity PgpFrontEnd is
    generic (
+      LSST_MODE_G      : boolean;
       -- MGT Configurations
       CLK_DIV_G        : integer;
       CLK25_DIV_G      : integer;
@@ -96,11 +97,11 @@ begin
             TX_PLL_G           => "PLL0",
             RX_PLL_G           => "PLL1",
             -- PGP Settings
-            VC_INTERLEAVE_G   => 0,
-            PAYLOAD_CNT_TOP_G => 7,
-            NUM_VC_EN_G       => 4,
-            TX_ENABLE_G       => true,
-            RX_ENABLE_G       => true)
+            VC_INTERLEAVE_G    => 0,
+            PAYLOAD_CNT_TOP_G  => 7,
+            NUM_VC_EN_G        => ite(LSST_MODE_G, 2, 4),
+            TX_ENABLE_G        => true,
+            RX_ENABLE_G        => true)
          port map (
             -- GT Clocking
             stableClk        => stableClk,
@@ -175,11 +176,11 @@ begin
             TX_PLL_G           => "PLL0",
             RX_PLL_G           => "PLL1",
             -- PGP Settings
-            VC_INTERLEAVE_G   => 0,
-            PAYLOAD_CNT_TOP_G => 7,
-            NUM_VC_EN_G       => 4,
-            TX_ENABLE_G       => true,
-            RX_ENABLE_G       => true)
+            VC_INTERLEAVE_G    => 0,
+            PAYLOAD_CNT_TOP_G  => 7,
+            NUM_VC_EN_G        => ite(LSST_MODE_G, 2, 4),
+            TX_ENABLE_G        => true,
+            RX_ENABLE_G        => true)
          port map (
             -- GT Clocking
             stableClk        => stableClk,

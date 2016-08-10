@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2015-03-24
+-- Last update: 2016-08-10
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -24,6 +24,7 @@ use work.PgpCardG3Pkg.all;
 
 entity PgpCore is
    generic (
+      LSST_MODE_G          : boolean;
       -- PGP Configurations
       PGP_RATE_G           : real;
       -- MGT Configurations
@@ -98,11 +99,17 @@ architecture mapping of PgpCore is
    signal pgpTxIn  : Pgp2bTxInArray(0 to 7);
    signal pgpTxOut : Pgp2bTxOutArray(0 to 7);
 
-   signal pgpTxMasters : AxiStreamMasterVectorArray(0 to 7, 0 to 3);
-   signal pgpTxSlaves  : AxiStreamSlaveVectorArray(0 to 7, 0 to 3);
+   signal pgpTxMasters : AxiStreamMasterVectorArray(0 to 7, 0 to 3) := (others => (others => AXI_STREAM_MASTER_INIT_C));
+   signal pgpTxSlaves  : AxiStreamSlaveVectorArray(0 to 7, 0 to 3)  := (others => (others => AXI_STREAM_SLAVE_FORCE_C));
 
-   signal pgpRxMasters : AxiStreamMasterVectorArray(0 to 7, 0 to 3);
-   signal pgpRxCtrl    : AxiStreamCtrlVectorArray(0 to 7, 0 to 3);
+   signal pgpRxMasters : AxiStreamMasterVectorArray(0 to 7, 0 to 3) := (others => (others => AXI_STREAM_MASTER_INIT_C));
+   signal pgpRxCtrl    : AxiStreamCtrlVectorArray(0 to 7, 0 to 3)   := (others => (others => AXI_STREAM_CTRL_UNUSED_C));
+
+   signal dmaTxMasters : AxiStreamMasterVectorArray(0 to 7, 0 to 3) := (others => (others => AXI_STREAM_MASTER_INIT_C));
+   signal dmaTxSlaves  : AxiStreamSlaveVectorArray(0 to 7, 0 to 3)  := (others => (others => AXI_STREAM_SLAVE_FORCE_C));
+
+   signal dmaRxMasters : AxiStreamMasterVectorArray(0 to 7, 0 to 3) := (others => (others => AXI_STREAM_MASTER_INIT_C));
+   signal dmaRxCtrl    : AxiStreamCtrlVectorArray(0 to 7, 0 to 3)   := (others => (others => AXI_STREAM_CTRL_UNUSED_C));
    
 begin
 
@@ -161,6 +168,7 @@ begin
 
    PgpFrontEnd_Inst : entity work.PgpFrontEnd
       generic map (
+         LSST_MODE_G      => LSST_MODE_G,
          -- MGT Configurations
          CLK_DIV_G        => CLK_DIV_G,
          CLK25_DIV_G      => CLK25_DIV_G,
@@ -203,6 +211,36 @@ begin
          pgpTxP             => pgpTxP,
          pgpTxN             => pgpTxN);        
 
+   NORMAL_BUILD : if (LSST_MODE_G = false) generate
+      pgpTxMasters <= dmaTxMasters;
+      dmaTxSlaves  <= pgpTxSlaves;
+      dmaRxMasters <= pgpRxMasters;
+      pgpRxCtrl    <= dmaRxCtrl;
+   end generate;
+
+   LSST_BUILD : if (LSST_MODE_G = true) generate
+      GEN_MAP :
+      for i in 0 to 3 generate
+
+         -- PGP.LANE[0].VC[0] = DMA.LANE[0].VC[0]
+         pgpTxMasters((2*i)+0, 0) <= dmaTxMasters((2*i)+0, 0);
+         dmaTxSlaves((2*i)+0, 0)  <= pgpTxSlaves((2*i)+0, 0);
+
+         -- PGP.LANE[0].VC[1] = DMA.LANE[1].VC[0]
+         pgpTxMasters((2*i)+0, 1) <= dmaTxMasters((2*i)+1, 0);
+         dmaTxSlaves((2*i)+1, 0)  <= pgpTxSlaves((2*i)+0, 1);
+
+         -- DMA.LANE[0].VC[0] = PGP.LANE[0].VC[0]
+         dmaRxMasters((2*i)+0, 0) <= pgpRxMasters((2*i)+0, 0);
+         pgpRxCtrl((2*i)+0, 0)    <= dmaRxCtrl((2*i)+0, 0);
+
+         -- DMA.LANE[1].VC[0] = PGP.LANE[0].VC[1]
+         dmaRxMasters((2*i)+1, 0) <= pgpRxMasters((2*i)+0, 1);
+         pgpRxCtrl((2*i)+0, 1)    <= dmaRxCtrl((2*i)+1, 0);
+         
+      end generate GEN_MAP;
+   end generate;
+
    PgpApp_Inst : entity work.PgpApp
       generic map (
          PGP_RATE_G => PGP_RATE_G)
@@ -218,11 +256,11 @@ begin
          pgpTxIn      => pgpTxIn,
          pgpTxOut     => pgpTxOut,
          -- Frame Transmit Interface
-         pgpTxMasters => pgpTxMasters,
-         pgpTxSlaves  => pgpTxSlaves,
+         pgpTxMasters => dmaTxMasters,
+         pgpTxSlaves  => dmaTxSlaves,
          -- Frame Receive Interface
-         pgpRxMasters => pgpRxMasters,
-         pgpRxCtrl    => pgpRxCtrl,
+         pgpRxMasters => dmaRxMasters,
+         pgpRxCtrl    => dmaRxCtrl,
          -- PLL Status
          pllTxReady   => pllTxReady,
          pllRxReady   => pllRxReady,

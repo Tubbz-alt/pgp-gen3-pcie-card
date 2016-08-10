@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2014-03-29
--- Last update: 2016-06-27
+-- Last update: 2016-08-10
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -22,6 +22,7 @@ use work.PgpCardG3Pkg.all;
 
 entity PgpCardG3Core is
    generic (
+      LSST_MODE_G          : boolean;
       -- PGP Configurations
       PGP_RATE_G           : real;
       -- MGT Configurations
@@ -120,6 +121,7 @@ begin
    -----------
    PgpCore_Inst : entity work.PgpCore
       generic map (
+         LSST_MODE_G          => LSST_MODE_G,
          -- PGP Configurations
          PGP_RATE_G           => PGP_RATE_G,
          -- MGT Configurations
@@ -189,8 +191,9 @@ begin
    ------------
    PciCore_Inst : entity work.PciCore
       generic map (
+         LSST_MODE_G => LSST_MODE_G,
          -- PGP Configurations
-         PGP_RATE_G => PGP_RATE_G)      
+         PGP_RATE_G  => PGP_RATE_G)      
       port map (
          -- FLASH Interface 
          flashAddr  => flashAddr,
