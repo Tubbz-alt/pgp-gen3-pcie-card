@@ -1,3 +1,0 @@
-../../modules/common/pci/xdc/PgpCardG3Pci.xdc
-../../modules/common/general/xdc/PgpCardG3Core.xdc
-../../modules/common/general/xdc/PgpCardG3Pinout.xdc
