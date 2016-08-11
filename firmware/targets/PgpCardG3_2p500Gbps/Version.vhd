@@ -4,9 +4,9 @@ use ieee.std_logic_1164.all;
 
 package Version is
 
-constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CEC8301F"; -- MAKE_VERSION
+constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CEC83020"; -- MAKE_VERSION
 
-constant BUILD_STAMP_C : string := "PgpCardG3_2p500Gbps: Vivado v2016.2 (x86_64) Built Wed Aug 10 11:59:08 PDT 2016 by ruckman";
+constant BUILD_STAMP_C : string := "PgpCardG3_2p500Gbps: Vivado v2016.2 (x86_64) Built Thu Aug 11 09:57:52 PDT 2016 by ruckman";
 
 end Version;
 
@@ -82,5 +82,7 @@ end Version;
 --                          Driving EVR_SEL[1:0] to "00"
 -- 
 -- 08/10/2016 (0xCEC8301F): Adding LSST_MODE_G generic
+-- 
+-- 08/11/2016 (0xCEC83020): Adding "continuous streaming" support
 -- 
 -------------------------------------------------------------------------------

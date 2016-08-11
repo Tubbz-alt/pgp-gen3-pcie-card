@@ -5,13 +5,13 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2016-08-10
+-- Last update: 2016-08-11
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
 -- Description: 
 -------------------------------------------------------------------------------
--- Copyright (c) 2015 SLAC National Accelerator Laboratory
+-- Copyright (c) 2016 SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
 
 library ieee;
@@ -222,21 +222,45 @@ begin
       GEN_MAP :
       for i in 0 to 3 generate
 
+         -- -------------------------------------------------
+         -- -- Mapping to channel pairs (requires to 2x QSFPs)
+         -- -------------------------------------------------
+         -- -- PGP.LANE[0].VC[0] = DMA.LANE[0].VC[0]
+         -- pgpTxMasters((2*i)+0, 0) <= dmaTxMasters((2*i)+0, 0);
+         -- dmaTxSlaves((2*i)+0, 0)  <= pgpTxSlaves((2*i)+0, 0);
+         -- -------------------------------------------------
+         -- -- PGP.LANE[0].VC[1] = DMA.LANE[1].VC[0]
+         -- pgpTxMasters((2*i)+0, 1) <= dmaTxMasters((2*i)+1, 0);
+         -- dmaTxSlaves((2*i)+1, 0)  <= pgpTxSlaves((2*i)+0, 1);
+         -- -------------------------------------------------
+         -- -- DMA.LANE[0].VC[0] = PGP.LANE[0].VC[0]
+         -- dmaRxMasters((2*i)+0, 0) <= pgpRxMasters((2*i)+0, 0);
+         -- pgpRxCtrl((2*i)+0, 0)    <= dmaRxCtrl((2*i)+0, 0);
+         -- -------------------------------------------------
+         -- -- DMA.LANE[1].VC[0] = PGP.LANE[0].VC[1]
+         -- dmaRxMasters((2*i)+1, 0) <= pgpRxMasters((2*i)+0, 1);
+         -- pgpRxCtrl((2*i)+0, 1)    <= dmaRxCtrl((2*i)+1, 0);
+         -- -------------------------------------------------
+
+         -------------------------------------------------
+         -- Mapping to QSFP pairs (requires to 1x QSFPs)
+         -------------------------------------------------
          -- PGP.LANE[0].VC[0] = DMA.LANE[0].VC[0]
-         pgpTxMasters((2*i)+0, 0) <= dmaTxMasters((2*i)+0, 0);
-         dmaTxSlaves((2*i)+0, 0)  <= pgpTxSlaves((2*i)+0, 0);
-
+         pgpTxMasters(i, 0)       <= dmaTxMasters((2*i)+0, 0);
+         dmaTxSlaves((2*i)+0, 0)  <= pgpTxSlaves(i, 0);
+         -------------------------------------------------
          -- PGP.LANE[0].VC[1] = DMA.LANE[1].VC[0]
-         pgpTxMasters((2*i)+0, 1) <= dmaTxMasters((2*i)+1, 0);
-         dmaTxSlaves((2*i)+1, 0)  <= pgpTxSlaves((2*i)+0, 1);
-
+         pgpTxMasters(i, 1)       <= dmaTxMasters((2*i)+1, 0);
+         dmaTxSlaves((2*i)+1, 0)  <= pgpTxSlaves(i, 1);
+         -------------------------------------------------
          -- DMA.LANE[0].VC[0] = PGP.LANE[0].VC[0]
-         dmaRxMasters((2*i)+0, 0) <= pgpRxMasters((2*i)+0, 0);
-         pgpRxCtrl((2*i)+0, 0)    <= dmaRxCtrl((2*i)+0, 0);
-
+         dmaRxMasters((2*i)+0, 0) <= pgpRxMasters(i, 0);
+         pgpRxCtrl(i, 0)          <= dmaRxCtrl((2*i)+0, 0);
+         -------------------------------------------------
          -- DMA.LANE[1].VC[0] = PGP.LANE[0].VC[1]
-         dmaRxMasters((2*i)+1, 0) <= pgpRxMasters((2*i)+0, 1);
-         pgpRxCtrl((2*i)+0, 1)    <= dmaRxCtrl((2*i)+1, 0);
+         dmaRxMasters((2*i)+1, 0) <= pgpRxMasters(i, 1);
+         pgpRxCtrl(i, 1)          <= dmaRxCtrl((2*i)+1, 0);
+         -------------------------------------------------         
          
       end generate GEN_MAP;
    end generate;

@@ -5,13 +5,13 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-03
--- Last update: 2016-06-10
+-- Last update: 2016-08-11
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
 -- Description: 
 -------------------------------------------------------------------------------
--- Copyright (c) 2014 SLAC National Accelerator Laboratory
+-- Copyright (c) 2016 SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
 
 library ieee;
@@ -59,6 +59,7 @@ architecture rtl of PciRxDma is
    type RegType is record
       rst           : sl;
       tranRd        : sl;
+      contEn        : sl;
       frameErr      : sl;
       tranEofe      : sl;
       tranSubId     : slv(3 downto 0);
@@ -77,6 +78,7 @@ architecture rtl of PciRxDma is
    constant REG_INIT_C : RegType := (
       rst           => '1',
       tranRd        => '0',
+      contEn        => '0',
       frameErr      => '0',
       tranEofe      => '0',
       tranSubId     => (others => '0'),
@@ -149,7 +151,8 @@ begin
       end if;
 
       -- Status value
-      v.dmaDescToPci.doneStatus(11 downto 8) := (others => '0');
+      v.dmaDescToPci.doneStatus(11 downto 9) := (others => '0');
+      v.dmaDescToPci.doneStatus(8)           := r.contEn;
       v.dmaDescToPci.doneStatus(7)           := r.frameErr;
       v.dmaDescToPci.doneStatus(6)           := r.tranEofe;
       v.dmaDescToPci.doneStatus(5 downto 2)  := dmaChannel;
@@ -160,8 +163,8 @@ begin
          when IDLE_S =>
             -- Check for data in the transaction FIFO and data FIFO
             if (tranValid = '1') and (r.rst = '0') and (v.txMaster.tValid = '0') and (rxMaster.tValid = '1') then
-               -- Check for start of frame bit
-               if ssiGetUserSof(AXIS_CONFIG_C, rxMaster) = '1' then
+               -- Check for start of frame bit or Continue enabled
+               if (ssiGetUserSof(AXIS_CONFIG_C, rxMaster) = '1') or (r.contEn = '1') then
                   -- Send a request to the descriptor
                   v.dmaDescToPci.newReq := '1';
                   -- Next state
@@ -182,6 +185,7 @@ begin
                -- Reset the error flag
                v.frameErr                := '0';
                -- Latch the descriptor values
+               v.contEn                  := dmaDescFromPci.contEn;
                v.dmaDescToPci.doneAddr   := dmaDescFromPci.newAddr;
                v.newAddr(29 downto 0)    := dmaDescFromPci.newAddr;
                v.dmaDescToPci.doneLength := (others => '0');
@@ -265,7 +269,7 @@ begin
                v.txMaster.tData(11 downto 10) := "00";  --PCIe reserved
 
                -- Check for frame length error
-               if (r.frameErr = '1') or (r.dmaDescToPci.doneLength = r.maxFrameCheck(0)) then
+               if r.frameErr = '1' then
                   v.txMaster.tData(9 downto 0)   := toSlv(1, 10);  -- Force a length of 1
                   v.txMaster.tData(39 downto 36) := "0000";        -- Last DW Byte Enable
                else                                                --no error detected
@@ -282,7 +286,7 @@ begin
                v.dmaDescToPci.doneLength := r.dmaDescToPci.doneLength + 1;
 
                -- Check for frame length error
-               if r.dmaDescToPci.doneLength = r.maxFrameCheck(0) then
+               if ((r.dmaDescToPci.doneLength = r.maxFrameCheck(0)) and (r.contEn = '0')) then
                   -- Set the error flag
                   v.frameErr := '1';
                end if;
@@ -291,11 +295,13 @@ begin
                v.txMaster.tKeep := x"FFFF";
 
                -- Check for frame length error
-               if (r.frameErr = '1') or (r.dmaDescToPci.doneLength = r.maxFrameCheck(0)) then
+               if (v.frameErr = '1') then
                   -- Assert the end of TLP packet flag
                   v.txMaster.tLast       := '1';  --EOF 
                   -- Let the descriptor know that we are done
                   v.dmaDescToPci.doneReq := '1';
+                  -- Reset the flag
+                  v.contEn               := '0';
                   -- Next state
                   v.state                := TR_DONE_S;
                -- Check if this is last data read
@@ -306,6 +312,8 @@ begin
                   if rxMaster.tLast = '1' then
                      -- Let the descriptor know that we are done
                      v.dmaDescToPci.doneReq := '1';
+                     -- Reset the flag
+                     v.contEn               := '0';
                      -- Next state
                      v.state                := TR_DONE_S;
                   else
@@ -377,8 +385,15 @@ begin
                   if (rxMaster.tLast = '1') or (v.frameErr = '1') then
                      -- Let the descriptor know that we are done
                      v.dmaDescToPci.doneReq := '1';
+                     -- Check for continuous mode
+                     if r.contEn = '1' then
+                        -- Override the frame length checking
+                        v.frameErr := '0';
+                        -- Update the flag
+                        v.contEn   := not(rxMaster.tLast);
+                     end if;
                      -- Next state
-                     v.state                := TR_DONE_S;
+                     v.state := TR_DONE_S;
                   else
                      -- Next state
                      v.state := READ_TRANS_S;

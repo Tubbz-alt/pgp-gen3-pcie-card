@@ -5,13 +5,13 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-03
--- Last update: 2014-08-18
--- Platform   : Vivado 2014.1
+-- Last update: 2016-08-11
+-- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
 -- Description: 
 -------------------------------------------------------------------------------
--- Copyright (c) 2014 SLAC National Accelerator Laboratory
+-- Copyright (c) 2016 SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
 
 library ieee;
@@ -23,15 +23,15 @@ use work.SsiPkg.all;
 
 package PciPkg is
 
-   constant PCI_AXIS_CONFIG_C : AxiStreamConfigType := ssiAxiStreamConfig(16,TKEEP_NORMAL_C,TUSER_NORMAL_C);
+   constant PCI_AXIS_CONFIG_C : AxiStreamConfigType := ssiAxiStreamConfig(16, TKEEP_NORMAL_C, TUSER_NORMAL_C);
    -- constant PCI_AXIS_CONFIG_C : AxiStreamConfigType := (
-      -- TSTRB_EN_C    => false,
-      -- TDATA_BYTES_C => 16,              -- 128 bit interface
-      -- TDEST_BITS_C  => 4,
-      -- TID_BITS_C    => 0,
-      -- TKEEP_MODE_C  => TKEEP_NORMAL_C,
-      -- TUSER_BITS_C  => 2,               -- SOF, EOFE
-      -- TUSER_MODE_C  => TUSER_NORMAL_C); 
+   -- TSTRB_EN_C    => false,
+   -- TDATA_BYTES_C => 16,              -- 128 bit interface
+   -- TDEST_BITS_C  => 4,
+   -- TID_BITS_C    => 0,
+   -- TKEEP_MODE_C  => TKEEP_NORMAL_C,
+   -- TUSER_BITS_C  => 2,               -- SOF, EOFE
+   -- TUSER_MODE_C  => TUSER_NORMAL_C); 
 
    -- Max transfer length, words
    constant PCIE_MAX_RX_TRANS_LENGTH_C : integer := 32;  -- 128 Bytes, smallest to ensure comparability
@@ -102,6 +102,7 @@ package PciPkg is
       newLength  : slv(23 downto 0);    -- Length in dwords, 1 based (TX Only)
       newControl : slv(7 downto 0);     -- Control word              (TX Only)
       doneAck    : sl;                  -- Descriptor done ack
+      contEn     : sl;                  -- Continue enable
       maxFrame   : slv(23 downto 0);    -- Max Frame Length, dwords, 1 based
    end record;
    type DescFromPciArray is array (integer range<>) of DescFromPciType;
@@ -110,6 +111,7 @@ package PciPkg is
       (others => '0'),
       (others => '0'),
       (others => '0'),
+      '0',
       '0',
       (others => '0')); 
 

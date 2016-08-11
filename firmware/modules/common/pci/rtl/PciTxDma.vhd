@@ -5,13 +5,13 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-03
--- Last update: 2015-05-23
--- Platform   : Vivado 2015.1
+-- Last update: 2016-08-11
+-- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
 -- Description:
 -------------------------------------------------------------------------------
--- Copyright (c) 2014 SLAC National Accelerator Laboratory
+-- Copyright (c) 2016 SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
 
 library ieee;
@@ -52,6 +52,8 @@ architecture rtl of PciTxDma is
       COLLECT_S);    
 
    type RegType is record
+      sof       : sl;
+      contEn    : sl;
       done      : sl;
       remLength : slv(23 downto 0);
       rxSlave   : AxiStreamSlaveType;
@@ -60,6 +62,8 @@ architecture rtl of PciTxDma is
    end record RegType;
    
    constant REG_INIT_C : RegType := (
+      sof       => '1',
+      contEn    => '0',
       done      => '0',
       remLength => (others => '0'),
       rxSlave   => AXI_STREAM_SLAVE_INIT_C,
@@ -167,6 +171,8 @@ begin
             if start = '1' then
                -- Latch the length of the transaction
                v.remLength                  := newLength;
+               -- Set the continuous mode flag
+               v.contEn                     := newControl(2);
                -- Set the destination
                v.txMaster.tDest(7 downto 2) := (others => '0');
                v.txMaster.tDest(1 downto 0) := newControl(1 downto 0);
@@ -184,8 +190,13 @@ begin
                v.rxSlave.tReady  := '1';
                -- Write to the FIFO
                v.txMaster.tValid := '1';
-               -- Set the SOF bit
-               ssiSetUserSof(PCI_AXIS_CONFIG_C, v.txMaster, dmaSof);
+               -- Check local & DMA SOF variable
+               if (r.sof = '1') and (dmaSof = '1') then
+                  -- Reset the flag
+                  v.sof := '0';
+                  -- Set the SOF bit
+                  ssiSetUserSof(PCI_AXIS_CONFIG_C, v.txMaster, '1');
+               end if;
                -- Check for TLP SOF
                if ssiGetUserSof(PCI_AXIS_CONFIG_C, rxMaster) = '1' then
                   -- Set the tKeep
@@ -197,11 +208,16 @@ begin
                   -- Check if this is the last DMA word to transfer
                   if r.remLength = 1 then
                      -- Handshake with Memory Requester  
-                     v.done           := '1';
-                     -- Set the EOF bit
-                     v.txMaster.tLast := '1';
+                     v.done := '1';
+                     -- Check for not continuous mode
+                     if r.contEn = '0' then
+                        -- Reset the flag
+                        v.sof            := '1';
+                        -- Set the EOF bit
+                        v.txMaster.tLast := '1';
+                     end if;
                      -- Next state
-                     v.state          := IDLE_S;
+                     v.state := IDLE_S;
                   end if;
                else
                   -- Set the tKeep

@@ -5,52 +5,15 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2014-07-31
--- Platform   : Vivado 2014.1
+-- Last update: 2016-08-11
+-- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
 -- Description:
 -- PCI Transmit Descriptor Controller
--- TX Descriptor contains length then address.
---
------------------------------
--- Write Registers:
------------------------------
---
--- for(i=0;i<DMA_SIZE_G;i++)
--- {
---    Addr i      : Bits[31:27] = DMA_TX[i].DMA_CH
---                : Bits[26:24] = DMA_TX[i].SUB_ID 
---                : Bits[23:00] = DMA_TX[i].newLength   
--- }
---
--- for(i=0;i<DMA_SIZE_G;i++)
--- {
---    Addr (i+32) : Bits[31:02] = DMA_TX[i].newAddr
---                : Bits[01:00] = Unused   
--- }
---
------------------------------
--- Read Registers:
------------------------------
---
--- for(i=0;i<DMA_SIZE_G;i++)
--- {
---    Addr 64 : Bits[i]    = Desc_Fifo(i).AFull
--- }
---
--- Addr 65  : Bits[31]    = Done_Fifo.Valid
---          : Bits[29:09] = zeros
---          : Bits[08:00] = Done_Fifo(i).Fill_Count
---
--- Addr 66  : Bits[31:00] = Tx Counter
---
--- Addr 67  : Bits[31:02] = Done Entry Address
---          : Bits[01]    = zero
---          : Bits[00]    = Done_Fifo.Valid
---
+-- https://docs.google.com/spreadsheets/d/1K8m2aPMaHxYG6Ul3f4jVZ44NlyKDHtr_bLjtMZGRRxw/edit?usp=sharing
 -------------------------------------------------------------------------------
--- Copyright (c) 2014 SLAC National Accelerator Laboratory
+-- Copyright (c) 2016 SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
 
 library ieee;
@@ -91,7 +54,7 @@ architecture rtl of PciTxDesc is
    signal tFifoCnt : Slv9Array(0 to (DMA_SIZE_G-1));
 
    -- Done Descriptor Logic
-   signal doneCnt      : std_logic_vector(4 downto 0) := (others=>'0');
+   signal doneCnt      : std_logic_vector(4 downto 0) := (others => '0');
    signal doneAck      : std_logic_vector(0 to (DMA_SIZE_G-1));
    signal txCount      : std_logic_vector(31 downto 0);
    signal dmaDescAFull : std_logic_vector(0 to (DMA_SIZE_G-1));
@@ -184,10 +147,10 @@ begin
             elsif (dFifoAFull = '0') and (dFifoWr = '0') then
                -- Poll the doneReq
                if dmaDescToPci(conv_integer(doneCnt)).doneReq = '1' then
-                  doneAck(conv_integer(doneCnt))      <= '1';
-                  txCount               <= txCount + 1;
-                  dFifoWr               <= '1';
-                  dFifoDin(31 downto 0) <= dmaDescToPci(conv_integer(doneCnt)).doneAddr & "00";
+                  doneAck(conv_integer(doneCnt)) <= '1';
+                  txCount                        <= txCount + 1;
+                  dFifoWr                        <= '1';
+                  dFifoDin(31 downto 0)          <= dmaDescToPci(conv_integer(doneCnt)).doneAddr & "00";
                end if;
                -- Increment DMA channel pointer counter
                if doneCnt = (DMA_SIZE_G-1) then  --prevent roll over

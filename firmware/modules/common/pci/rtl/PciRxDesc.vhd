@@ -5,64 +5,15 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2014-08-18
--- Platform   : Vivado 2014.1
+-- Last update: 2016-08-11
+-- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
 -- Description:
 -- PCI Receive Descriptor Controller
---
------------------------------
--- Write Registers:
------------------------------
---
--- for(i=0;i<DMA_SIZE_G;i++)
--- {
---    Addr i : Bits[31:02] = Free Entry Address[i]
---           : Bits[01:00] = Unused   
--- }
---
--- Addr 64  : Bits[31]    = Enable, FIFO is held in reset when not set
---          : Bits[30:24] = Unused
---          : Bits[23:00] = Max Frame Length, 1 based
---
------------------------------
--- Read Registers:
------------------------------
---
--- for(i=0;i<DMA_SIZE_G;i++)
--- {
---    Addr i+32 : Bits[31]    = Free_Fifo(i).Full
---              : Bits[30]    = Free_Fifo(i).Valid
---              : Bits[29:09] = zeros
---              : Bits[08:00] = Free_Fifo(i).Fill_Count
--- }
---
--- Addr 64  : Bits[31]    = Enable, FIFO is held in reset when not set
---          : Bits[30:24] = zeros
---          : Bits[23:00] = Max Frame Length
---
--- Addr 65  : Bits[31:00] = Rx Counter
---
--- Addr 66  : Bits[31]    = Done_Fifo.Valid
---          : Bits[30]    = Done_Fifo.Full
---          : Bits[29]    = lastDescErr
---          : Bits[28]    = DMA_RX.fifoErr
---          : Bits[27]    = DMA_RX.frameErr
---          : Bits[26]    = DMA_RX.EOFE
---          : Bits[25:09] = zeros
---          : Bits[08:00] = Done_Fifo(i).Fill_Count
---
--- Addr 67  : Bits[31:27] = dmaChannel (up to 32 DMA_RX channels)
---          : Bits[26:24] = SUB_ID (up to 8 SUB_IDs)
---          : Bits[23:00] = doneLength
---
--- Addr 68  : Bits[31:02] = Done Entry Address
---          : Bits[01]    = (DMA_RX.fifoErr or DMA_RX.frameErr or DMA_RX.EOFE)
---          : Bits[00]    = Done_Fifo.Valid
---
+-- https://docs.google.com/spreadsheets/d/1K8m2aPMaHxYG6Ul3f4jVZ44NlyKDHtr_bLjtMZGRRxw/edit?usp=sharing
 -------------------------------------------------------------------------------
--- Copyright (c) 2014 SLAC National Accelerator Laboratory
+-- Copyright (c) 2016 SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
 
 library ieee;
@@ -141,14 +92,7 @@ architecture rtl of PciRxDesc is
    signal descData   : slv(31 downto 0)                  := (others => '0');
    signal interrupt  : sl;
    signal reqIrq     : sl;
-
-   -- attribute dont_touch : string;
-   -- attribute dont_touch of
-   -- rFifoRd,
-   -- rFifoValid,
-   -- rFifoDin,
-   -- rFifoDout,
-   -- descData : signal is "true";
+   signal contEn     : sl;
    
 begin
 
@@ -173,6 +117,7 @@ begin
             dFifoDin    <= (others => '0');
             maxFrame    <= (others => '0');
             rxFreeEn    <= '0';
+            contEn      <= '0';
             lastDesc    <= (others => '0');
             lastDescErr <= '0';
          else
@@ -191,6 +136,7 @@ begin
                -- Max frame length write
                if regAddr = 64 then
                   rxFreeEn <= regWrData(31);
+                  contEn   <= regWrData(30);
                   maxFrame <= regWrData(23 downto 0);
                end if;
             end if;
@@ -256,6 +202,9 @@ begin
 
       -- Max Frame
       dmaDescFromPci(i).maxFrame <= maxFrame;
+
+      -- Continue enable
+      dmaDescFromPci(i).contEn <= contEn;
 
       -- Unused fields
       dmaDescFromPci(i).newLength  <= (others => '0');
@@ -371,7 +320,7 @@ begin
                   regRdData(31)         <= rFifoValid;
                   regRdData(30)         <= rFifoFull;
                   regRdData(29)         <= lastDescErr;
-                  regRdData(28)         <= '0';
+                  regRdData(28)         <= rFifoDout(64);  -- contEn
                   regRdData(27)         <= rFifoDout(63);  -- frameErr
                   regRdData(26)         <= rFifoDout(62);  -- EOFE
                   regRdData(8 downto 0) <= rFifoCnt;
