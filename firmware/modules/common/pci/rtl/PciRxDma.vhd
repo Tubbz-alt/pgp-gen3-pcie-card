@@ -381,19 +381,19 @@ begin
                if r.cnt = r.tranCnt then
                   -- Assert the end of TLP packet flag
                   v.txMaster.tLast := '1';        --EOF 
+                  -- Check for continuous mode
+                  if r.contEn = '1' then
+                     -- Override the frame length checking
+                     v.frameErr := '0';
+                     -- Update the flag
+                     v.contEn   := not(rxMaster.tLast);
+                  end if;
                   -- Check if this is the end of frame or error
                   if (rxMaster.tLast = '1') or (v.frameErr = '1') then
                      -- Let the descriptor know that we are done
                      v.dmaDescToPci.doneReq := '1';
-                     -- Check for continuous mode
-                     if r.contEn = '1' then
-                        -- Override the frame length checking
-                        v.frameErr := '0';
-                        -- Update the flag
-                        v.contEn   := not(rxMaster.tLast);
-                     end if;
                      -- Next state
-                     v.state := TR_DONE_S;
+                     v.state                := TR_DONE_S;
                   else
                      -- Next state
                      v.state := READ_TRANS_S;
