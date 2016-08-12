@@ -4,9 +4,9 @@ use ieee.std_logic_1164.all;
 
 package Version is
 
-constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CEC83020"; -- MAKE_VERSION
+constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CEC83021"; -- MAKE_VERSION
 
-constant BUILD_STAMP_C : string := "PgpCardG3_3p125Gbps_LSST: Vivado v2016.2 (x86_64) Built Thu Aug 11 11:09:49 PDT 2016 by ruckman";
+constant BUILD_STAMP_C : string := "PgpCardG3_3p125Gbps_LSST: Vivado v2016.2 (x86_64) Built Fri Aug 12 10:22:06 PDT 2016 by ruckman";
 
 end Version;
 
@@ -74,7 +74,7 @@ end Version;
 --
 -- 06/13/2016 (0xCEC8301B): In PgpDmaLane, changed CASCADE_SIZE_G from 1 to 4
 --
--- 06/14/2016 (0xCEC8301C): Added pipelining to improve performance for 5.0 Gbps PGP build
+-- 06/14/2016 (0xCEC8301C): Added pipelining to help with timing for 5.0 Gbps PGP build
 --
 -- 06/24/2016 (0xCEC8301D): Setting VC_INTERLEAVE_G = 0 (no VC interleaving)
 --
@@ -84,5 +84,7 @@ end Version;
 -- 08/10/2016 (0xCEC8301F): Adding LSST_MODE_G generic
 -- 
 -- 08/11/2016 (0xCEC83020): Adding "continuous streaming" support
+--
+-- 08/12/2016 (0xCEC83021): Added more pipelining to help with timing for 5.0 Gbps PGP build
 -- 
 -------------------------------------------------------------------------------
