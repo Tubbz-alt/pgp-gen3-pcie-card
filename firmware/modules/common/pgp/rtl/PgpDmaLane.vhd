@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2016-08-12
+-- Last update: 2016-08-13
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -69,7 +69,7 @@ end PgpDmaLane;
 
 architecture rtl of PgpDmaLane is
 
-   constant DMA_CH_C : slv(3 downto 0) := toSlv(LANE_G, 4);
+   constant DMA_CH_C : slv(2 downto 0) := toSlv(LANE_G, 3);
 
    signal rxMasters : AxiStreamMasterArray(0 to 3);
    signal rxSlaves  : AxiStreamSlaveArray(0 to 3);

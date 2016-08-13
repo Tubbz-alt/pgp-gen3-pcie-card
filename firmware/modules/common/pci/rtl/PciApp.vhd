@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2016-08-11
+-- Last update: 2016-08-13
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -165,6 +165,8 @@ architecture rtl of PciApp is
    signal evrOpCodeMask : slv(7 downto 0);
    signal evrSyncWord   : Slv32Array(0 to 7);
    signal lutDropCnt    : Slv8VectorArray(0 to 7, 0 to 3);
+   signal pgpLocData    : Slv8Array(0 to 7);
+   signal pgpRemData    : Slv8Array(0 to 7);
    
 begin
    
@@ -204,11 +206,11 @@ begin
       pciToEvr.acceptCode(lane)  <= acceptCode(lane);
       pciToPgp.pgpRxRst(lane)    <= pgpRxRst(lane) or cardRst;
       pciToPgp.pgpTxRst(lane)    <= pgpTxRst(lane) or cardRst;
-
+      pciToPgp.pgpLocData(lane)  <= pgpLocData(lane);
       -- Input buses
-      dmaTxIbMaster(lane) <= pgpToPci.dmaTxIbMaster(lane);
-      dmaTxObSlave(lane)  <= pgpToPci.dmaTxObSlave(lane);
-      dmaRxIbMaster(lane) <= pgpToPci.dmaRxIbMaster(lane);
+      dmaTxIbMaster(lane)        <= pgpToPci.dmaTxIbMaster(lane);
+      dmaTxObSlave(lane)         <= pgpToPci.dmaTxObSlave(lane);
+      dmaRxIbMaster(lane)        <= pgpToPci.dmaRxIbMaster(lane);
 
       dmaTxDescToPci(lane) <= pgpToPci.dmaTxDescToPci(lane);
       dmaRxDescToPci(lane) <= pgpToPci.dmaRxDescToPci(lane);
@@ -349,6 +351,15 @@ begin
             din    => pgpToPci.acceptCnt(lane),
             rd_clk => pciClk,
             dout   => acceptCnt(lane)); 
+
+      SynchronizerFifo_7 : entity work.SynchronizerFifo
+         generic map(
+            DATA_WIDTH_G => 8)
+         port map(
+            wr_clk => pgpClk,
+            din    => pgpToPci.pgpRemData(lane),
+            rd_clk => pciClk,
+            dout   => pgpRemData(lane));                
 
    end generate GEN_SYNC_LANE;
 
@@ -577,6 +588,7 @@ begin
             cardRst       <= '1';
             loopBack      <= (others => '0');
             pgpOpCode     <= (others => '0');
+            pgpLocData    <= (others => (others => '0'));
             pgpRxRst      <= (others => '0');
             pgpTxRst      <= (others => '0');
             pllRxRst      <= (others => '0');
@@ -753,6 +765,14 @@ begin
                            regLocRdData(2)(15 downto 8)  <= lutDropCnt(lane, 1);
                            regLocRdData(2)(23 downto 16) <= lutDropCnt(lane, 2);
                            regLocRdData(2)(31 downto 24) <= lutDropCnt(lane, 3);
+                        end if;
+                        --regAddr: 0xA0-0xA7 
+                        if (regAddr(9 downto 2) = (160+lane)) then
+                           regLocRdData(2)(15 downto 8) <= pgpRemData(lane);
+                           regLocRdData(2)(7 downto 0)  <= pgpLocData(lane);
+                           if regWrEn = '1' then
+                              pgpLocData(lane) <= regWrData(7 downto 0);
+                           end if;
                         end if;
                      end loop;
                end case;

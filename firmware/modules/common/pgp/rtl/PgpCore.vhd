@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2016-08-11
+-- Last update: 2016-08-13
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -212,10 +212,16 @@ begin
          pgpTxN             => pgpTxN);        
 
    NORMAL_BUILD : if (LSST_MODE_G = false) generate
-      pgpTxMasters <= dmaTxMasters;
-      dmaTxSlaves  <= pgpTxSlaves;
-      dmaRxMasters <= pgpRxMasters;
-      pgpRxCtrl    <= dmaRxCtrl;
+      GEN_LANE :
+      for i in 0 to 7 generate
+         GEN_VC :
+         for j in 0 to 3 generate
+            pgpTxMasters(i, j) <= dmaTxMasters(i, j);
+            dmaTxSlaves(i, j)  <= pgpTxSlaves(i, j);
+            dmaRxMasters(i, j) <= pgpRxMasters(i, j);
+            pgpRxCtrl(i, j)    <= dmaRxCtrl(i, j);
+         end generate GEN_VC;
+      end generate GEN_LANE;
    end generate;
 
    LSST_BUILD : if (LSST_MODE_G = true) generate

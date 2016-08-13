@@ -4,9 +4,9 @@ use ieee.std_logic_1164.all;
 
 package Version is
 
-constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CEC83022"; -- MAKE_VERSION
+constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CEC83023"; -- MAKE_VERSION
 
-constant BUILD_STAMP_C : string := "PgpCardG3_3p125Gbps: Vivado v2016.2 (x86_64) Built Fri Aug 12 15:28:28 PDT 2016 by ruckman";
+constant BUILD_STAMP_C : string := "PgpCardG3_3p125Gbps: Vivado v2016.2 (x86_64) Built Sat Aug 13 10:58:08 PDT 2016 by ruckman";
 
 end Version;
 
@@ -88,5 +88,9 @@ end Version;
 -- 08/12/2016 (0xCEC83021): Added more pipelining to help with timing for 5.0 Gbps PGP build
 --
 -- 08/12/2016 (0xCEC83022): In PciRxDma.vhd, only update the dmaDescToPci.doneStatus bus when there is a DONE request event
+--
+-- 08/13/2016 (0xCEC83023): In PciRxDma.vhd, moved contEn from doneStatus(8) to doneStatus(5)
+--                          In PgpCore.vhd, if (LSST_MODE_G = false) using for loops to map the PGP streams
+--                          Added pgpRemData[7:0][7:0] control & pgpRemData[7:0][7:0] monitoring
 -- 
 -------------------------------------------------------------------------------

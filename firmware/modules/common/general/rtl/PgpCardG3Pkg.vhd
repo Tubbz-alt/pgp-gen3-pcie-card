@@ -5,13 +5,13 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2016-04-26
+-- Last update: 2016-08-13
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
 -- Description:
 -------------------------------------------------------------------------------
--- Copyright (c) 2015 SLAC National Accelerator Laboratory
+-- Copyright (c) 2016 SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
 
 library ieee;
@@ -42,6 +42,7 @@ package PgpCardG3Pkg is
       fifoErrorCnt   : Slv4Array(0 to 7);
       lutDropCnt     : Slv8VectorArray(0 to 7, 0 to 3);
       rxCount        : Slv4VectorArray(0 to 7, 0 to 3);
+      pgpRemData     : Slv8Array(0 to 7);
       dmaTxIbMaster  : AxiStreamMasterArray(0 to 7);
       dmaTxObSlave   : AxiStreamSlaveArray(0 to 7);
       dmaTxDescToPci : DescToPciArray(0 to 7);
@@ -61,6 +62,7 @@ package PgpCardG3Pkg is
       fifoErrorCnt   => (others => (others => '0')),
       lutDropCnt     => (others => (others => (others => '0'))),
       rxCount        => (others => (others => (others => '0'))),
+      pgpRemData     => (others => (others => '0')),
       dmaTxIbMaster  => (others => AXI_STREAM_MASTER_INIT_C),
       dmaTxObSlave   => (others => AXI_STREAM_SLAVE_INIT_C),
       dmaTxDescToPci => (others => DESC_TO_PCI_INIT_C),
@@ -77,6 +79,7 @@ package PgpCardG3Pkg is
       loopback         : slv(7 downto 0);
       pgpOpCodeEn      : sl;
       pgpOpCode        : slv(7 downto 0);
+      pgpLocData       : Slv8Array(0 to 7);
       enHeaderCheck    : SlVectorArray(0 to 7, 0 to 3);
       dmaTxIbSlave     : AxiStreamSlaveArray(0 to 7);
       dmaTxObMaster    : AxiStreamMasterArray(0 to 7);

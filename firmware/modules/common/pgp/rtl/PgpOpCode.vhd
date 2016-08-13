@@ -5,13 +5,13 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2016-04-26
--- Platform   : Vivado 2014.1
+-- Last update: 2016-08-13
+-- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
 -- Description: 
 -------------------------------------------------------------------------------
--- Copyright (c) 2014 SLAC National Accelerator Laboratory
+-- Copyright (c) 2016 SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
 
 library ieee;
@@ -27,9 +27,10 @@ entity PgpOpCode is
    generic (
       TPD_G : time := 1 ns);
    port (
-      -- Software OP-Code
+      -- Software OP-Code and Data
       pgpOpCodeEn   : in  sl;
       pgpOpCode     : in  slv(7 downto 0);
+      pgpLocData    : in  slv(7 downto 0);
       -- Configurations
       runDelay      : in  slv(31 downto 0);
       acceptDelay   : in  slv(31 downto 0);
@@ -86,6 +87,7 @@ architecture rtl of PgpOpCode is
 
    signal runTrig  : sl;
    signal opCodeEn : sl;
+   signal locData  : slv(7 downto 0);
    signal opCode   : slv(7 downto 0);
    signal seconds  : slv(31 downto 0);
 
@@ -127,9 +129,9 @@ begin
    runTrig             <= fromEvr.run and not(evrOpCodeMask);
    pgpTxIn.opCodeEn    <= runTrig or opCodeEn;
    pgpTxIn.opCode      <= r.trigAddr when(opCodeEn = '0') else opCode;
-   pgpTxIn.locData     <= (others => '0');  -- not used
-   pgpTxIn.flowCntlDis <= '0';              -- Ignore flow control 
-   pgpTxIn.flush       <= '0';              -- not used
+   pgpTxIn.locData     <= locData;
+   pgpTxIn.flowCntlDis <= '0';          -- Ignore flow control 
+   pgpTxIn.flush       <= '0';          -- not used
 
    -------------------------------
    -- Synchronization
@@ -187,7 +189,18 @@ begin
          din    => evrToPgp.seconds,
          -- Read Ports (rd_clk domain)
          rd_clk => pgpClk,
-         dout   => seconds);         
+         dout   => seconds);     
+
+   SynchronizerFifo_4 : entity work.SynchronizerFifo
+      generic map(
+         DATA_WIDTH_G => 8)
+      port map(
+         -- Write Ports (wr_clk domain)
+         wr_clk => pciClk,
+         din    => pgpLocData,
+         -- Read Ports (rd_clk domain)
+         rd_clk => pgpClk,
+         dout   => locData);          
 
    -------------------------------
    -- Look up Table

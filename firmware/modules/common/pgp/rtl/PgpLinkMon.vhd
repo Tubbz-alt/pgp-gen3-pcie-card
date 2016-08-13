@@ -5,13 +5,13 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2014-07-31
--- Platform   : Vivado 2014.1
+-- Last update: 2016-08-13
+-- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
 -- Description: 
 -------------------------------------------------------------------------------
--- Copyright (c) 2014 SLAC National Accelerator Laboratory
+-- Copyright (c) 2016 SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
 
 library ieee;
@@ -36,6 +36,7 @@ entity PgpLinkMon is
       linkErrorCnt : out slv(3 downto 0);
       fifoErrorCnt : out slv(3 downto 0);
       rxCount      : out Slv4Array(0 to 3);
+      pgpRemData   : out slv(7 downto 0);
       -- Non VC Rx Signals
       pgpRxOut     : in  Pgp2bRxOutType;
       -- Non VC Tx Signals
@@ -53,6 +54,7 @@ architecture rtl of PgpLinkMon is
    type RegType is record
       locLinkReady : sl;
       remLinkReady : sl;
+      pgpRemData   : slv(7 downto 0);
       countRst     : slv(1 downto 0);
       cellErrorCnt : slv(3 downto 0);
       linkDownCnt  : slv(3 downto 0);
@@ -64,6 +66,7 @@ architecture rtl of PgpLinkMon is
    constant REG_INIT_C : RegType := (
       '0',
       '0',
+      (others => '0'),
       (others => '0'),
       (others => '0'),
       (others => '0'),
@@ -87,6 +90,7 @@ begin
       v := r;
 
       -- Added register to help with timing
+      v.pgpRemData  := PgpRxOut.remLinkData;
       v.countRst(0) := countRst;
       v.countRst(1) := r.countRst(0);
 
@@ -147,6 +151,7 @@ begin
       linkErrorCnt <= r.linkErrorCnt;
       fifoErrorCnt <= r.fifoErrorCnt;
       rxCount      <= r.rxCount;
+      pgpRemData   <= r.pgpRemData;
       
    end process comb;
 

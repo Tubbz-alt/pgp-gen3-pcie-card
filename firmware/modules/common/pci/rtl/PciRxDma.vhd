@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-03
--- Last update: 2016-08-12
+-- Last update: 2016-08-13
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -41,7 +41,7 @@ entity PciRxDma is
       dmaDescFromPci : in  DescFromPciType;
       dmaDescToPci   : out DescToPciType;
       dmaTranFromPci : in  TranFromPciType;
-      dmaChannel     : in  slv(3 downto 0));
+      dmaChannel     : in  slv(2 downto 0));
 end PciRxDma;
 
 architecture rtl of PciRxDma is
@@ -409,11 +409,11 @@ begin
 
       -- Latch the Status value when there is a DONE request event
       if (v.dmaDescToPci.doneReq = '1') and (r.dmaDescToPci.doneReq = '0') then
-         v.dmaDescToPci.doneStatus(11 downto 9) := (others => '0');
-         v.dmaDescToPci.doneStatus(8)           := v.contEn;
+         v.dmaDescToPci.doneStatus(11 downto 8) := (others => '0');
          v.dmaDescToPci.doneStatus(7)           := v.frameErr;
          v.dmaDescToPci.doneStatus(6)           := v.tranEofe;
-         v.dmaDescToPci.doneStatus(5 downto 2)  := dmaChannel;
+         v.dmaDescToPci.doneStatus(5)           := v.contEn;
+         v.dmaDescToPci.doneStatus(4 downto 2)  := dmaChannel;
          v.dmaDescToPci.doneStatus(1 downto 0)  := r.tranSubId(1 downto 0);
       end if;
 

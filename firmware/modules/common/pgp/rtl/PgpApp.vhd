@@ -5,13 +5,13 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2016-06-14
+-- Last update: 2016-08-13
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
 -- Description: 
 -------------------------------------------------------------------------------
--- Copyright (c) 2015 SLAC National Accelerator Laboratory
+-- Copyright (c) 2016 SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
 
 library ieee;
@@ -273,6 +273,7 @@ begin
             -- Software OP-Code
             pgpOpCodeEn   => pciToPgp.pgpOpCodeEn,
             pgpOpCode     => pciToPgp.pgpOpCode,
+            pgpLocData    => pciToPgp.pgpLocData(lane),
             -- Configurations
             runDelay      => runDelay(lane),
             acceptDelay   => acceptDelay(lane),
@@ -323,6 +324,7 @@ begin
             rxCount(1)      => pgpToPci.rxCount(lane, 1),
             rxCount(2)      => pgpToPci.rxCount(lane, 2),
             rxCount(3)      => pgpToPci.rxCount(lane, 3),
+            pgpRemData      => pgpToPci.pgpRemData(lane),
             -- Non VC Rx Signals
             pgpRxOut        => pgpRxOut(lane),
             -- Non VC Tx Signals

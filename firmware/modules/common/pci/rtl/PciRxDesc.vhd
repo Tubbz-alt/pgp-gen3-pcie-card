@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2016-08-11
+-- Last update: 2016-08-13
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -320,7 +320,7 @@ begin
                   regRdData(31)         <= rFifoValid;
                   regRdData(30)         <= rFifoFull;
                   regRdData(29)         <= lastDescErr;
-                  regRdData(28)         <= rFifoDout(64);  -- contEn
+                  regRdData(28)         <= '0';            -- spare
                   regRdData(27)         <= rFifoDout(63);  -- frameErr
                   regRdData(26)         <= rFifoDout(62);  -- EOFE
                   regRdData(8 downto 0) <= rFifoCnt;
