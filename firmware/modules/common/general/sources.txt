@@ -1,5 +1,2 @@
 vhdl work rtl/PgpCardG3Pkg.vhd
 vhdl work rtl/PgpCardG3Core.vhd
-
-vhdl work rtl/PgpCardG3DmaLoopbackCore.vhd
-vhdl work rtl/PgpCoreDmaLoopback.vhd
