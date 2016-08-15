@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2016-08-13
+-- Last update: 2016-08-15
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -146,8 +146,10 @@ architecture rtl of PciApp is
       pllRxReady,
       pllTxRst,
       pllRxRst : slv(1 downto 0);
-   signal evrRunCnt : Slv32Array(7 downto 0);
-   signal acceptCnt : Slv32Array(7 downto 0);
+   signal evrRunCnt  : Slv32Array(7 downto 0);
+   signal acceptCnt  : Slv32Array(7 downto 0);
+   signal vcPause    : slv(31 downto 0);
+   signal vcOverflow : slv(31 downto 0);
 
    --EVR Signals     
    signal evrPllRst     : sl;
@@ -234,7 +236,7 @@ begin
    -------------------------------
    -- Synchronization
    ------------------------------- 
-   SynchronizerVector_0 : entity work.SynchronizerVector
+   Sync_pllTxReady : entity work.SynchronizerVector
       generic map (
          WIDTH_G => 2)
       port map (
@@ -242,7 +244,7 @@ begin
          dataIn  => pgpToPci.pllTxReady,
          dataOut => pllTxReady);
 
-   SynchronizerVector_1 : entity work.SynchronizerVector
+   Sync_pllRxReady : entity work.SynchronizerVector
       generic map (
          WIDTH_G => 2)
       port map (
@@ -250,7 +252,7 @@ begin
          dataIn  => pgpToPci.pllRxReady,
          dataOut => pllRxReady);  
 
-   SynchronizerVector_2 : entity work.SynchronizerVector
+   Sync_locLinkReady : entity work.SynchronizerVector
       generic map (
          WIDTH_G => 8)
       port map (
@@ -258,7 +260,7 @@ begin
          dataIn  => pgpToPci.locLinkReady,
          dataOut => locLinkReady);
 
-   SynchronizerVector_3 : entity work.SynchronizerVector
+   Sync_remLinkReady : entity work.SynchronizerVector
       generic map (
          WIDTH_G => 8)
       port map (
@@ -269,7 +271,7 @@ begin
    GEN_SYNC_LANE :
    for lane in 0 to 7 generate
       
-      SynchronizerFifo_0 : entity work.SynchronizerFifo
+      Sync_cellErrorCnt : entity work.SynchronizerFifo
          generic map(
             DATA_WIDTH_G => 4)
          port map(
@@ -278,7 +280,7 @@ begin
             rd_clk => pciClk,
             dout   => cellErrorCnt(lane));
 
-      SynchronizerFifo_1 : entity work.SynchronizerFifo
+      Sync_linkDownCnt : entity work.SynchronizerFifo
          generic map(
             DATA_WIDTH_G => 4)
          port map(
@@ -287,7 +289,7 @@ begin
             rd_clk => pciClk,
             dout   => linkDownCnt(lane));
 
-      SynchronizerFifo_2 : entity work.SynchronizerFifo
+      Sync_linkErrorCnt : entity work.SynchronizerFifo
          generic map(
             DATA_WIDTH_G => 4)
          port map(
@@ -296,7 +298,7 @@ begin
             rd_clk => pciClk,
             dout   => linkErrorCnt(lane));             
 
-      SynchronizerFifo_3 : entity work.SynchronizerFifo
+      Sync_fifoErrorCnt : entity work.SynchronizerFifo
          generic map(
             DATA_WIDTH_G => 4)
          port map(
@@ -305,10 +307,26 @@ begin
             rd_clk => pciClk,
             dout   => fifoErrorCnt(lane)); 
 
+      Sync_vcPause : entity work.SynchronizerVector
+         generic map (
+            WIDTH_G => 4)
+         port map (
+            clk     => pciClk,
+            dataIn  => pgpToPci.vcPause(lane),
+            dataOut => vcPause((4*lane)+3 downto (4*lane)));   
+
+      Sync_vcOverflow : entity work.SynchronizerVector
+         generic map (
+            WIDTH_G => 4)
+         port map (
+            clk     => pciClk,
+            dataIn  => pgpToPci.vcOverflow(lane),
+            dataOut => vcOverflow((4*lane)+3 downto (4*lane)));               
+
       GEN_SYNC_VC :
       for vc in 0 to 3 generate
          
-         SynchronizerFifo_4 : entity work.SynchronizerFifo
+         Sync_rxCount : entity work.SynchronizerFifo
             generic map(
                DATA_WIDTH_G => 4)
             port map(
@@ -317,7 +335,7 @@ begin
                rd_clk => pciClk,
                dout   => rxCount(lane, vc));  
 
-         SynchronizerFifo_lutDropCnt : entity work.SynchronizerFifo
+         Sync_lutDropCnt : entity work.SynchronizerFifo
             generic map(
                DATA_WIDTH_G => 8)
             port map(
@@ -328,13 +346,13 @@ begin
 
       end generate GEN_SYNC_VC;
 
-      Synchronizer_Inst : entity work.Synchronizer
+      Sync_evrSyncStatus : entity work.Synchronizer
          port map (
             clk     => pciClk,
             dataIn  => pgpToPci.evrSyncStatus(lane),
             dataOut => evrSyncStatus(lane));          
 
-      SynchronizerFifo_5 : entity work.SynchronizerFifo
+      Sync_runCodeCnt : entity work.SynchronizerFifo
          generic map(
             DATA_WIDTH_G => 32)
          port map(
@@ -343,7 +361,7 @@ begin
             rd_clk => pciClk,
             dout   => evrRunCnt(lane)); 
 
-      SynchronizerFifo_6 : entity work.SynchronizerFifo
+      Sync_acceptCnt : entity work.SynchronizerFifo
          generic map(
             DATA_WIDTH_G => 32)
          port map(
@@ -352,7 +370,7 @@ begin
             rd_clk => pciClk,
             dout   => acceptCnt(lane)); 
 
-      SynchronizerFifo_7 : entity work.SynchronizerFifo
+      Sync_pgpRemData : entity work.SynchronizerFifo
          generic map(
             DATA_WIDTH_G => 8)
          port map(
@@ -363,13 +381,13 @@ begin
 
    end generate GEN_SYNC_LANE;
 
-   Synchronizer_Inst : entity work.Synchronizer
+   Sync_linkUp : entity work.Synchronizer
       port map (
          clk     => pciClk,
          dataIn  => EvrToPci.linkUp,
          dataOut => evrLinkUp);   
 
-   SynchronizerFifo_5 : entity work.SynchronizerFifo
+   Sync_EvrSeconds : entity work.SynchronizerFifo
       generic map(
          DATA_WIDTH_G => 32)
       port map(
@@ -378,7 +396,7 @@ begin
          rd_clk => pciClk,
          dout   => evrSeconds); 
 
-   SynchronizerFifo_6 : entity work.SynchronizerFifo
+   Sync_EvrErrorCnt : entity work.SynchronizerFifo
       generic map(
          DATA_WIDTH_G => 32)
       port map(
@@ -521,6 +539,10 @@ begin
                else
                   regRdData <= toSlv(0, 32);
                end if;
+            elsif regAddr(9 downto 2) = x"09" then
+               regRdData <= vcPause;
+            elsif regAddr(9 downto 2) = x"0A" then
+               regRdData <= vcOverflow;
             elsif regAddr(9 downto 2) = x"0B" then
                regRdData(31 downto 16) <= cfgOut.command;
                regRdData(15 downto 0)  <= cfgOut.Status;

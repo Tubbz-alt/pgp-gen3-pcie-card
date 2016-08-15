@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2016-08-13
+-- Last update: 2016-08-15
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -57,8 +57,10 @@ entity PgpDmaLane is
       trigLutOut       : in  TrigLutOutArray(0 to 3);
       trigLutIn        : out TrigLutInArray(0 to 3);
       lutDropCnt       : out Slv8Array(0 to 3);
-      -- FIFO Overflow Error Strobe
+      -- Diagnostic Monitoring Interface
       fifoError        : out sl;
+      vcPause          : out slv(3 downto 0);
+      vcOverflow       : out slv(3 downto 0);
       -- Global Signals
       pgpClk           : in  sl;
       pgpTxRst         : in  sl;
@@ -196,8 +198,10 @@ begin
             -- 32-bit Streaming TX Interface
             mAxisMaster   => rxMasters(vc),
             mAxisSlave    => rxSlaves(vc),
-            -- FIFO Overflow Error Strobe
+            -- Diagnostic Monitoring Interface
             fifoError     => fifoErr(vc),
+            vcPause       => vcPause(vc),
+            vcOverflow    => vcOverflow(vc),
             -- Global Signals
             clk           => pgpClk,
             rst           => pgpRxRst);          

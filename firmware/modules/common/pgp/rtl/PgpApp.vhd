@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2016-08-13
+-- Last update: 2016-08-15
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -353,19 +353,19 @@ begin
          port map (
             countRst         => countRst,
             -- DMA TX Interface
-            dmaTxIbMaster    => PgpToPci.dmaTxIbMaster(lane),
-            dmaTxIbSlave     => PciToPgp.dmaTxIbSlave(lane),
-            dmaTxObMaster    => PciToPgp.dmaTxObMaster(lane),
-            dmaTxObSlave     => PgpToPci.dmaTxObSlave(lane),
-            dmaTxDescFromPci => PciToPgp.dmaTxDescFromPci(lane),
-            dmaTxDescToPci   => PgpToPci.dmaTxDescToPci(lane),
-            dmaTxTranFromPci => PciToPgp.dmaTxTranFromPci(lane),
+            dmaTxIbMaster    => pgpToPci.dmaTxIbMaster(lane),
+            dmaTxIbSlave     => pciToPgp.dmaTxIbSlave(lane),
+            dmaTxObMaster    => pciToPgp.dmaTxObMaster(lane),
+            dmaTxObSlave     => pgpToPci.dmaTxObSlave(lane),
+            dmaTxDescFromPci => pciToPgp.dmaTxDescFromPci(lane),
+            dmaTxDescToPci   => pgpToPci.dmaTxDescToPci(lane),
+            dmaTxTranFromPci => pciToPgp.dmaTxTranFromPci(lane),
             -- DMA RX Interface
-            dmaRxIbMaster    => PgpToPci.dmaRxIbMaster(lane),
-            dmaRxIbSlave     => PciToPgp.dmaRxIbSlave(lane),
-            dmaRxDescFromPci => PciToPgp.dmaRxDescFromPci(lane),
-            dmaRxDescToPci   => PgpToPci.dmaRxDescToPci(lane),
-            dmaRxTranFromPci => PciToPgp.dmaRxTranFromPci(lane),
+            dmaRxIbMaster    => pgpToPci.dmaRxIbMaster(lane),
+            dmaRxIbSlave     => pciToPgp.dmaRxIbSlave(lane),
+            dmaRxDescFromPci => pciToPgp.dmaRxDescFromPci(lane),
+            dmaRxDescToPci   => pgpToPci.dmaRxDescToPci(lane),
+            dmaRxTranFromPci => pciToPgp.dmaRxTranFromPci(lane),
             -- Frame Transmit Interface
             pgpTxMasters(0)  => pgpTxMasters(lane, 0),
             pgpTxMasters(1)  => pgpTxMasters(lane, 1),
@@ -401,12 +401,14 @@ begin
             trigLutOut(1)    => trigLutOut(lane, 1),
             trigLutOut(2)    => trigLutOut(lane, 2),
             trigLutOut(3)    => trigLutOut(lane, 3),
-            lutDropCnt(0)    => PgpToPci.lutDropCnt(lane, 0),
-            lutDropCnt(1)    => PgpToPci.lutDropCnt(lane, 1),
-            lutDropCnt(2)    => PgpToPci.lutDropCnt(lane, 2),
-            lutDropCnt(3)    => PgpToPci.lutDropCnt(lane, 3),
-            -- FIFO Overflow Error Strobe
+            lutDropCnt(0)    => pgpToPci.lutDropCnt(lane, 0),
+            lutDropCnt(1)    => pgpToPci.lutDropCnt(lane, 1),
+            lutDropCnt(2)    => pgpToPci.lutDropCnt(lane, 2),
+            lutDropCnt(3)    => pgpToPci.lutDropCnt(lane, 3),
+            -- Diagnostic Monitoring Interface
             fifoError        => fifoError(lane),
+            vcPause          => pgpToPci.vcPause(lane),
+            vcOverflow       => pgpToPci.vcOverflow(lane),
             --Global Signals
             pgpClk           => pgpClk,
             pgpTxRst         => pgpTxRstDly(lane),

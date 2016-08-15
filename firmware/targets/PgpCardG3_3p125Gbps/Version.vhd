@@ -4,9 +4,9 @@ use ieee.std_logic_1164.all;
 
 package Version is
 
-constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CEC83023"; -- MAKE_VERSION
+constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CEC83024"; -- MAKE_VERSION
 
-constant BUILD_STAMP_C : string := "PgpCardG3_3p125Gbps: Vivado v2016.2 (x86_64) Built Sat Aug 13 10:58:08 PDT 2016 by ruckman";
+constant BUILD_STAMP_C : string := "PgpCardG3_3p125Gbps: Vivado v2016.2 (x86_64) Built Mon Aug 15 10:06:08 PDT 2016 by ruckman";
 
 end Version;
 
@@ -91,6 +91,9 @@ end Version;
 --
 -- 08/13/2016 (0xCEC83023): In PciRxDma.vhd, moved contEn from doneStatus(8) to doneStatus(5)
 --                          In PgpCore.vhd, if (LSST_MODE_G = false) using for loops to map the PGP streams
---                          Added pgpRemData[7:0][7:0] control & pgpRemData[7:0][7:0] monitoring
+--                          Added pgpRemData[Lane=7:0][Word=7:0] control & pgpRemData[Lane=7:0][Word=7:0] monitoring
+-- 
+-- 08/15/2016 (0xCEC83024): Fixed a bug in PciTxDma.vhd that was created during 0xCEC8301F release
+--                          Added PgpPause[Lane=7:0][VC=3:0] & PgpOverflow[Lane=7:0][VC=3:0] monitoring registers
 -- 
 -------------------------------------------------------------------------------

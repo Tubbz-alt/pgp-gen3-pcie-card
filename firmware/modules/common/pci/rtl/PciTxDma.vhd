@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-03
--- Last update: 2016-08-11
+-- Last update: 2016-08-15
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -85,8 +85,12 @@ architecture rtl of PciTxDma is
    signal txSlave    : AxiStreamSlaveType;
    signal dmaCtrl    : AxiStreamCtrlType;
 
-   -- attribute dont_touch      : string;
-   -- attribute dont_touch of r : signal is "true";
+   -- attribute dont_touch               : string;
+   -- attribute dont_touch of r          : signal is "true";
+   -- attribute dont_touch of start      : signal is "true";
+   -- attribute dont_touch of dmaSof     : signal is "true";
+   -- attribute dont_touch of newControl : signal is "true";
+   -- attribute dont_touch of newLength  : signal is "true";
    
 begin
 
@@ -245,20 +249,30 @@ begin
                         v.txMaster.tKeep := x"000F";
                         -- Handshake with Memory Requester  
                         v.done           := '1';
-                        -- Set the EOF bit
-                        v.txMaster.tLast := '1';
+                        -- Check for not continuous mode
+                        if r.contEn = '0' then
+                           -- Reset the flag
+                           v.sof            := '1';
+                           -- Set the EOF bit
+                           v.txMaster.tLast := '1';
+                        end if;
                         -- Next state
-                        v.state          := IDLE_S;
+                        v.state := IDLE_S;
                      when toSlv(2, 24) =>
                         if rxMaster.tKeep(7 downto 0) = x"FF" then
                            -- Set the tKeep
                            v.txMaster.tKeep := x"00FF";
                            -- Handshake with Memory Requester  
                            v.done           := '1';
-                           -- Set the EOF bit
-                           v.txMaster.tLast := '1';
+                           -- Check for not continuous mode
+                           if r.contEn = '0' then
+                              -- Reset the flag
+                              v.sof            := '1';
+                              -- Set the EOF bit
+                              v.txMaster.tLast := '1';
+                           end if;
                            -- Next state
-                           v.state          := IDLE_S;
+                           v.state := IDLE_S;
                         end if;
                      when toSlv(3, 24) =>
                         if rxMaster.tKeep(11 downto 0) = x"FFF" then
@@ -266,10 +280,15 @@ begin
                            v.txMaster.tKeep := x"0FFF";
                            -- Handshake with Memory Requester  
                            v.done           := '1';
-                           -- Set the EOF bit
-                           v.txMaster.tLast := '1';
+                           -- Check for not continuous mode
+                           if r.contEn = '0' then
+                              -- Reset the flag
+                              v.sof            := '1';
+                              -- Set the EOF bit
+                              v.txMaster.tLast := '1';
+                           end if;
                            -- Next state
-                           v.state          := IDLE_S;
+                           v.state := IDLE_S;
                         end if;
                      when toSlv(4, 24) =>
                         if rxMaster.tKeep(15 downto 0) = x"FFFF" then
@@ -277,10 +296,15 @@ begin
                            v.txMaster.tKeep := x"FFFF";
                            -- Handshake with Memory Requester  
                            v.done           := '1';
-                           -- Set the EOF bit
-                           v.txMaster.tLast := '1';
+                           -- Check for not continuous mode
+                           if r.contEn = '0' then
+                              -- Reset the flag
+                              v.sof            := '1';
+                              -- Set the EOF bit
+                              v.txMaster.tLast := '1';
+                           end if;
                            -- Next state
-                           v.state          := IDLE_S;
+                           v.state := IDLE_S;
                         end if;
                      when others =>
                         null;

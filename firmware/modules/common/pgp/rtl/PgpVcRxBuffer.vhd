@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-08-29
--- Last update: 2016-08-12
+-- Last update: 2016-08-15
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -46,8 +46,10 @@ entity PgpVcRxBuffer is
       -- 32-bit Streaming TX Interface
       mAxisMaster   : out AxiStreamMasterType;
       mAxisSlave    : in  AxiStreamSlaveType;
-      -- FIFO Overflow Error Strobe
+      -- Diagnostic Monitoring Interface
       fifoError     : out sl;
+      vcPause       : out sl;
+      vcOverflow    : out sl;
       -- Global Signals
       clk           : in  sl;
       rst           : in  sl);
@@ -73,6 +75,8 @@ architecture rtl of PgpVcRxBuffer is
 
    type RegType is record
       fifoError  : sl;
+      vcPause    : sl;
+      vcOverflow : sl;
       lutDropCnt : slv(7 downto 0);
       lutWaitCnt : natural range 0 to LUT_WAIT_C;
       hrdData    : Slv32Array(0 to 1);
@@ -86,6 +90,8 @@ architecture rtl of PgpVcRxBuffer is
    
    constant REG_INIT_C : RegType := (
       fifoError  => '0',
+      vcPause    => '0',
+      vcOverflow => '0',
       lutDropCnt => (others => '0'),
       lutWaitCnt => 0,
       hrdData    => (others => (others => '0')),
@@ -155,6 +161,13 @@ begin
       v.fifoError     := axisCtrl.overflow;
       v.trigLutDly(1) := trigLutOut;
       v.trigLutDly(0) := r.trigLutDly(1);
+      v.vcPause       := axisCtrl.pause;
+
+      -- Check for overflow strobe   
+      if axisCtrl.overflow = '1' then
+         -- Latch the error flag
+         v.vcOverflow := '1';
+      end if;
 
       -- Reset strobing signals
       v.rxSlave.tReady := '0';
@@ -382,6 +395,8 @@ begin
 
       -- Outputs
       fifoError  <= r.fifoError;
+      vcPause    <= r.vcPause;
+      vcOverflow <= r.vcOverflow;
       trigLutIn  <= r.trigLutIn;
       lutDropCnt <= r.lutDropCnt;
       rxSlave    <= v.rxSlave;

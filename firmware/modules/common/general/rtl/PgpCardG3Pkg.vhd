@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2016-08-13
+-- Last update: 2016-08-15
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -40,6 +40,8 @@ package PgpCardG3Pkg is
       linkDownCnt    : Slv4Array(0 to 7);
       linkErrorCnt   : Slv4Array(0 to 7);
       fifoErrorCnt   : Slv4Array(0 to 7);
+      vcPause        : Slv4Array(0 to 7);
+      vcOverflow     : Slv4Array(0 to 7);
       lutDropCnt     : Slv8VectorArray(0 to 7, 0 to 3);
       rxCount        : Slv4VectorArray(0 to 7, 0 to 3);
       pgpRemData     : Slv8Array(0 to 7);
@@ -60,6 +62,8 @@ package PgpCardG3Pkg is
       linkDownCnt    => (others => (others => '0')),
       linkErrorCnt   => (others => (others => '0')),
       fifoErrorCnt   => (others => (others => '0')),
+      vcPause        => (others => (others => '0')),
+      vcOverflow     => (others => (others => '0')),
       lutDropCnt     => (others => (others => (others => '0'))),
       rxCount        => (others => (others => (others => '0'))),
       pgpRemData     => (others => (others => '0')),
