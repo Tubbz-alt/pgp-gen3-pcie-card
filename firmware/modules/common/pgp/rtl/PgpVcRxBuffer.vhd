@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-08-29
--- Last update: 2016-08-15
+-- Last update: 2016-08-21
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -57,8 +57,10 @@ end PgpVcRxBuffer;
 
 architecture rtl of PgpVcRxBuffer is
 
-   constant AXIS_CONFIG_C : AxiStreamConfigType := ssiAxiStreamConfig(4);  -- 32-bit interface
-   constant LUT_WAIT_C    : natural             := 7;
+   constant AXIS_CONFIG_C  : AxiStreamConfigType := ssiAxiStreamConfig(4);  -- 32-bit interface
+   constant LUT_WAIT_C     : natural             := 7;
+   -- constant CASCADE_SIZE_C : natural             := ite(SLAVE_READY_EN_G,1,CASCADE_SIZE_G);
+   constant CASCADE_SIZE_C : natural             := 1;
 
    type StateType is (
       IDLE_S,
@@ -130,11 +132,11 @@ begin
          GEN_SYNC_FIFO_G     => true,
          ALTERA_SYN_G        => false,
          ALTERA_RAM_G        => "M9K",
-         CASCADE_SIZE_G      => CASCADE_SIZE_G,
+         CASCADE_SIZE_G      => CASCADE_SIZE_C,
          FIFO_ADDR_WIDTH_G   => 10,
          FIFO_FIXED_THRESH_G => true,
          FIFO_PAUSE_THRESH_G => 512,
-         CASCADE_PAUSE_SEL_G => (CASCADE_SIZE_G-1),
+         CASCADE_PAUSE_SEL_G => (CASCADE_SIZE_C-1),
          -- AXI Stream Port Configurations
          SLAVE_AXI_CONFIG_G  => SSI_PGP2B_CONFIG_C,
          MASTER_AXI_CONFIG_G => AXIS_CONFIG_C)        

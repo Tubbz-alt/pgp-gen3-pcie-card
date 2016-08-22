@@ -5,13 +5,13 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-08-22
--- Last update: 2015-06-01
--- Platform   : Vivado 2015.1
+-- Last update: 2016-08-21
+-- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
 -- Description: 
 -------------------------------------------------------------------------------
--- Copyright (c) 2014 SLAC National Accelerator Laboratory
+-- Copyright (c) 2016 SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
 
 library ieee;
@@ -52,15 +52,15 @@ architecture rtl of PciRegCtrl is
    -- TLP Header format/type values
    constant PIO_CPLD_FMT_TYPE_C : slv(6 downto 0) := "1001010";
    constant PIO_CPL_FMT_TYPE_C  : slv(6 downto 0) := "0001010";
+   constant CNT_SIZE_C          : positive        := 4;
 
    type stateType is (
       IDLE_S,
-      PIPE0_WAIT_S,
-      PIPE1_WAIT_S,
-      PIPE2_WAIT_S,
+      WAIT_S,
       ACK_HDR_S);   
 
    type RegType is record
+      cnt        : natural range 0 to CNT_SIZE_C;
       wrEn       : sl;
       rdEn       : sl;
       hdr        : PciHdrType;
@@ -70,6 +70,7 @@ architecture rtl of PciRegCtrl is
    end record RegType;
    
    constant REG_INIT_C : RegType := (
+      cnt        => 0,
       wrEn       => '0',
       rdEn       => '0',
       hdr        => PCI_HDR_INIT_C,
@@ -80,14 +81,14 @@ architecture rtl of PciRegCtrl is
    signal r   : RegType := REG_INIT_C;
    signal rin : RegType;
 
-   -- attribute dont_touch      : string;
-   -- attribute dont_touch of r : signal is "true";
+   attribute dont_touch      : string;
+   attribute dont_touch of r : signal is "true";
 
 begin
 
    comb : process (pciRst, r, regBusy, regIbSlave, regObMaster, regRdData, regTranFromPci) is
-      variable v         : RegType;
-      variable header    : PciHdrType;
+      variable v      : RegType;
+      variable header : PciHdrType;
    begin
       -- Latch the current value
       v := r;
@@ -123,7 +124,7 @@ begin
                      -- Read from the register
                      v.rdEn  := '1';
                      -- Next state
-                     v.state := PIPE0_WAIT_S;
+                     v.state := WAIT_S;
                   else
                      -- Write to the register
                      v.wrEn  := '1';
@@ -136,17 +137,16 @@ begin
                end if;
             end if;
          ----------------------------------------------------------------------
-         when PIPE0_WAIT_S =>
-            -- Next state
-            v.state := PIPE1_WAIT_S;
-         ----------------------------------------------------------------------
-         when PIPE1_WAIT_S =>
-            -- Next state
-            v.state := PIPE2_WAIT_S;   
-         ----------------------------------------------------------------------
-         when PIPE2_WAIT_S =>
-            -- Next state
-            v.state := ACK_HDR_S;               
+         when WAIT_S =>
+            if r.cnt = CNT_SIZE_C then
+               -- Reset the counter
+               v.cnt   := 0;
+               -- Next state
+               v.state := ACK_HDR_S;
+            else
+               -- Increment the counter
+               v.cnt := r.cnt + 1;
+            end if;
          ----------------------------------------------------------------------
          when ACK_HDR_S =>
             -- Check if target is ready for data
@@ -154,9 +154,9 @@ begin
                -- Check for read operation
                if r.hdr.fmt(1) = '0' then
                   -- Write to the FIFO
-                  v.txMaster.tValid := '1';
+                  v.txMaster.tValid                := '1';
                   -- Set the EOF bit
-                  v.txMaster.tLast  := '1';               
+                  v.txMaster.tLast                 := '1';
                   -- TLP = DW0/H2/H1/H0
                   v.txMaster.tKeep                 := x"FFFF";
                   --DW0 (Reordered Data)
@@ -165,26 +165,26 @@ begin
                   v.txMaster.tData(119 downto 112) := regRdData(15 downto 8);
                   v.txMaster.tData(127 downto 120) := regRdData(7 downto 0);
                   --H2
-                  v.txMaster.tData(95 downto 80)   := r.hdr.ReqId;         -- Echo back requester ID
-                  v.txMaster.tData(79 downto 72)   := r.hdr.Tag;  -- Echo back Tag               
-                  v.txMaster.tData(71)             := '0';        -- PCIe Reserved
+                  v.txMaster.tData(95 downto 80)   := r.hdr.ReqId;  -- Echo back requester ID
+                  v.txMaster.tData(79 downto 72)   := r.hdr.Tag;    -- Echo back Tag               
+                  v.txMaster.tData(71)             := '0';   -- PCIe Reserved
                   v.txMaster.tData(70 downto 64)   := r.hdr.addr(6 downto 2) & "00";
                   --H1
                   v.txMaster.tData(63 downto 48)   := regTranFromPci.locId;  -- Send Completer ID                  
-                  v.txMaster.tData(47 downto 45)   := "000";      -- Success
-                  v.txMaster.tData(44)             := '0';        -- PCIe Reserved
+                  v.txMaster.tData(47 downto 45)   := "000";        -- Success
+                  v.txMaster.tData(44)             := '0';   -- PCIe Reserved
                   v.txMaster.tData(43 downto 32)   := x"004";
                   --H0
-                  v.txMaster.tData(31)             := '0';        -- PCIe Reserved               
+                  v.txMaster.tData(31)             := '0';   -- PCIe Reserved               
                   v.txMaster.tData(30 downto 24)   := PIO_CPLD_FMT_TYPE_C;
-                  v.txMaster.tData(23)             := '0';        -- PCIe Reserved
-                  v.txMaster.tData(22 downto 20)   := r.hdr.tc;   -- Echo back TC bit
-                  v.txMaster.tData(19 downto 16)   := "0000";     -- PCIe Reserved
+                  v.txMaster.tData(23)             := '0';   -- PCIe Reserved
+                  v.txMaster.tData(22 downto 20)   := r.hdr.tc;     -- Echo back TC bit
+                  v.txMaster.tData(19 downto 16)   := "0000";       -- PCIe Reserved
                   v.txMaster.tData(15)             := '0';   -- TD Field
                   v.txMaster.tData(14)             := '0';   -- EP Field
-                  v.txMaster.tData(13 downto 12)   := r.hdr.attr;          -- Echo back ATTR
-                  v.txMaster.tData(11 downto 10)   := "00";       -- PCIe Reserved                  
-                  v.txMaster.tData(9 downto 0)     := toSlv(1,10);               
+                  v.txMaster.tData(13 downto 12)   := r.hdr.attr;   -- Echo back ATTR
+                  v.txMaster.tData(11 downto 10)   := "00";  -- PCIe Reserved                  
+                  v.txMaster.tData(9 downto 0)     := toSlv(1, 10);
                end if;
                -------------------------------------------------------------------
                -- Note: Memory write operation are "posted" only, which should not
@@ -192,7 +192,7 @@ begin
                --       "PCI Express System Architecture" ISBN: 0-321-15630-7)
                -------------------------------------------------------------------               
                -- Next state
-               v.state           := IDLE_S;
+               v.state := IDLE_S;
             end if;
       ----------------------------------------------------------------------
       end case;

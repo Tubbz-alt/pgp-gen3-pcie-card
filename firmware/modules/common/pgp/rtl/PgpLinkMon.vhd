@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2016-08-13
+-- Last update: 2016-08-21
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -37,6 +37,10 @@ entity PgpLinkMon is
       fifoErrorCnt : out slv(3 downto 0);
       rxCount      : out Slv4Array(0 to 3);
       pgpRemData   : out slv(7 downto 0);
+      locPause     : out slv(3 downto 0);
+      locOverflow  : out slv(3 downto 0);
+      remPause     : out slv(3 downto 0);
+      remOverflow  : out slv(3 downto 0);
       -- Non VC Rx Signals
       pgpRxOut     : in  Pgp2bRxOutType;
       -- Non VC Tx Signals
@@ -54,6 +58,10 @@ architecture rtl of PgpLinkMon is
    type RegType is record
       locLinkReady : sl;
       remLinkReady : sl;
+      locPause     : slv(3 downto 0);
+      locOverflow  : slv(3 downto 0);
+      remPause     : slv(3 downto 0);
+      remOverflow  : slv(3 downto 0);
       pgpRemData   : slv(7 downto 0);
       countRst     : slv(1 downto 0);
       cellErrorCnt : slv(3 downto 0);
@@ -72,6 +80,10 @@ architecture rtl of PgpLinkMon is
       (others => '0'),
       (others => '0'),
       (others => '0'),
+      (others => '0'),
+      (others => '0'),
+      (others => '0'),
+      (others => '0'),
       (others => (others => '0')));
 
    signal r   : RegType := REG_INIT_C;
@@ -83,20 +95,24 @@ begin
    -------------------------------
    -- Lane Status and Health
    ------------------------------- 
-   comb : process (PgpRxOut, PgpTxOut, countRst, fifoError, pgpRst, pgpRxCtrl, pgpRxMasters, r) is
+   comb : process (countRst, fifoError, pgpRst, pgpRxCtrl, pgpRxMasters, pgpRxOut, pgpTxOut, r) is
       variable v : RegType;
    begin
       -- Latch the current value
       v := r;
 
       -- Added register to help with timing
-      v.pgpRemData  := PgpRxOut.remLinkData;
+      v.pgpRemData  := pgpRxOut.remLinkData;
+      v.locPause    := pgpTxOut.locPause;
+      v.locOverflow := pgpTxOut.locOverflow;
+      v.remPause    := pgpRxOut.remPause;
+      v.remOverflow := pgpRxOut.remOverflow;
       v.countRst(0) := countRst;
       v.countRst(1) := r.countRst(0);
 
       -- Local and remote link status
-      v.locLinkReady := PgpRxOut.linkReady and PgpTxOut.linkReady;
-      v.remLinkReady := PgpRxOut.remLinkReady;
+      v.locLinkReady := pgpRxOut.linkReady and PgpTxOut.linkReady;
+      v.remLinkReady := pgpRxOut.remLinkReady;
 
       -- Cell Error Count
       if (r.countRst(1) = '1') or (r.locLinkReady = '0') then
@@ -152,6 +168,10 @@ begin
       fifoErrorCnt <= r.fifoErrorCnt;
       rxCount      <= r.rxCount;
       pgpRemData   <= r.pgpRemData;
+      locPause     <= r.locPause;
+      locOverflow  <= r.locOverflow;
+      remPause     <= r.remPause;
+      remOverflow  <= r.remOverflow;
       
    end process comb;
 

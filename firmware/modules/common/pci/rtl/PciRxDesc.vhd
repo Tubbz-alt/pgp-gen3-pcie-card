@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2016-08-13
+-- Last update: 2016-08-21
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -326,7 +326,7 @@ begin
                   regRdData(8 downto 0) <= rFifoCnt;
                end if;
                -- FIFO Read, low value
-               if regAddr = 67 then
+               if (regAddr = 67) or (regAddr = 69) then
                   if rFifoValid = '1' then
                      regRdData             <= rFifoDout(63 downto 32);
                      descData(31 downto 2) <= rFifoDout(31 downto 2);
@@ -338,7 +338,7 @@ begin
                   end if;
                end if;
                -- FIFO Read
-               if regAddr = 68 then
+               if (regAddr = 68) or (regAddr = 70) then
                   regRdData <= descData;
                   -- Check if we need to reset the flag
                   if descData(0) = '1' then

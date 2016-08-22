@@ -5,13 +5,13 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2016-08-10
+-- Last update: 2016-08-21
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
 -- Description:
 -------------------------------------------------------------------------------
--- Copyright (c) 2014 SLAC National Accelerator Laboratory
+-- Copyright (c) 2016 SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
 
 library ieee;
@@ -27,8 +27,9 @@ use work.PgpCardG3Pkg.all;
 
 entity PciCore is
    generic (
-      LSST_MODE_G : boolean;
-      PGP_RATE_G  : real);
+      LSST_MODE_G    : boolean;
+      DMA_LOOPBACK_G : boolean;
+      PGP_RATE_G     : real);
    port (
       -- FLASH Interface 
       flashAddr  : out   slv(25 downto 0);
@@ -143,8 +144,9 @@ begin
 
    PciApp_Inst : entity work.PciApp
       generic map (
-         LSST_MODE_G => LSST_MODE_G,
-         PGP_RATE_G  => PGP_RATE_G)     
+         LSST_MODE_G    => LSST_MODE_G,
+         DMA_LOOPBACK_G => DMA_LOOPBACK_G,
+         PGP_RATE_G     => PGP_RATE_G)     
       port map (
          -- FLASH Interface 
          flashAddr        => flashAddr,

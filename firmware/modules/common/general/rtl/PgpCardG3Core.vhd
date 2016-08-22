@@ -5,13 +5,13 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2014-03-29
--- Last update: 2016-08-10
+-- Last update: 2016-08-21
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
 -- Description: 
 -------------------------------------------------------------------------------
--- Copyright (c) 2015 SLAC National Accelerator Laboratory
+-- Copyright (c) 2016 SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
 
 library ieee;
@@ -81,6 +81,8 @@ end PgpCardG3Core;
 
 architecture rtl of PgpCardG3Core is
 
+   constant DMA_LOOPBACK_C : boolean := false;
+
    signal stableClk,
       pgpClk,
       pgpRst,
@@ -122,6 +124,7 @@ begin
    PgpCore_Inst : entity work.PgpCore
       generic map (
          LSST_MODE_G          => LSST_MODE_G,
+         DMA_LOOPBACK_G       => DMA_LOOPBACK_C,
          -- PGP Configurations
          PGP_RATE_G           => PGP_RATE_G,
          -- MGT Configurations
@@ -191,9 +194,10 @@ begin
    ------------
    PciCore_Inst : entity work.PciCore
       generic map (
-         LSST_MODE_G => LSST_MODE_G,
+         LSST_MODE_G    => LSST_MODE_G,
+         DMA_LOOPBACK_G => DMA_LOOPBACK_C,
          -- PGP Configurations
-         PGP_RATE_G  => PGP_RATE_G)      
+         PGP_RATE_G     => PGP_RATE_G)      
       port map (
          -- FLASH Interface 
          flashAddr  => flashAddr,

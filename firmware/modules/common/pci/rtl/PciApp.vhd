@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2016-08-15
+-- Last update: 2016-08-21
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -28,8 +28,9 @@ use work.Version.all;
 
 entity PciApp is
    generic (
-      LSST_MODE_G : boolean;
-      PGP_RATE_G  : real);
+      LSST_MODE_G    : boolean;
+      DMA_LOOPBACK_G : boolean;
+      PGP_RATE_G     : real);
    port (
       -- FLASH Interface 
       flashAddr        : out   slv(25 downto 0);
@@ -146,10 +147,12 @@ architecture rtl of PciApp is
       pllRxReady,
       pllTxRst,
       pllRxRst : slv(1 downto 0);
-   signal evrRunCnt  : Slv32Array(7 downto 0);
-   signal acceptCnt  : Slv32Array(7 downto 0);
-   signal vcPause    : slv(31 downto 0);
-   signal vcOverflow : slv(31 downto 0);
+   signal evrRunCnt   : Slv32Array(7 downto 0);
+   signal acceptCnt   : Slv32Array(7 downto 0);
+   signal locPause    : slv(31 downto 0);
+   signal locOverflow : slv(31 downto 0);
+   signal remPause    : slv(31 downto 0);
+   signal remOverflow : slv(31 downto 0);
 
    --EVR Signals     
    signal evrPllRst     : sl;
@@ -307,21 +310,37 @@ begin
             rd_clk => pciClk,
             dout   => fifoErrorCnt(lane)); 
 
-      Sync_vcPause : entity work.SynchronizerVector
+      Sync_locPause : entity work.SynchronizerVector
          generic map (
             WIDTH_G => 4)
          port map (
             clk     => pciClk,
-            dataIn  => pgpToPci.vcPause(lane),
-            dataOut => vcPause((4*lane)+3 downto (4*lane)));   
+            dataIn  => pgpToPci.locPause(lane),
+            dataOut => locPause((4*lane)+3 downto (4*lane)));   
 
-      Sync_vcOverflow : entity work.SynchronizerVector
+      Sync_locOverflow : entity work.SynchronizerVector
          generic map (
             WIDTH_G => 4)
          port map (
             clk     => pciClk,
-            dataIn  => pgpToPci.vcOverflow(lane),
-            dataOut => vcOverflow((4*lane)+3 downto (4*lane)));               
+            dataIn  => pgpToPci.locOverflow(lane),
+            dataOut => locOverflow((4*lane)+3 downto (4*lane)));    
+
+      Sync_remPause : entity work.SynchronizerVector
+         generic map (
+            WIDTH_G => 4)
+         port map (
+            clk     => pciClk,
+            dataIn  => pgpToPci.remPause(lane),
+            dataOut => remPause((4*lane)+3 downto (4*lane)));   
+
+      Sync_remOverflow : entity work.SynchronizerVector
+         generic map (
+            WIDTH_G => 4)
+         port map (
+            clk     => pciClk,
+            dataIn  => pgpToPci.remOverflow(lane),
+            dataOut => remOverflow((4*lane)+3 downto (4*lane)));                
 
       GEN_SYNC_VC :
       for vc in 0 to 3 generate
@@ -535,14 +554,20 @@ begin
                regRdData <= toSlv(getTimeRatio(PGP_RATE_G, 1.0E+6), 32);
             elsif regAddr(9 downto 2) = x"07" then
                if LSST_MODE_G then
-                  regRdData <= toSlv(1, 32);
+                  regRdData(0) <= '1';
                else
-                  regRdData <= toSlv(0, 32);
+                  regRdData(0) <= '0';
                end if;
+               if DMA_LOOPBACK_G then
+                  regRdData(1) <= '1';
+               else
+                  regRdData(1) <= '0';
+               end if;
+               regRdData(31 downto 2) <= (others => '0');
             elsif regAddr(9 downto 2) = x"09" then
-               regRdData <= vcPause;
+               regRdData <= locPause;
             elsif regAddr(9 downto 2) = x"0A" then
-               regRdData <= vcOverflow;
+               regRdData <= locOverflow;
             elsif regAddr(9 downto 2) = x"0B" then
                regRdData(31 downto 16) <= cfgOut.command;
                regRdData(15 downto 0)  <= cfgOut.Status;
@@ -560,6 +585,10 @@ begin
             elsif regAddr(9 downto 2) = x"21" then
                regRdData(7 downto 0)  <= locLinkReady;
                regRdData(15 downto 8) <= remLinkReady;
+            elsif regAddr(9 downto 2) = x"22" then
+               regRdData <= remPause;
+            elsif regAddr(9 downto 2) = x"23" then
+               regRdData <= remOverflow;
             elsif regAddr(9 downto 2) = x"98" then
                regRdData(31 downto 0) <= acceptCnt(0);
             elsif regAddr(9 downto 2) = x"99" then

@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2016-08-15
+-- Last update: 2016-08-21
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -325,6 +325,10 @@ begin
             rxCount(2)      => pgpToPci.rxCount(lane, 2),
             rxCount(3)      => pgpToPci.rxCount(lane, 3),
             pgpRemData      => pgpToPci.pgpRemData(lane),
+            locPause        => pgpToPci.locPause(lane),
+            locOverflow     => pgpToPci.locOverflow(lane),
+            remPause        => pgpToPci.remPause(lane),
+            remOverflow     => pgpToPci.remOverflow(lane),
             -- Non VC Rx Signals
             pgpRxOut        => pgpRxOut(lane),
             -- Non VC Tx Signals
@@ -407,8 +411,6 @@ begin
             lutDropCnt(3)    => pgpToPci.lutDropCnt(lane, 3),
             -- Diagnostic Monitoring Interface
             fifoError        => fifoError(lane),
-            vcPause          => pgpToPci.vcPause(lane),
-            vcOverflow       => pgpToPci.vcOverflow(lane),
             --Global Signals
             pgpClk           => pgpClk,
             pgpTxRst         => pgpTxRstDly(lane),
