@@ -72,10 +72,8 @@ architecture rtl of PciTxDmaFifoMux is
 begin
 
    comb : process (pciRst, r, sAxisMaster, txSlave) is
-      variable v    : RegType;
-      variable sof  : sl;
-      variable eof  : sl;
-      variable eofe : sl;
+      variable v   : RegType;
+      variable sof : sl;
    begin
       -- Latch the current value
       v := r;
@@ -83,8 +81,6 @@ begin
       -- Reset strobing signals
       v.rxSlave.tReady := '0';
       sof              := '0';
-      eof              := '0';
-      eofe             := '0';
 
       -- Update tValid register
       if txSlave.tReady = '1' then
@@ -114,14 +110,11 @@ begin
                   -- Next state
                   v.state := WORD1_S;
                else                     -- Note: SOF can only exist on WORD0_S
-                  -- Get SOF/EOF/EOFE
+                  -- Set SOF
                   sof              := ssiGetUserSof(PCI_AXIS_CONFIG_C, sAxisMaster);
-                  eof              := sAxisMaster.tLast;
-                  eofe             := ssiGetUserEofe(PCI_AXIS_CONFIG_C, sAxisMaster);
-                  -- Set SOF/EOF/EOFE
                   ssiSetUserSof(AXIS_32B_CONFIG_C, v.txMaster, sof);
-                  v.txMaster.tLast := eof;
-                  ssiSetUserEofe(AXIS_32B_CONFIG_C, v.txMaster, eofe);
+                  -- Set EOF
+                  v.txMaster.tLast := sAxisMaster.tLast;
                end if;
             end if;
          ----------------------------------------------------------------------
@@ -136,12 +129,8 @@ begin
                   -- Next state
                   v.state := WORD2_S;
                else
-                  -- Get EOF/EOFE
-                  eof              := r.saved.tLast;
-                  eofe             := ssiGetUserEofe(PCI_AXIS_CONFIG_C, r.saved);
-                  -- Set EOF/EOFE
-                  v.txMaster.tLast := eof;
-                  ssiSetUserEofe(AXIS_32B_CONFIG_C, v.txMaster, eofe);
+                  -- Set EOF
+                  v.txMaster.tLast := r.saved.tLast;
                   -- Next state
                   v.state          := WORD0_S;
                end if;
@@ -158,12 +147,8 @@ begin
                   -- Next state
                   v.state := WORD3_S;
                else
-                  -- Get EOF/EOFE
-                  eof              := r.saved.tLast;
-                  eofe             := ssiGetUserEofe(PCI_AXIS_CONFIG_C, r.saved);
-                  -- Set EOF/EOFE
-                  v.txMaster.tLast := eof;
-                  ssiSetUserEofe(AXIS_32B_CONFIG_C, v.txMaster, eofe);
+                  -- Set EOF
+                  v.txMaster.tLast := r.saved.tLast;
                   -- Next state
                   v.state          := WORD0_S;
                end if;
@@ -175,12 +160,8 @@ begin
                -- Write to the FIFO
                v.txMaster.tValid             := '1';
                v.txMaster.tData(31 downto 0) := r.saved.tData(127 downto 96);
-               -- Get EOF/EOFE
-               eof                           := r.saved.tLast;
-               eofe                          := ssiGetUserEofe(PCI_AXIS_CONFIG_C, r.saved);
-               -- Set EOF/EOFE
-               v.txMaster.tLast              := eof;
-               ssiSetUserEofe(AXIS_32B_CONFIG_C, v.txMaster, eofe);
+               -- Set EOF
+               v.txMaster.tLast              := r.saved.tLast;
                -- Next state
                v.state                       := WORD0_S;
             end if;

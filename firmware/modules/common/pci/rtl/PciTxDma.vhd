@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-03
--- Last update: 2016-08-15
+-- Last update: 2016-08-25
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -129,7 +129,7 @@ begin
          CASCADE_SIZE_G      => 1,
          FIFO_ADDR_WIDTH_G   => 9,
          FIFO_FIXED_THRESH_G => true,
-         FIFO_PAUSE_THRESH_G => 256,  -- min. threshold =  (511 - 2*(PCIE_MAX_TX_TRANS_LENGTH_C/4))
+         FIFO_PAUSE_THRESH_G => 128,
          -- AXI Stream Port Configurations
          SLAVE_AXI_CONFIG_G  => PCI_AXIS_CONFIG_C,
          MASTER_AXI_CONFIG_G => PCI_AXIS_CONFIG_C)            
