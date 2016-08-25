@@ -5,13 +5,13 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2014-03-28
--- Last update: 2014-07-31
--- Platform   : Vivado 2014.1
+-- Last update: 2016-08-25
+-- Platform   :
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
 -- Description:
 -------------------------------------------------------------------------------
--- Copyright (c) 2014 SLAC National Accelerator Laboratory
+-- Copyright (c) 2016 SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
 
 library IEEE;
@@ -40,9 +40,8 @@ package Pgp1p250GbpsPkg is
 
    -- MMCM Configurations
    constant MMCM_CLKIN_PERIOD_C  : real    := 8.000;
-   constant MMCM_CLKFBOUT_MULT_C : real    := 8.000;
-   constant MMCM_DIVCLK_DIVIDE_C : natural := 1;
-   constant MMCM_GTCLK_DIVIDE_C  : real    := 8.000;
-   constant MMCM_PGPCLK_DIVIDE_C : natural := 16;
+   constant MMCM_CLKFBOUT_MULT_C : real    := 12.500;
+   constant MMCM_GTCLK_DIVIDE_C  : real    := 12.500;
+   constant MMCM_PGPCLK_DIVIDE_C : natural := 25;
    
 end package Pgp1p250GbpsPkg;

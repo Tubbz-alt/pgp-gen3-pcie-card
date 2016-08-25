@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2016-08-15
+-- Last update: 2016-08-25
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -73,8 +73,8 @@ architecture rtl of PgpDmaLane is
 
    constant DMA_CH_C : slv(2 downto 0) := toSlv(LANE_G, 3);
 
-   signal rxMasters : AxiStreamMasterArray(0 to 3);
-   signal rxSlaves  : AxiStreamSlaveArray(0 to 3);
+   signal rxMasters : AxiStreamMasterArray(3 downto 0);
+   signal rxSlaves  : AxiStreamSlaveArray(3 downto 0);
 
    signal rxMaster : AxiStreamMasterType;
    signal rxSlave  : AxiStreamSlaveType;
@@ -82,8 +82,8 @@ architecture rtl of PgpDmaLane is
    signal txMaster : AxiStreamMasterType;
    signal txSlave  : AxiStreamSlaveType;
 
-   signal txMasters : AxiStreamMasterArray(0 to 3);
-   signal txSlaves  : AxiStreamSlaveArray(0 to 3);
+   signal txMasters : AxiStreamMasterArray(3 downto 0);
+   signal txSlaves  : AxiStreamSlaveArray(3 downto 0);
 
    signal pgpTxMaster : AxiStreamMasterType;
    signal pgpTxSlave  : AxiStreamSlaveType;
@@ -122,20 +122,14 @@ begin
          NUM_MASTERS_G => 4)
       port map (
          -- Clock and reset
-         axisClk         => pgpClk,
-         axisRst         => pgpTxRst,
+         axisClk      => pgpClk,
+         axisRst      => pgpTxRst,
          -- Slave         
-         sAxisMaster     => txMaster,
-         sAxisSlave      => txSlave,
+         sAxisMaster  => txMaster,
+         sAxisSlave   => txSlave,
          -- Masters
-         mAxisMasters(0) => txMasters(0),
-         mAxisMasters(1) => txMasters(1),
-         mAxisMasters(2) => txMasters(2),
-         mAxisMasters(3) => txMasters(3),
-         mAxisSlaves(0)  => txSlaves(0),
-         mAxisSlaves(1)  => txSlaves(1),
-         mAxisSlaves(2)  => txSlaves(2),
-         mAxisSlaves(3)  => txSlaves(3));    
+         mAxisMasters => txMasters,
+         mAxisSlaves  => txSlaves);    
 
    GEN_VC_TX_BUFFER :
    for vc in 0 to 3 generate
@@ -154,8 +148,8 @@ begin
             CASCADE_SIZE_G      => 1,
             FIFO_ADDR_WIDTH_G   => 4,
             -- AXI Stream Port Configurations
-            SLAVE_AXI_CONFIG_G  => ssiAxiStreamConfig(4),
-            MASTER_AXI_CONFIG_G => SSI_PGP2B_CONFIG_C)          
+            SLAVE_AXI_CONFIG_G  => AXIS_32B_CONFIG_C,
+            MASTER_AXI_CONFIG_G => AXIS_16B_CONFIG_C)          
          port map (
             -- Slave Port
             sAxisClk    => pgpClk,
@@ -214,20 +208,14 @@ begin
          NUM_SLAVES_G  => 4)
       port map (
          -- Clock and reset
-         axisClk         => pgpClk,
-         axisRst         => pgpRxRst,
+         axisClk      => pgpClk,
+         axisRst      => pgpRxRst,
          -- Slave
-         sAxisMasters(0) => rxMasters(0),
-         sAxisMasters(1) => rxMasters(1),
-         sAxisMasters(2) => rxMasters(2),
-         sAxisMasters(3) => rxMasters(3),
-         sAxisSlaves(0)  => rxSlaves(0),
-         sAxisSlaves(1)  => rxSlaves(1),
-         sAxisSlaves(2)  => rxSlaves(2),
-         sAxisSlaves(3)  => rxSlaves(3),
+         sAxisMasters => rxMasters,
+         sAxisSlaves  => rxSlaves,
          -- Masters
-         mAxisMaster     => rxMaster,
-         mAxisSlave      => rxSlave);   
+         mAxisMaster  => rxMaster,
+         mAxisSlave   => rxSlave);   
 
    PciRxDma_Inst : entity work.PciRxDma
       generic map (

@@ -5,13 +5,13 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory 
 -- Created    : 2014-06-22
--- Last update: 2014-07-09
--- Platform   : Vivado 2013.3  
+-- Last update: 2016-08-25
+-- Platform   :   
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
 -- Description: Simulation testbed for AtlasAsmPackFexHitDetComparator.vhd
 -------------------------------------------------------------------------------
--- Copyright (c) 2014 SLAC National Accelerator Laboratory 
+-- Copyright (c) 2016 SLAC National Accelerator Laboratory 
 -------------------------------------------------------------------------------
 
 library ieee;
@@ -30,8 +30,6 @@ architecture testbed of PciRxDmaTb is
 
    constant LOC_CLK_PERIOD_C : time := 10 ns;
    constant TPD_C            : time := LOC_CLK_PERIOD_C/4;
-
-   constant AXIS_CONFIG_C : AxiStreamConfigType := ssiAxiStreamConfig(4);  -- 32-bit interface
 
    constant MAX_CNT_C   : slv(31 downto 0) := toSlv(100, 32);
    constant MAX_FRAME_C : slv(23 downto 0) := toSlv(300, 24);
@@ -121,7 +119,7 @@ begin
          if r.cnt = 0 then
             v.cnt                            := r.cnt + 1;
             v.sAxisMaster.tValid             := '1';
-            ssiSetUserSof(AXIS_CONFIG_C, v.sAxisMaster, '1');
+            ssiSetUserSof(AXIS_32B_CONFIG_C, v.sAxisMaster, '1');
             v.sAxisMaster.tData(31 downto 0) := r.cnt;
          elsif r.cnt < (MAX_CNT_C-1) then
             v.cnt                            := r.cnt + 1;
@@ -131,7 +129,7 @@ begin
             v.cnt                            := r.cnt + 1;
             v.sAxisMaster.tValid             := '1';
             v.sAxisMaster.tLast              := '1';
-            ssiSetUserEofe(AXIS_CONFIG_C, v.sAxisMaster, '0');
+            ssiSetUserEofe(AXIS_32B_CONFIG_C, v.sAxisMaster, '0');
             v.sAxisMaster.tData(31 downto 0) := r.cnt;
          else
             null;

@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-03
--- Last update: 2016-08-13
+-- Last update: 2016-08-25
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -45,8 +45,6 @@ entity PciRxDma is
 end PciRxDma;
 
 architecture rtl of PciRxDma is
-
-   constant AXIS_CONFIG_C : AxiStreamConfigType := ssiAxiStreamConfig(4);  -- 32-bit interface
 
    type StateType is (
       IDLE_S,
@@ -156,7 +154,7 @@ begin
             -- Check for data in the transaction FIFO and data FIFO
             if (tranValid = '1') and (r.rst = '0') and (v.txMaster.tValid = '0') and (rxMaster.tValid = '1') then
                -- Check for start of frame bit or Continue enabled
-               if (ssiGetUserSof(AXIS_CONFIG_C, rxMaster) = '1') or (r.contEn = '1') then
+               if (ssiGetUserSof(AXIS_32B_CONFIG_C, rxMaster) = '1') or (r.contEn = '1') then
                   -- Send a request to the descriptor
                   v.dmaDescToPci.newReq := '1';
                   -- Next state

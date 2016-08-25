@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2014-06-23
--- Last update: 2016-06-10
+-- Last update: 2016-08-25
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -48,8 +48,6 @@ end PciRxTransFifo;
 
 architecture rtl of PciRxTransFifo is
 
-   constant AXIS_CONFIG_C : AxiStreamConfigType := ssiAxiStreamConfig(4);  -- 32-bit interface
-
    type StateType is (
       IDLE_S,
       SEND_S);  
@@ -89,8 +87,8 @@ architecture rtl of PciRxTransFifo is
    signal axisMaster : AxiStreamMasterType;
    signal axisCtrl   : AxiStreamCtrlType;
 
-   -- attribute dont_touch      : string;
-   -- attribute dont_touch of r : signal is "true";
+   attribute dont_touch      : string;
+   attribute dont_touch of r : signal is "true";
    
 begin
 
@@ -107,32 +105,36 @@ begin
       -- Set the ready flag
       v.sAxisSlave.tReady := sAxisMaster.tValid and not(axisCtrl.pause) and not(tranAFull);
 
-      -- Check if moving data
-      if v.sAxisSlave.tReady = '1' then
-         -- Latch the transaction data
-         v.tranSubId  := sAxisMaster.tDest(3 downto 0);
-         v.tranEofe   := ssiGetUserEofe(AXIS_CONFIG_C, sAxisMaster);
-         v.tranLength := r.cnt;
-         -- State Machine
-         case r.state is
-            ----------------------------------------------------------------------
-            when IDLE_S =>
+      -- Update the transaction length
+      v.tranLength := r.cnt;
+
+      -- State Machine
+      case r.state is
+         ----------------------------------------------------------------------
+         when IDLE_S =>
+            -- Check if moving data
+            if v.sAxisSlave.tReady = '1' then
                -- Check the flag
                if r.sof = '1' then
                   -- Check for start of frame bit
-                  if ssiGetUserSof(AXIS_CONFIG_C, sAxisMaster) = '1' then
-                     -- Reset the flag
+                  if ssiGetUserSof(AXIS_32B_CONFIG_C, sAxisMaster) = '1' then
+                     -- Reset the flags
                      v.sof        := '0';
+                     v.tranEofe   := '0';
                      -- Latch the FIFO data
                      v.axisMaster := sAxisMaster;
+                     -- Latch the transaction data
+                     v.tranSubId  := sAxisMaster.tDest(3 downto 0);
                      -- Check tLast
                      if sAxisMaster.tLast = '1' then
+                        -- Update the EOFE field
+                        v.tranEofe := ssiGetUserEofe(AXIS_32B_CONFIG_C, sAxisMaster);
                         -- Write to the transaction FIFO
-                        v.tranWr := '1';
+                        v.tranWr   := '1';
                         -- Preset the counter
-                        v.cnt    := toSlv(1, 9);
+                        v.cnt      := toSlv(1, 9);
                         -- Set the flag
-                        v.sof    := '1';
+                        v.sof      := '1';
                      else
                         -- Reset the counter              
                         v.tranCnt          := (others => '0');
@@ -149,12 +151,14 @@ begin
                   v.axisMaster := sAxisMaster;
                   -- Check tLast
                   if sAxisMaster.tLast = '1' then
+                     -- Update the EOFE field
+                     v.tranEofe := ssiGetUserEofe(AXIS_32B_CONFIG_C, sAxisMaster);
                      -- Write to the transaction FIFO
-                     v.tranWr := '1';
+                     v.tranWr   := '1';
                      -- Preset the counter
-                     v.cnt    := toSlv(1, 9);
+                     v.cnt      := toSlv(1, 9);
                      -- Set the flag
-                     v.sof    := '1';
+                     v.sof      := '1';
                   else
                      -- Reset the counter              
                      v.tranCnt          := (others => '0');
@@ -166,8 +170,11 @@ begin
                      v.state            := SEND_S;
                   end if;
                end if;
-            ----------------------------------------------------------------------
-            when SEND_S =>
+            end if;
+         ----------------------------------------------------------------------
+         when SEND_S =>
+            -- Check if moving data
+            if v.sAxisSlave.tReady = '1' then
                -- Increment the counter
                v.cnt := r.cnt + 1;
                -- MUX the data bus
@@ -200,6 +207,11 @@ begin
                end if;
                -- Check the counter and tLast
                if (r.cnt = PCIE_MAX_RX_TRANS_LENGTH_C) or (sAxisMaster.tLast = '1') then
+                  -- Check for EOF flag 
+                  if (sAxisMaster.tLast = '1') then
+                     -- Update the EOFE field
+                     v.tranEofe := ssiGetUserEofe(AXIS_32B_CONFIG_C, sAxisMaster);
+                  end if;
                   -- Set the flag
                   v.sof               := sAxisMaster.tLast;
                   -- Write to the transaction FIFO
@@ -215,9 +227,10 @@ begin
                   -- Next State
                   v.state             := IDLE_S;
                end if;
-         ----------------------------------------------------------------------
-         end case;
-      end if;
+            end if;
+      ----------------------------------------------------------------------
+      end case;
+
 
       -- Reset
       if (reset = '1') then

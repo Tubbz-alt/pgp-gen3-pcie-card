@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2016-08-21
+-- Last update: 2016-08-25
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -40,31 +40,31 @@ entity PgpCore is
       QPLL_FBDIV_45_IN_G   : integer;
       QPLL_REFCLK_DIV_IN_G : integer;
       -- MMCM Configurations
-      MMCM_DIVCLK_DIVIDE_G : natural;
       MMCM_CLKFBOUT_MULT_G : real;
       MMCM_GTCLK_DIVIDE_G  : real;
       MMCM_PGPCLK_DIVIDE_G : natural;
       MMCM_CLKIN_PERIOD_G  : real);          
    port (
       -- Parallel Interface
-      PciToPgp   : in  PciToPgpType;
-      PgpToPci   : out PgpToPciType;
-      evrToPgp   : in  EvrToPgpArray(0 to 7);
+      PciToPgp      : in  PciToPgpType;
+      PgpToPci      : out PgpToPciType;
+      evrToPgp      : in  EvrToPgpArray(0 to 7);
       -- GT Pins
-      pgpRefClkP : in  sl;
-      pgpRefClkN : in  sl;
-      pgpRxP     : in  slv(7 downto 0);
-      pgpRxN     : in  slv(7 downto 0);
-      pgpTxP     : out slv(7 downto 0);
-      pgpTxN     : out slv(7 downto 0);
+      pgpRefClkP    : in  sl;
+      pgpRefClkN    : in  sl;
+      pgpRxP        : in  slv(7 downto 0);
+      pgpRxN        : in  slv(7 downto 0);
+      pgpTxP        : out slv(7 downto 0);
+      pgpTxN        : out slv(7 downto 0);
       -- Global Signals
-      stableClk  : out sl;
-      pgpClk     : out sl;
-      pgpRst     : out sl;
-      evrClk     : in  sl;
-      evrRst     : in  sl;
-      pciClk     : in  sl;
-      pciRst     : in  sl);      
+      pgpMmcmLocked : out sl;
+      stableClk     : out sl;
+      pgpClk        : out sl;
+      pgpRst        : out sl;
+      evrClk        : in  sl;
+      evrRst        : in  sl;
+      pciClk        : in  sl;
+      pciRst        : in  sl);      
 end PgpCore;
 
 architecture mapping of PgpCore is
@@ -141,7 +141,6 @@ begin
             QPLL_FBDIV_45_IN_G   => QPLL_FBDIV_45_IN_G,
             QPLL_REFCLK_DIV_IN_G => QPLL_REFCLK_DIV_IN_G,
             -- MMCM Configurations
-            MMCM_DIVCLK_DIVIDE_G => MMCM_DIVCLK_DIVIDE_G,
             MMCM_CLKFBOUT_MULT_G => MMCM_CLKFBOUT_MULT_G,
             MMCM_GTCLK_DIVIDE_G  => MMCM_GTCLK_DIVIDE_G,
             MMCM_PGPCLK_DIVIDE_G => MMCM_PGPCLK_DIVIDE_G,
@@ -167,6 +166,7 @@ begin
             -- Global Signals
             evrClk             => evrClk,
             evrRst             => evrRst,
+            pgpMmcmLocked      => pgpMmcmLocked,
             stableClk          => stableClock,
             pgpClk             => locClk,
             pgpRst             => locRst);    
@@ -218,10 +218,12 @@ begin
    end generate;
 
    BYPASS_CORE : if (DMA_LOOPBACK_G = true) generate
-      locClk     <= pciClk;
-      locRst     <= pciRst;
-      pllTxReady <= "11";
-      pllRxReady <= "11";
+      stableClk     <= pciClk;
+      pgpMmcmLocked <= '1';
+      locClk        <= pciClk;
+      locRst        <= pciRst;
+      pllTxReady    <= "11";
+      pllRxReady    <= "11";
       GEN_LANE :
       for i in 0 to 7 generate
          pgpTxOut(i).locOverflow  <= x"0";

@@ -5,13 +5,13 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2014-03-28
--- Last update: 2016-08-10
+-- Last update: 2016-08-25
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
 -- Description: 
 -------------------------------------------------------------------------------
--- Copyright (c) 2014 SLAC National Accelerator Laboratory
+-- Copyright (c) 2016 SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
 
 library ieee;
@@ -83,7 +83,6 @@ begin
          QPLL_FBDIV_45_IN_G   => QPLL_FBDIV_45_IN_C,
          QPLL_REFCLK_DIV_IN_G => QPLL_REFCLK_DIV_IN_C,
          -- MMCM Configurations
-         MMCM_DIVCLK_DIVIDE_G => MMCM_DIVCLK_DIVIDE_C,
          MMCM_CLKFBOUT_MULT_G => MMCM_CLKFBOUT_MULT_C,
          MMCM_GTCLK_DIVIDE_G  => MMCM_GTCLK_DIVIDE_C,
          MMCM_PGPCLK_DIVIDE_G => MMCM_PGPCLK_DIVIDE_C,

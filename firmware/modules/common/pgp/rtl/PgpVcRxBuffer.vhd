@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-08-29
--- Last update: 2016-08-21
+-- Last update: 2016-08-25
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -23,6 +23,7 @@ use work.StdRtlPkg.all;
 use work.PgpCardG3Pkg.all;
 use work.AxiStreamPkg.all;
 use work.SsiPkg.all;
+use work.PciPkg.all;
 use work.Pgp2bPkg.all;
 
 entity PgpVcRxBuffer is
@@ -57,10 +58,9 @@ end PgpVcRxBuffer;
 
 architecture rtl of PgpVcRxBuffer is
 
-   constant AXIS_CONFIG_C  : AxiStreamConfigType := ssiAxiStreamConfig(4);  -- 32-bit interface
-   constant LUT_WAIT_C     : natural             := 7;
+   constant LUT_WAIT_C     : natural := 7;
    -- constant CASCADE_SIZE_C : natural             := ite(SLAVE_READY_EN_G,1,CASCADE_SIZE_G);
-   constant CASCADE_SIZE_C : natural             := 1;
+   constant CASCADE_SIZE_C : natural := 1;
 
    type StateType is (
       IDLE_S,
@@ -112,6 +112,9 @@ architecture rtl of PgpVcRxBuffer is
 
    signal txSlave  : AxiStreamSlaveType;
    signal axisCtrl : AxiStreamCtrlType;
+
+   attribute dont_touch      : string;
+   attribute dont_touch of r : signal is "true";
    
 begin
    
@@ -138,8 +141,8 @@ begin
          FIFO_PAUSE_THRESH_G => 512,
          CASCADE_PAUSE_SEL_G => (CASCADE_SIZE_C-1),
          -- AXI Stream Port Configurations
-         SLAVE_AXI_CONFIG_G  => SSI_PGP2B_CONFIG_C,
-         MASTER_AXI_CONFIG_G => AXIS_CONFIG_C)        
+         SLAVE_AXI_CONFIG_G  => AXIS_16B_CONFIG_C,
+         MASTER_AXI_CONFIG_G => AXIS_32B_CONFIG_C)        
       port map (
          -- Slave Port
          sAxisClk    => clk,
@@ -179,6 +182,7 @@ begin
          v.txMaster.tValid := '0';
          v.txMaster.tLast  := '0';
          v.txMaster.tUser  := (others => '0');
+         v.txMaster.tKeep  := (others => '1');
          v.txMaster.tDest  := toSlv(VC_G, 8);
       end if;
 
@@ -188,7 +192,7 @@ begin
             -- Check if ready to move data 
             if (rxMaster.tValid = '1') then
                -- Check for SOF
-               if ssiGetUserSof(AXIS_CONFIG_C, rxMaster) = '1' then
+               if ssiGetUserSof(AXIS_32B_CONFIG_C, rxMaster) = '1' then
                   -- Check we are are checking the header
                   if (enHeaderCheck = '1') then
                      -- Next state
@@ -198,8 +202,11 @@ begin
                      v.rxSlave.tReady := '1';
                      -- Write to the FIFO         
                      v.txMaster       := rxMaster;
-                     -- Next state
-                     v.state          := FWD_PAYLOAD_S;
+                     -- Check for non-EOF
+                     if rxMaster.tLast = '0' then
+                        -- Next state
+                        v.state := FWD_PAYLOAD_S;
+                     end if;
                   end if;
                else
                   -- Blow off the data
@@ -234,7 +241,7 @@ begin
                -- Latch the OpCode, which is used to address the trigger LUT
                v.trigLutIn.raddr := rxMaster.tData(23 downto 16);
                -- Check for EOF or SOF
-               if (rxMaster.tLast = '1') or (ssiGetUserSof(AXIS_CONFIG_C, rxMaster) = '1') then
+               if (rxMaster.tLast = '1') or (ssiGetUserSof(AXIS_32B_CONFIG_C, rxMaster) = '1') then
                   -- Next state
                   v.state := IDLE_S;
                else
@@ -274,7 +281,7 @@ begin
             if v.txMaster.tValid = '0' then
                -- Write to the FIFO
                v.txMaster.tValid             := '1';
-               ssiSetUserSof(AXIS_CONFIG_C, v.txMaster, '1');
+               ssiSetUserSof(AXIS_32B_CONFIG_C, v.txMaster, '1');
                v.txMaster.tData(31 downto 8) := r.hrdData(0)(31 downto 8);
                v.txMaster.tData(7 downto 5)  := toSlv(LANE_G, 3);
                v.txMaster.tData(4 downto 2)  := r.hrdData(0)(4 downto 2);
@@ -302,11 +309,11 @@ begin
                v.txMaster.tValid             := '1';
                v.txMaster.tData(31 downto 0) := r.trigLutOut.acceptCnt;
                -- Check for EOF
-               if rxMaster.tLast = '1' or (ssiGetUserSof(AXIS_CONFIG_C, rxMaster) = '1') then
+               if rxMaster.tLast = '1' or (ssiGetUserSof(AXIS_32B_CONFIG_C, rxMaster) = '1') then
                   -- Set the EOF bit
                   v.txMaster.tLast := '1';
                   -- Set the EOFE bit
-                  ssiSetUserEofe(AXIS_CONFIG_C, v.txMaster, '1');
+                  ssiSetUserEofe(AXIS_32B_CONFIG_C, v.txMaster, '1');
                   -- Next state
                   v.state          := IDLE_S;
                else
@@ -324,11 +331,11 @@ begin
                v.txMaster.tValid             := '1';
                v.txMaster.tData(31 downto 0) := r.trigLutOut.offset;
                -- Check for EOF
-               if rxMaster.tLast = '1' or (ssiGetUserSof(AXIS_CONFIG_C, rxMaster) = '1') then
+               if rxMaster.tLast = '1' or (ssiGetUserSof(AXIS_32B_CONFIG_C, rxMaster) = '1') then
                   -- Set the EOF bit
                   v.txMaster.tLast := '1';
                   -- Set the EOFE bit
-                  ssiSetUserEofe(AXIS_CONFIG_C, v.txMaster, '1');
+                  ssiSetUserEofe(AXIS_32B_CONFIG_C, v.txMaster, '1');
                   -- Next state
                   v.state          := IDLE_S;
                else
@@ -346,11 +353,11 @@ begin
                v.txMaster.tValid             := '1';
                v.txMaster.tData(31 downto 0) := r.trigLutOut.seconds;
                -- Check for EOF
-               if rxMaster.tLast = '1' or (ssiGetUserSof(AXIS_CONFIG_C, rxMaster) = '1') then
+               if rxMaster.tLast = '1' or (ssiGetUserSof(AXIS_32B_CONFIG_C, rxMaster) = '1') then
                   -- Set the EOF bit
                   v.txMaster.tLast := '1';
                   -- Set the EOFE bit
-                  ssiSetUserEofe(AXIS_CONFIG_C, v.txMaster, '1');
+                  ssiSetUserEofe(AXIS_32B_CONFIG_C, v.txMaster, '1');
                   -- Next state
                   v.state          := IDLE_S;
                else
@@ -367,11 +374,11 @@ begin
                -- Write to the FIFO         
                v.txMaster       := rxMaster;
                -- Check for second SOF
-               if (ssiGetUserSof(AXIS_CONFIG_C, rxMaster) = '1') then
+               if (ssiGetUserSof(AXIS_32B_CONFIG_C, rxMaster) = '1') then
                   -- Set the EOF bit
                   v.txMaster.tLast := '1';
                   -- Set the EOFE bit
-                  ssiSetUserEofe(AXIS_CONFIG_C, v.txMaster, '1');
+                  ssiSetUserEofe(AXIS_32B_CONFIG_C, v.txMaster, '1');
                   -- Next state
                   v.state          := IDLE_S;
                -- Check for EOF

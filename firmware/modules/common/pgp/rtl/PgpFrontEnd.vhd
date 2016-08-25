@@ -5,13 +5,13 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2016-08-10
--- Platform   : Vivado 2014.1
+-- Last update: 2016-08-25
+-- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
 -- Description: 
 -------------------------------------------------------------------------------
--- Copyright (c) 2014 SLAC National Accelerator Laboratory
+-- Copyright (c) 2016 SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
 
 library ieee;
@@ -97,6 +97,7 @@ begin
             TX_PLL_G           => "PLL0",
             RX_PLL_G           => "PLL1",
             -- PGP Settings
+            LANE_CNT_G         => 1,
             VC_INTERLEAVE_G    => 0,
             PAYLOAD_CNT_TOP_G  => 7,
             NUM_VC_EN_G        => ite(LSST_MODE_G, 2, 4),
@@ -150,7 +151,11 @@ begin
             pgpRxCtrl(0)     => pgpRxCtrl(lane, 0),
             pgpRxCtrl(1)     => pgpRxCtrl(lane, 1),
             pgpRxCtrl(2)     => pgpRxCtrl(lane, 2),
-            pgpRxCtrl(3)     => pgpRxCtrl(lane, 3));  
+            pgpRxCtrl(3)     => pgpRxCtrl(lane, 3),
+            -- Debug Interface 
+            txPreCursor      => "00000",
+            txPostCursor     => "00000",
+            txDiffCtrl       => "1111");  -- Max. diff swing  
    end generate GEN_WEST;
 
    GEN_EAST :
@@ -229,7 +234,11 @@ begin
             pgpRxCtrl(0)     => pgpRxCtrl(lane, 0),
             pgpRxCtrl(1)     => pgpRxCtrl(lane, 1),
             pgpRxCtrl(2)     => pgpRxCtrl(lane, 2),
-            pgpRxCtrl(3)     => pgpRxCtrl(lane, 3)); 
+            pgpRxCtrl(3)     => pgpRxCtrl(lane, 3),
+            -- Debug Interface 
+            txPreCursor      => "00000",
+            txPostCursor     => "00000",
+            txDiffCtrl       => "1111");  -- Max. diff swing              
    end generate GEN_EAST;
 
    GEN_WDT :

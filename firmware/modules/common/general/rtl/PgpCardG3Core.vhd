@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2014-03-29
--- Last update: 2016-08-21
+-- Last update: 2016-08-25
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -37,7 +37,6 @@ entity PgpCardG3Core is
       QPLL_FBDIV_45_IN_G   : integer;
       QPLL_REFCLK_DIV_IN_G : integer;
       -- MMCM Configurations
-      MMCM_DIVCLK_DIVIDE_G : natural;
       MMCM_CLKFBOUT_MULT_G : real;
       MMCM_GTCLK_DIVIDE_G  : real;
       MMCM_PGPCLK_DIVIDE_G : natural;
@@ -84,6 +83,7 @@ architecture rtl of PgpCardG3Core is
    constant DMA_LOOPBACK_C : boolean := false;
 
    signal stableClk,
+      pgpMmcmLocked,
       pgpClk,
       pgpRst,
       evrClk,
@@ -99,22 +99,8 @@ architecture rtl of PgpCardG3Core is
 
 begin
 
-   --led(0) <= uOr(EvrToPci.errorCnt);  
---   ClkOutBufSingle_Inst : entity work.ClkOutBufSingle
---      port map (
---         clkIn  => evrClk,
---         clkOut => led(0));   
-   led(0) <= evrToPgp(0).run;
 
-   led(1) <= EvrToPci.linkUp;
-   led(7) <= PciToEvr.countRst;
-   led(2) <= PciToEvr.pllRst;
-   led(3) <= PciToEvr.evrReset;
-   led(4) <= PciToEvr.enable;
-
-   led(5) <= not(pciRst);
-   led(6) <= pciLinkUp;
-
+   led      <= (others => pgpMmcmLocked);
    tieToGnd <= (others => '0');
    tieToVdd <= (others => '1');
 
@@ -139,31 +125,31 @@ begin
          QPLL_FBDIV_45_IN_G   => QPLL_FBDIV_45_IN_G,
          QPLL_REFCLK_DIV_IN_G => QPLL_REFCLK_DIV_IN_G,
          -- MMCM Configurations
-         MMCM_DIVCLK_DIVIDE_G => MMCM_DIVCLK_DIVIDE_G,
          MMCM_CLKFBOUT_MULT_G => MMCM_CLKFBOUT_MULT_G,
          MMCM_GTCLK_DIVIDE_G  => MMCM_GTCLK_DIVIDE_G,
          MMCM_PGPCLK_DIVIDE_G => MMCM_PGPCLK_DIVIDE_G,
          MMCM_CLKIN_PERIOD_G  => MMCM_CLKIN_PERIOD_G)  
       port map (
          -- Parallel Interface
-         evrToPgp   => evrToPgp,
-         pciToPgp   => pciToPgp,
-         pgpToPci   => pgpToPci,
+         evrToPgp      => evrToPgp,
+         pciToPgp      => pciToPgp,
+         pgpToPci      => pgpToPci,
          -- PGP Fiber Links         
-         pgpRefClkP => pgpRefClkP,
-         pgpRefClkN => pgpRefClkN,
-         pgpRxP     => pgpRxP,
-         pgpRxN     => pgpRxN,
-         pgpTxP     => pgpTxP,
-         pgpTxN     => pgpTxN,
+         pgpRefClkP    => pgpRefClkP,
+         pgpRefClkN    => pgpRefClkN,
+         pgpRxP        => pgpRxP,
+         pgpRxN        => pgpRxN,
+         pgpTxP        => pgpTxP,
+         pgpTxN        => pgpTxN,
          -- Global Signals
-         stableClk  => stableClk,
-         pgpClk     => pgpClk,
-         pgpRst     => pgpRst,
-         evrClk     => evrClk,
-         evrRst     => evrRst,
-         pciClk     => pciClk,
-         pciRst     => pciRst);       
+         pgpMmcmLocked => pgpMmcmLocked,
+         stableClk     => stableClk,
+         pgpClk        => pgpClk,
+         pgpRst        => pgpRst,
+         evrClk        => evrClk,
+         evrRst        => evrRst,
+         pciClk        => pciClk,
+         pciRst        => pciRst);       
 
    -----------
    -- EVR Core

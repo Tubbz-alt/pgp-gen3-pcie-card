@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-03
--- Last update: 2016-08-11
+-- Last update: 2016-08-25
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -24,6 +24,8 @@ use work.SsiPkg.all;
 package PciPkg is
 
    constant PCI_AXIS_CONFIG_C : AxiStreamConfigType := ssiAxiStreamConfig(16, TKEEP_NORMAL_C, TUSER_NORMAL_C);
+   constant AXIS_32B_CONFIG_C : AxiStreamConfigType := ssiAxiStreamConfig(4, TKEEP_NORMAL_C, TUSER_NORMAL_C);
+   constant AXIS_16B_CONFIG_C : AxiStreamConfigType := ssiAxiStreamConfig(2, TKEEP_NORMAL_C, TUSER_NORMAL_C);
    -- constant PCI_AXIS_CONFIG_C : AxiStreamConfigType := (
    -- TSTRB_EN_C    => false,
    -- TDATA_BYTES_C => 16,              -- 128 bit interface

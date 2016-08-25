@@ -5,13 +5,13 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory 
 -- Created    : 2014-06-22
--- Last update: 2014-08-18
--- Platform   : Vivado 2013.3  
+-- Last update: 2016-08-25
+-- Platform   :  
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
 -- Description: Simulation testbed for AtlasAsmPackFexHitDetComparator.vhd
 -------------------------------------------------------------------------------
--- Copyright (c) 2014 SLAC National Accelerator Laboratory 
+-- Copyright (c) 2016 SLAC National Accelerator Laboratory 
 -------------------------------------------------------------------------------
 
 library ieee;
@@ -104,8 +104,8 @@ begin
          FIFO_ADDR_WIDTH_G   => 9,
          FIFO_FIXED_THRESH_G => true,
          FIFO_PAUSE_THRESH_G => 500,
-         SLAVE_AXI_CONFIG_G  => ssiAxiStreamConfig(4),
-         MASTER_AXI_CONFIG_G => SSI_PGP2B_CONFIG_C)
+         SLAVE_AXI_CONFIG_G  => AXIS_32B_CONFIG_C,
+         MASTER_AXI_CONFIG_G => AXIS_16B_CONFIG_C)
       port map (
          -- Slave Port
          sAxisClk    => clk,

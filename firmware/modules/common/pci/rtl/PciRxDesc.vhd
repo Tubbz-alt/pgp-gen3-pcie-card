@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2016-08-21
+-- Last update: 2016-08-25
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -229,22 +229,21 @@ begin
             rxCount  <= (others => '0');
             rFifoDin <= (others => '0');
          else
-            --reset RX counter
+            -- Reset RX counter
             if countReset = '1' then
                rxCount <= (others => '0');
             elsif rFifoAFull = '0' then
-               -- poll the doneReq
-               if (dmaDescToPci(doneCnt).doneReq = '1') and (doneAck(doneCnt) = '0') then
-                  doneAck(doneCnt) <= '1';
-                  rxCount          <= rxCount + 1;
-                  rFifoWr          <= '1';
-
+               -- Poll the doneReq
+               if (dmaDescToPci(doneCnt).doneReq = '1') then
+                  doneAck(doneCnt)       <= '1';
+                  rxCount                <= rxCount + 1;
+                  rFifoWr                <= '1';
                   rFifoDin(67 downto 56) <= dmaDescToPci(doneCnt).doneStatus;
                   rFifoDin(55 downto 32) <= dmaDescToPci(doneCnt).doneLength;
                   rFifoDin(31 downto 2)  <= dmaDescToPci(doneCnt).doneAddr;
                end if;
-               --increment DMA channel pointer counter
-               if doneCnt = (DMA_SIZE_G-1) then  --prevent roll over
+               -- Increment DMA channel pointer counter
+               if doneCnt = (DMA_SIZE_G-1) then  -- Prevent roll over
                   doneCnt <= 0;
                else
                   doneCnt <= doneCnt + 1;

@@ -5,13 +5,13 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2015-01-30
--- Platform   : Vivado 2014.1
+-- Last update: 2016-08-25
+-- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
 -- Description: 
 -------------------------------------------------------------------------------
--- Copyright (c) 2014 SLAC National Accelerator Laboratory
+-- Copyright (c) 2016 SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
 
 library ieee;
@@ -34,7 +34,6 @@ entity PgpClk is
       QPLL_FBDIV_45_IN_G   : integer;
       QPLL_REFCLK_DIV_IN_G : integer;
       -- MMCM Configurations
-      MMCM_DIVCLK_DIVIDE_G : natural;
       MMCM_CLKFBOUT_MULT_G : real;
       MMCM_GTCLK_DIVIDE_G  : real;
       MMCM_PGPCLK_DIVIDE_G : natural;
@@ -59,6 +58,7 @@ entity PgpClk is
       --Global Signals
       evrClk             : in  sl;
       evrRst             : in  sl;
+      pgpMmcmLocked      : out sl;
       stableClk          : out sl;
       pgpClk             : out sl;
       pgpRst             : out sl); 
@@ -82,7 +82,8 @@ architecture PgpClk of PgpClk is
       clkRef,
       clkRst,
       clk,
-      rst : sl := '0';
+      rst,
+      gtRst : sl := '0';
    signal westPllRefClk,
       westPllReset,
       westPllRst,
@@ -120,91 +121,32 @@ begin
          clk    => stableClock,
          rstOut => stableRst);
 
-   RstSync_Inst : entity work.RstSync
-      port map (
-         clk      => clk,
-         asyncRst => stableRst,
-         syncRst  => rst);      
-
    -- Determine which PLL clock and PLL reset to use
    clkRef <= evrClk when((PGP_RATE_G = EVR_RATES_C(0)) or (PGP_RATE_G = EVR_RATES_C(1))) else stableClock;
-   clkRst <= evrRst when((PGP_RATE_G = EVR_RATES_C(0)) or (PGP_RATE_G = EVR_RATES_C(1))) else '0';
+   clkRst <= evrRst when((PGP_RATE_G = EVR_RATES_C(0)) or (PGP_RATE_G = EVR_RATES_C(1))) else stableRst;
 
-   mmcm_adv_inst : MMCME2_ADV
+   U_MMCM : entity work.ClockManager7
       generic map(
-         BANDWIDTH            => "LOW",
-         CLKOUT4_CASCADE      => false,
-         COMPENSATION         => "ZHOLD",
-         STARTUP_WAIT         => false,
-         DIVCLK_DIVIDE        => 1,
-         CLKFBOUT_MULT_F      => MMCM_CLKFBOUT_MULT_G,
-         CLKFBOUT_PHASE       => 0.000,
-         CLKFBOUT_USE_FINE_PS => false,
-         CLKOUT0_DIVIDE_F     => MMCM_GTCLK_DIVIDE_G,
-         CLKOUT0_PHASE        => 0.000,
-         CLKOUT0_DUTY_CYCLE   => 0.500,
-         CLKOUT0_USE_FINE_PS  => false,
-         CLKOUT1_DIVIDE       => MMCM_PGPCLK_DIVIDE_G,
-         CLKOUT1_PHASE        => 0.000,
-         CLKOUT1_DUTY_CYCLE   => 0.500,
-         CLKOUT1_USE_FINE_PS  => false,
-         CLKIN1_PERIOD        => MMCM_CLKIN_PERIOD_G,
-         REF_JITTER1          => 0.006)
+         TYPE_G             => "MMCM",
+         INPUT_BUFG_G       => false,
+         FB_BUFG_G          => true,
+         RST_IN_POLARITY_G  => '1',
+         NUM_CLOCKS_G       => 2,
+         -- MMCM attributes
+         BANDWIDTH_G        => "HIGH",
+         CLKIN_PERIOD_G     => MMCM_CLKIN_PERIOD_G,
+         DIVCLK_DIVIDE_G    => 1,
+         CLKFBOUT_MULT_F_G  => MMCM_CLKFBOUT_MULT_G,
+         CLKOUT0_DIVIDE_F_G => MMCM_GTCLK_DIVIDE_G,
+         CLKOUT1_DIVIDE_G   => MMCM_PGPCLK_DIVIDE_G)
       port map(
-         -- Output clocks
-         CLKFBOUT     => clkFbOut,
-         CLKFBOUTB    => open,
-         CLKOUT0      => clkOut0,
-         CLKOUT0B     => open,
-         CLKOUT1      => clkOut1,
-         CLKOUT1B     => open,
-         CLKOUT2      => open,
-         CLKOUT2B     => open,
-         CLKOUT3      => open,
-         CLKOUT3B     => open,
-         CLKOUT4      => open,
-         CLKOUT5      => open,
-         CLKOUT6      => open,
-         -- Input clock control
-         CLKFBIN      => clkFbIn,
-         CLKIN1       => clkRef,
-         CLKIN2       => '0',
-         -- Tied to always select the primary input clock
-         CLKINSEL     => '1',
-         -- Ports for dynamic reconfiguration
-         DADDR        => (others => '0'),
-         DCLK         => '0',
-         DEN          => '0',
-         DI           => (others => '0'),
-         DO           => open,
-         DRDY         => open,
-         DWE          => '0',
-         -- Ports for dynamic phase shift
-         PSCLK        => '0',
-         PSEN         => '0',
-         PSINCDEC     => '0',
-         PSDONE       => open,
-         -- Other control and status signals
-         LOCKED       => open,
-         CLKINSTOPPED => open,
-         CLKFBSTOPPED => open,
-         PWRDWN       => '0',
-         RST          => clkRst); 
-
-   BUFH_Inst : BUFH
-      port map (
-         I => clkFbOut,
-         O => clkFbIn); 
-
-   BUFG_1 : BUFG
-      port map (
-         I => clkOut0,
-         O => gtClk);
-
-   BUFG_2 : BUFG
-      port map (
-         I => clkOut1,
-         O => clk);         
+         clkIn     => clkRef,
+         rstIn     => clkRst,
+         clkOut(0) => gtClk,
+         clkOut(1) => clk,
+         rstOut(0) => gtRst,
+         rstOut(1) => rst,
+         locked    => pgpMmcmLocked);         
 
    -- West QPLL 
    westPllRefClk     <= gtClk & gtClk;

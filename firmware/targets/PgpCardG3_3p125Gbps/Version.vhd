@@ -4,9 +4,9 @@ use ieee.std_logic_1164.all;
 
 package Version is
 
-constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CEC83025"; -- MAKE_VERSION
+constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CEC83026"; -- MAKE_VERSION
 
-constant BUILD_STAMP_C : string := "PgpCardG3_3p125Gbps: Vivado v2016.1 (x86_64) Built Fri Aug 19 17:11:25 PDT 2016 by ruckman";
+constant BUILD_STAMP_C : string := "PgpCardG3_3p125Gbps: Vivado v2016.2 (x86_64) Built Wed Aug 24 17:15:22 PDT 2016 by ruckman";
 
 end Version;
 
@@ -99,5 +99,9 @@ end Version;
 -- 08/19/2016 (0xCEC83025): Added remPause[Lane=7:0][VC=3:0] & remOverflow[Lane=7:0][VC=3:0] monitoring registers
 --                          Adding DMA_LOOPBACK_G generic
 --                          Memory mapping 0x50C to 0x514 and 0x510 to 0x518
+-- 
+-- 08/25/2016 (0xCEC83026): Changed 32-bit and 16-bit AXIS configurations from TKEEP_COMP_C/TUSER_FIRST_LAST_C to TKEEP_NORMAL_C/TUSER_NORMAL_C
+--                          Changed MMCM to BANDWIDTH_G = "HIGH" (optimized for lowest output jitter
+--                          Minor bug fixes (still have not found the cause of the VC corruption bug yet)
 -- 
 -------------------------------------------------------------------------------
