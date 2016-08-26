@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-03
--- Last update: 2016-08-25
+-- Last update: 2015-05-23
 -- Platform   : Vivado 2015.1
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -130,7 +130,7 @@ begin
                -- Reset the counter
                v.cnt                   := x"0";
                -- Next state
-               v.state                 := CALC_PIPELINE_DLY_S;
+               v.state                 := CHECK_THRESH_S;
             end if;
          ----------------------------------------------------------------------
          when CHECK_THRESH_S =>

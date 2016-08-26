@@ -11,7 +11,7 @@
 -------------------------------------------------------------------------------
 -- Description: 
 -------------------------------------------------------------------------------
--- Copyright (c) 2016 SLAC National Accelerator Laboratory
+-- Copyright (c) 2014 SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
 
 library ieee;
@@ -83,7 +83,7 @@ architecture rtl of PciRxTransFifo is
    signal rin : RegType;
 
    signal reset      : sl;
-   signal tranPause  : sl;
+   signal tranAFull  : sl;
    signal axisMaster : AxiStreamMasterType;
    signal axisCtrl   : AxiStreamCtrlType;
 
@@ -92,7 +92,7 @@ architecture rtl of PciRxTransFifo is
    
 begin
 
-   comb : process (axisCtrl, r, reset, sAxisMaster, tranPause) is
+   comb : process (axisCtrl, r, reset, sAxisMaster, tranAFull) is
       variable v : RegType;
    begin
       -- Latch the current value
@@ -103,7 +103,7 @@ begin
       ssiResetFlags(v.axisMaster);
 
       -- Set the ready flag
-      v.sAxisSlave.tReady := sAxisMaster.tValid and not(axisCtrl.pause) and not(tranPause);
+      v.sAxisSlave.tReady := sAxisMaster.tValid and not(axisCtrl.pause) and not(tranAFull);
 
       -- Update the transaction length
       v.tranLength := r.cnt;
@@ -299,8 +299,7 @@ begin
          BRAM_EN_G    => true,
          FWFT_EN_G    => true,
          DATA_WIDTH_G => 23,
-         ADDR_WIDTH_G => 10,
-         FULL_THRES_G => 1000)
+         ADDR_WIDTH_G => 10)
       port map (
          rst                => reset,
          --Write Ports (wr_clk domain)
@@ -310,7 +309,7 @@ begin
          din(18)            => r.tranEofe,
          din(17 downto 9)   => r.tranLength,
          din(8 downto 0)    => r.tranCnt,
-         prog_full          => tranPause,
+         almost_full        => tranAFull,
          --Read Ports (rd_clk domain)
          rd_clk             => pciClk,
          rd_en              => tranRd,
