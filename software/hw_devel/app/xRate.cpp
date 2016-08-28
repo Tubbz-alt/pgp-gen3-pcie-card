@@ -10,7 +10,6 @@
 #include <string>
 #include <iomanip>
 #include <iostream>
-#include <string.h>
 #include <stdlib.h>
 #include <pthread.h>
 
@@ -21,32 +20,13 @@
 
 using namespace std;
 
-#define TX_SIZE 500000
-//#define TX_SIZE 5000
-//#define TX_SIZE 500
-
-//#define TX_SIZE 253// EOF.tKeep = 0xFFFF
-//#define TX_SIZE 252// EOF.tKeep = 0xFFF
-//#define TX_SIZE 251// EOF.tKeep = 0xFF
-//#define TX_SIZE 250// EOF.tKeep = 0xF
-
-//#define TX_SIZE 200
-//#define TX_SIZE 18
-
-//#define TX_SIZE 5// EOF.tKeep = 0xFFFF
-//#define TX_SIZE 4// EOF.tKeep = 0xFFF
-//#define TX_SIZE 3// EOF.tKeep = 0xFF
-//#define TX_SIZE 2// EOF.tKeep = 0xF
-
-//#define TX_SIZE 1
-
 class RunData {
    public:
       int fd;
+      uint size;
       unsigned long count;
       unsigned long total;
 };
-
 
 void *runWrite ( void *t ) {
    fd_set          fds;
@@ -55,14 +35,16 @@ void *runWrite ( void *t ) {
    int             ret;
    uint *          data;
    uint            size;
+   uint            maxSize;
    uint            lane;
    uint            pntr;
    uint            vc;
 
    RunData *txData = (RunData *)t;
 
-   size = TX_SIZE;
-   data = (uint *)malloc(sizeof(uint)*size);
+   size = txData->size;
+   maxSize = (txData->size+256);
+   data = (uint *)malloc(sizeof(uint)*maxSize);
    lane = 0;
    vc   = 0;
    pntr = 0;
@@ -87,7 +69,6 @@ void *runWrite ( void *t ) {
       else {
          ret = pgpcard_send (txData->fd,data,size,lane,vc);
          asm("nop");
-         //cout << "Write Ret=" << ret << endl;
          if ( ret <= 0 ) {
             cout << "Write Error" << endl;
             error++;
@@ -98,7 +79,9 @@ void *runWrite ( void *t ) {
          }
          pntr++;         
          lane = (pntr>>0)&0x7;
-         //vc   = (pntr>>3)&0x3;
+         vc   = (pntr>>3)&0x3;
+         size = txData->size + (4*lane) + vc;
+         // size = txData->size + (4*lane);
       }
    }
    free(data);
@@ -121,10 +104,11 @@ void *runRead ( void *t ) {
    uint            fifoErrCnt = 0;
    uint            lengthErr;
    uint            lengthErrCnt = 0;
+   int             size;
 
    RunData *rxData = (RunData *)t;
 
-   maxSize = TX_SIZE*2;
+   maxSize = (rxData->size+256);
    data = (uint *)malloc(sizeof(uint)*maxSize);
 
    cout << "Starting read thread" << endl;
@@ -147,8 +131,9 @@ void *runRead ( void *t ) {
       else {
          ret = pgpcard_recv (rxData->fd,data,maxSize,&lane,&vc,&eofe,&fifoErr,&lengthErr);
          asm("nop");
-         //cout << vc << "\t" << lane << endl;
-         if ( ret != TX_SIZE ) {
+         size = rxData->size + (4*lane) + vc;
+         // size = rxData->size + (4*lane);
+         if ( ret != size ) {
             cout << "Read Error. Ret=" << dec << ret << endl;
             error++;
          }
@@ -157,13 +142,17 @@ void *runRead ( void *t ) {
             rxData->total += ret;
          }
          if(eofe != 0){
-            cout << endl << "Read Error. eofeCnt=" << dec << ++eofeCnt << endl << endl;
+            cout << endl << vc<< ": Read Error. eofeCnt=" << dec << ++eofeCnt << endl << endl;
+            cout << "Read Return = " << dec << ret << endl;
+            error++;
          }
          if(fifoErr != 0){
-            cout << endl << "Read Error. fifoErrCnt=" << dec << ++fifoErrCnt << endl << endl;
+            cout << endl << vc<< ": Read Error. fifoErrCnt=" << dec << ++fifoErrCnt << endl << endl;
+            error++;
          }
          if(lengthErr != 0){
-            cout << endl << "Read Error. lengthErrCnt=" << dec << ++lengthErrCnt << endl << endl;
+            cout << endl << vc<< ": Read Error. lengthErrCnt=" << dec << ++lengthErrCnt << endl << endl;
+            error++;
          }         
       }
    }
@@ -183,19 +172,29 @@ int main (int argc, char **argv) {
    time_t l_tme;
    uint lastRx;
    uint lastTx;
+   uint size = 500000;
    PgpCardStatus status;
-
+   
+   if (argc > 1) {
+      size  = atoi(argv[1]);
+      cout << "size = " << (int)size << endl;
+   } 
+   
    if ( (fd = open(DEVNAME, O_RDWR )) < 0 ) {
       cout << "Error opening File" << endl;
       return(1);
    }
+  
+   
    seconds       = 0;
    txData->fd    = fd;
    txData->count = 0;
    txData->total = 0;
+   txData->size  = size;
    rxData->fd    = fd;
    rxData->count = 0;
    rxData->total = 0;
+   rxData->size  = size;
    
    //pgpcard_setDebug(fd, 5);   
 
@@ -216,14 +215,16 @@ int main (int argc, char **argv) {
    while (1) {
       sleep(1);
       time(&c_tme);
-      cout << "Seconds=" << dec << seconds;
+      // cout << "Seconds=" << dec << seconds;
+      cout << "Size=" << dec << rxData->size;
       cout << ", Rx Count=" << dec << rxData->count;
       cout << ", Rx Total=" << dec << rxData->total;
-      cout << ", Rx Rate=" << ((double)(rxData->count-lastRx) * 32.0 * (double)TX_SIZE) / (double)(c_tme-l_tme);
+      cout << ", Rx Rate=" << ((double)(rxData->count-lastRx) * 32.0 * (double)size) / (double)(c_tme-l_tme);
       cout << ", Tx Count=" << dec << txData->count;
       cout << ", Tx Total=" << dec << txData->total;
-      cout << ", Tx Rate=" << ((double)(txData->count-lastTx) * 32.0 * (double)TX_SIZE) / (double)(c_tme-l_tme);
+      cout << ", Tx Rate=" << ((double)(txData->count-lastTx) * 32.0 * (double)size) / (double)(c_tme-l_tme);
       cout << hex << endl;
+      
       if ( seconds++ % 10 == 0 ) {
          pgpcard_status(fd, &status);
          
