@@ -43,11 +43,11 @@ void *runWrite ( void *t ) {
    RunData *txData = (RunData *)t;
 
    size = txData->size;
-   maxSize = (txData->size+256);
+   maxSize = (0x1000000);
    data = (uint *)malloc(sizeof(uint)*maxSize);
    lane = 0;
-   vc   = 0;
    pntr = 0;
+   vc   = 0;
 
    cout << "Starting write thread" << endl;
 
@@ -67,6 +67,7 @@ void *runWrite ( void *t ) {
          error++;
       }
       else {
+         data[0] = (size<<16) | (lane<<8) | vc;
          ret = pgpcard_send (txData->fd,data,size,lane,vc);
          asm("nop");
          if ( ret <= 0 ) {
@@ -81,7 +82,6 @@ void *runWrite ( void *t ) {
          lane = (pntr>>0)&0x7;
          vc   = (pntr>>3)&0x3;
          size = txData->size + (4*lane) + vc;
-         // size = txData->size + (4*lane);
       }
    }
    free(data);
@@ -108,7 +108,7 @@ void *runRead ( void *t ) {
 
    RunData *rxData = (RunData *)t;
 
-   maxSize = (rxData->size+256);
+   maxSize = (0x1000000);
    data = (uint *)malloc(sizeof(uint)*maxSize);
 
    cout << "Starting read thread" << endl;
@@ -132,9 +132,14 @@ void *runRead ( void *t ) {
          ret = pgpcard_recv (rxData->fd,data,maxSize,&lane,&vc,&eofe,&fifoErr,&lengthErr);
          asm("nop");
          size = rxData->size + (4*lane) + vc;
-         // size = rxData->size + (4*lane);
-         if ( ret != size ) {
-            cout << "Read Error. Ret=" << dec << ret << endl;
+         // if ( (data[0] != ( (ret<<16) | (lane<<8) | vc) ) ) {
+         // if ( (ret != size) || (data[0] != ( (ret<<16) | (lane<<8) | vc) ) ) {
+         if ( ret != size  ) {
+            cout << "\tRead Error    = "  << dec << ret << endl;
+            cout << "\tRead Expected = "  << dec << size << endl;
+            cout << "\tlane          = "  << dec << lane << endl;
+            cout << "\tvc            = "  << dec << vc << endl;
+            cout << "\tdata[0]       = "  << hex << data[0] << endl;
             error++;
          }
          else {
@@ -225,7 +230,7 @@ int main (int argc, char **argv) {
       cout << ", Tx Rate=" << ((double)(txData->count-lastTx) * 32.0 * (double)size) / (double)(c_tme-l_tme);
       cout << hex << endl;
       
-      if ( seconds++ % 10 == 0 ) {
+      /*if ( seconds++ % 10 == 0 ) {
          pgpcard_status(fd, &status);
          
          cout << endl;  
@@ -310,7 +315,7 @@ int main (int argc, char **argv) {
          cout << "               RxDmaWrite: 0x" <<  setw(2) << setfill('0') << status.RxWrite << endl;
          cout << "                RxDmaRead: 0x" <<  setw(2) << setfill('0') << status.RxRead  << endl;            
          cout << endl;   
-      }
+      }*/
       lastRx = rxData->count;
       lastTx = txData->count;
       l_tme = c_tme;

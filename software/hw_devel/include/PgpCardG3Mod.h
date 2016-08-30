@@ -176,8 +176,8 @@ struct PgpCardReg {
    __u32 rxMaxFrame;    // Software_Addr = 0x500,        Firmware_Addr(13 downto 2) = 0x140 
    __u32 rxCount;       // Software_Addr = 0x504,        Firmware_Addr(13 downto 2) = 0x141 
    __u32 rxStatus;      // Software_Addr = 0x508,        Firmware_Addr(13 downto 2) = 0x142
-   __u32 rxRead[2];     // Software_Addr = 0x510:0x50C,  Firmware_Addr(13 downto 2) = 0x144:0x143      
-   __u32 rxSpare2[187]; // Software_Addr = 0x77C:0x514,  Firmware_Addr(13 downto 2) = 0x1FF:0x145
+   __u32 rxRead[4];     // Software_Addr = 0x518:0x50C,  Firmware_Addr(13 downto 2) = 0x146:0x143      
+   __u32 rxSpare2[185]; // Software_Addr = 0x7FC:0x51C,  Firmware_Addr(13 downto 2) = 0x1FF:0x147
    
    //PciTxDesc.vhd
    __u32 txWrA[8];      // Software_Addr = 0x81C:0x800,  Firmware_Addr(13 downto 2) = 0x207:0x200   

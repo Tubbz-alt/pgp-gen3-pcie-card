@@ -162,9 +162,10 @@ ssize_t PgpCard_Write(struct file *filp, const char* buffer, size_t count, loff_
 
        // Write descriptor
        if(pgpCardTx->pgpLane < 8) {
-           pgpDevice->reg->txWrA[pgpCardTx->pgpLane] = descA;
-           asm("nop");//no operation function
-           pgpDevice->reg->txWrB[pgpCardTx->pgpLane] = descB;   
+         iowrite32(descA,&(pgpDevice->reg->txWrA[pgpCardTx->pgpLane]));
+         asm("nop");
+         iowrite32(descB,&(pgpDevice->reg->txWrB[pgpCardTx->pgpLane]));
+         asm("nop");          
        } else {
          printk(KERN_DEBUG "%s: Write: Invalid pgpCardTx->pgpLane: %i\n", MOD_NAME, pgpCardTx->pgpLane);
        }
@@ -302,7 +303,8 @@ ssize_t PgpCard_Read(struct file *filp, char *buffer, size_t count, loff_t *f_po
    }
 
    // Return entry to RX queue
-   pgpDevice->reg->rxFree[pgpDevice->rxQueue[pgpDevice->rxRead]->lane] = pgpDevice->rxQueue[pgpDevice->rxRead]->dma; 
+   iowrite32(pgpDevice->rxQueue[pgpDevice->rxRead]->dma,&(pgpDevice->reg->rxFree[pgpDevice->rxQueue[pgpDevice->rxRead]->lane]));
+   asm("nop");
 
    if ( pgpDevice->debug > 1 ) printk(KERN_DEBUG"%s: Read: Added buffer %.8x to RX queue. Maj=%i\n",
       MOD_NAME,(__u32)(pgpDevice->rxQueue[pgpDevice->rxRead]->dma),pgpDevice->major);
@@ -904,7 +906,8 @@ static irqreturn_t PgpCard_IRQHandler(int irq, void *dev_id, struct pt_regs *reg
    struct PgpDevice *pgpDevice = (struct PgpDevice *)dev_id;
 
    // Read IRQ Status
-   stat = pgpDevice->reg->irq;
+   stat = ioread32(&(pgpDevice->reg->irq));
+   asm("nop");   
 
    // Is this the source
    if ( (stat & 0x2) != 0 ) {
@@ -912,10 +915,12 @@ static irqreturn_t PgpCard_IRQHandler(int irq, void *dev_id, struct pt_regs *reg
       if ( pgpDevice->debug > 0 ) printk(KERN_DEBUG"%s: Irq: IRQ Called. Maj=%i\n", MOD_NAME,pgpDevice->major);
 
       // Disable interrupts
-      pgpDevice->reg->irq = 0;
+      iowrite32(0,&(pgpDevice->reg->irq));
+      asm("nop");
 
       // Read Tx completion status
-      stat = pgpDevice->reg->txStat[1];
+      stat = ioread32(&(pgpDevice->reg->txStat[1]));
+      asm("nop");       
 
       // Tx Data is ready
       if ( (stat & 0x80000000) != 0 ) {
@@ -923,7 +928,8 @@ static irqreturn_t PgpCard_IRQHandler(int irq, void *dev_id, struct pt_regs *reg
          do {
 
             // Read dma value
-            stat = pgpDevice->reg->txRead;
+            stat = ioread32(&(pgpDevice->reg->txRead));
+            asm("nop");            
             
             if( (stat & 0x1) == 0x1 ) {
 
@@ -955,7 +961,8 @@ static irqreturn_t PgpCard_IRQHandler(int irq, void *dev_id, struct pt_regs *reg
       }
 
       // Read Rx completion status
-      stat = pgpDevice->reg->rxStatus;
+      stat = ioread32(&(pgpDevice->reg->rxStatus));
+      asm("nop");
 
       // Data is ready
       if ( (stat & 0x80000000) != 0 ) {
@@ -963,9 +970,10 @@ static irqreturn_t PgpCard_IRQHandler(int irq, void *dev_id, struct pt_regs *reg
          do {
             
             // Read descriptor
-            descA = pgpDevice->reg->rxRead[0];
-            asm("nop");//no operation function to force sequential MEM IO read (first rxRead[0] then rxRead[1])
-            descB = pgpDevice->reg->rxRead[1];
+            descA = ioread32(&(pgpDevice->reg->rxRead[0]));
+            asm("nop");
+            descB = ioread32(&(pgpDevice->reg->rxRead[1]));
+            asm("nop");
             
             if( (descB & 0x1) == 0x1 ) {            
             
@@ -1006,7 +1014,10 @@ static irqreturn_t PgpCard_IRQHandler(int irq, void *dev_id, struct pt_regs *reg
                   }
                   
                   // Return entry to FPGA if device is not open
-                  else pgpDevice->reg->rxFree[(descA >> 26) & 0x7] = (descB & 0xFFFFFFFC); 
+                  else {
+                     iowrite32((descB & 0xFFFFFFFC), &(pgpDevice->reg->rxFree[(descA >> 26) & 0x7]));
+                     asm("nop");
+                  }
 
                } else printk(KERN_WARNING "%s: Irq: Failed to locate RX descriptor %.8x. Maj=%i\n",MOD_NAME,(__u32)(descA&0xFFFFFFFC),pgpDevice->major);
             }
@@ -1016,7 +1027,8 @@ static irqreturn_t PgpCard_IRQHandler(int irq, void *dev_id, struct pt_regs *reg
 
       // Enable interrupts
       if ( pgpDevice->debug > 0 ) printk(KERN_DEBUG"%s: Irq: Done. Maj=%i\n", MOD_NAME,pgpDevice->major);
-      pgpDevice->reg->irq = 1;
+      iowrite32(1,&(pgpDevice->reg->irq));
+      asm("nop");      
       ret = IRQ_HANDLED;
    }
    else ret = IRQ_NONE;
@@ -1168,7 +1180,8 @@ static int PgpCard_Probe(struct pci_dev *pcidev, const struct pci_device_id *dev
       };
 
       // Add to RX queue (evenly distributed to all free list RX FIFOs)
-      pgpDevice->reg->rxFree[idx % 8] = pgpDevice->rxBuffer[idx]->dma;     
+      iowrite32(pgpDevice->rxBuffer[idx]->dma,&(pgpDevice->reg->rxFree[idx % 8]));
+      asm("nop");
    }
    pgpDevice->rxRead  = 0;
    pgpDevice->rxWrite = 0;
@@ -1178,7 +1191,8 @@ static int PgpCard_Probe(struct pci_dev *pcidev, const struct pci_device_id *dev
    init_waitqueue_head(&pgpDevice->outq);
 
    // Enable interrupts
-   pgpDevice->reg->irq = 1;
+   iowrite32(1,&(pgpDevice->reg->irq));
+   asm("nop");
 
    printk(KERN_INFO"%s: Init: Driver is loaded. Maj=%i\n", MOD_NAME,pgpDevice->major);
    return SUCCESS;
