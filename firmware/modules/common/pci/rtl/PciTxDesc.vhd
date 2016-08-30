@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2016-08-11
+-- Last update: 2016-08-30
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -63,7 +63,7 @@ architecture rtl of PciTxDesc is
    signal dFifoRd      : std_logic;
    signal dFifoAFull   : std_logic;
    signal dFifoDout    : std_logic_vector(31 downto 0);
-   signal dFifoCnt     : std_logic_vector(8 downto 0);
+   signal dFifoCnt     : std_logic_vector(9 downto 0);
    signal dFifoValid   : std_logic;
    signal interrupt    : sl;
    signal reqIrq       : sl;
@@ -171,7 +171,7 @@ begin
          FWFT_EN_G    => true,
          DATA_WIDTH_G => 32,
          FULL_THRES_G => 500,
-         ADDR_WIDTH_G => 9)    
+         ADDR_WIDTH_G => 10)    
       port map (
          rst        => pciRst,
          clk        => pciClk,
@@ -211,7 +211,7 @@ begin
                -- Status read: valid and count
                elsif regAddr = 65 then
                   regRdData(31)         <= dFifoValid;
-                  regRdData(8 downto 0) <= dFifoCnt;
+                  regRdData(9 downto 0) <= dFifoCnt;
                -- Counter read
                elsif regAddr = 66 then
                   regRdData <= txCount;

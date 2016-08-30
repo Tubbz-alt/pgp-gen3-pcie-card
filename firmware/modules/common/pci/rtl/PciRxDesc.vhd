@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2016-08-25
+-- Last update: 2016-08-30
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -56,7 +56,7 @@ architecture rtl of PciRxDesc is
       Dout  : slv(31 downto 2);
       Full  : sl;
       Empty : sl;
-      Cnt   : slv(8 downto 0);
+      Cnt   : slv(9 downto 0);
       Valid : sl;
    end record;
 
@@ -85,7 +85,7 @@ architecture rtl of PciRxDesc is
    signal rFifoFull  : sl;
    signal rFifoAFull : sl;
    signal rFifoDout  : slv(67 downto 0);
-   signal rFifoCnt   : slv(8 downto 0);
+   signal rFifoCnt   : slv(9 downto 0);
    signal rFifoValid : sl;
    signal doneAck    : slv(0 to (DMA_SIZE_G-1));
    signal rxCount    : slv(31 downto 0)                  := (others => '0');
@@ -156,7 +156,7 @@ begin
             BRAM_EN_G    => true,
             FWFT_EN_G    => true,
             DATA_WIDTH_G => 30,
-            ADDR_WIDTH_G => 9)   
+            ADDR_WIDTH_G => 10)   
          port map (
             rst        => fifoRst,
             clk        => pciClk,
@@ -262,7 +262,7 @@ begin
          BRAM_EN_G    => true,
          FWFT_EN_G    => true,
          DATA_WIDTH_G => 68,
-         ADDR_WIDTH_G => 9)    
+         ADDR_WIDTH_G => 10)    
       port map (
          rst         => fifoRst,
          clk         => pciClk,
@@ -302,7 +302,7 @@ begin
                   if regAddr = (i+32) then
                      regRdData(31)         <= dFifo(i).Full;
                      regRdData(30)         <= dFifo(i).Valid;
-                     regRdData(8 downto 0) <= dFifo(i).Cnt;
+                     regRdData(9 downto 0) <= dFifo(i).Cnt;
                   end if;
                end loop;
                -- Read back the rxFreeEn and maxFrame
@@ -322,7 +322,7 @@ begin
                   regRdData(28)         <= '0';            -- spare
                   regRdData(27)         <= rFifoDout(63);  -- frameErr
                   regRdData(26)         <= rFifoDout(62);  -- EOFE
-                  regRdData(8 downto 0) <= rFifoCnt;
+                  regRdData(9 downto 0) <= rFifoCnt;
                end if;
                -- FIFO Read, low value
                if (regAddr = 67) or (regAddr = 69) then
