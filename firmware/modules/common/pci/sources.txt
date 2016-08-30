@@ -17,6 +17,5 @@ vhdl work rtl/PciTxDesc.vhd
 vhdl work rtl/PciTxDescFifo.vhd
 vhdl work rtl/PciTxDma.vhd
 vhdl work rtl/PciTxDmaMemReq.vhd
-vhdl work rtl/PciTxDmaFifoMux.vhd
 
 vhdl work coregen/PcieCore4xA7.dcp

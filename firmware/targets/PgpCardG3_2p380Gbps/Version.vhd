@@ -4,9 +4,9 @@ use ieee.std_logic_1164.all;
 
 package Version is
 
-constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CEC83021"; -- MAKE_VERSION
+constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CEC83028"; -- MAKE_VERSION
 
-constant BUILD_STAMP_C : string := "PgpCardG3_2p380Gbps: Vivado v2016.2 (x86_64) Built Fri Aug 12 09:20:08 PDT 2016 by ruckman";
+constant BUILD_STAMP_C : string := "PgpCardG3_2p380Gbps: Vivado v2016.2 (x86_64) Built Mon Aug 29 21:03:40 PDT 2016 by ruckman";
 
 end Version;
 
@@ -86,5 +86,26 @@ end Version;
 -- 08/11/2016 (0xCEC83020): Adding "continuous streaming" support
 --
 -- 08/12/2016 (0xCEC83021): Added more pipelining to help with timing for 5.0 Gbps PGP build
+--
+-- 08/12/2016 (0xCEC83022): In PciRxDma.vhd, only update the dmaDescToPci.doneStatus bus when there is a DONE request event
+--
+-- 08/13/2016 (0xCEC83023): In PciRxDma.vhd, moved contEn from doneStatus(8) to doneStatus(5)
+--                          In PgpCore.vhd, if (LSST_MODE_G = false) using for loops to map the PGP streams
+--                          Added pgpRemData[Lane=7:0][Word=7:0] control & pgpRemData[Lane=7:0][Word=7:0] monitoring
 -- 
+-- 08/15/2016 (0xCEC83024): Fixed a bug in PciTxDma.vhd that was created during 0xCEC8301F release
+--                          Added locPause[Lane=7:0][VC=3:0] & locOverflow[Lane=7:0][VC=3:0] monitoring registers
+-- 
+-- 08/19/2016 (0xCEC83025): Added remPause[Lane=7:0][VC=3:0] & remOverflow[Lane=7:0][VC=3:0] monitoring registers
+--                          Adding DMA_LOOPBACK_G generic
+--                          Memory mapping 0x50C to 0x514 and 0x510 to 0x518
+-- 
+-- 08/25/2016 (0xCEC83026): Changed 32-bit and 16-bit AXIS configurations from TKEEP_COMP_C/TUSER_FIRST_LAST_C to TKEEP_NORMAL_C/TUSER_NORMAL_C
+--                          Changed MMCM to BANDWIDTH_G = "HIGH" (optimized for lowest output jitter
+--                          Minor bug fixes (still have not found the cause of the VC corruption bug yet)
+-- 
+-- 08/25/2016 (0xCEC83027): Fixed a flow control bug when a TX DMA starts the first memory request transaction
+-- 
+-- 08/29/2016 (0xCEC83028): Fixed VC corruption bug
+--
 -------------------------------------------------------------------------------

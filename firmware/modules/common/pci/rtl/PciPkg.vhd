@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-03
--- Last update: 2016-08-25
+-- Last update: 2016-08-29
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -20,20 +20,13 @@ use ieee.std_logic_1164.all;
 use work.StdRtlPkg.all;
 use work.AxiStreamPkg.all;
 use work.SsiPkg.all;
+use work.Pgp2bPkg.all;
 
 package PciPkg is
 
    constant PCI_AXIS_CONFIG_C : AxiStreamConfigType := ssiAxiStreamConfig(16, TKEEP_NORMAL_C, TUSER_NORMAL_C);
-   constant AXIS_32B_CONFIG_C : AxiStreamConfigType := ssiAxiStreamConfig(4, TKEEP_NORMAL_C, TUSER_NORMAL_C);
-   constant AXIS_16B_CONFIG_C : AxiStreamConfigType := ssiAxiStreamConfig(2, TKEEP_NORMAL_C, TUSER_NORMAL_C);
-   -- constant PCI_AXIS_CONFIG_C : AxiStreamConfigType := (
-   -- TSTRB_EN_C    => false,
-   -- TDATA_BYTES_C => 16,              -- 128 bit interface
-   -- TDEST_BITS_C  => 4,
-   -- TID_BITS_C    => 0,
-   -- TKEEP_MODE_C  => TKEEP_NORMAL_C,
-   -- TUSER_BITS_C  => 2,               -- SOF, EOFE
-   -- TUSER_MODE_C  => TUSER_NORMAL_C); 
+   constant AXIS_32B_CONFIG_C : AxiStreamConfigType := ssiAxiStreamConfig(4, TKEEP_COMP_C);
+   constant AXIS_16B_CONFIG_C : AxiStreamConfigType := SSI_PGP2B_CONFIG_C;
 
    -- Max transfer length, words
    constant PCIE_MAX_RX_TRANS_LENGTH_C : integer := 32;  -- 128 Bytes, smallest to ensure comparability

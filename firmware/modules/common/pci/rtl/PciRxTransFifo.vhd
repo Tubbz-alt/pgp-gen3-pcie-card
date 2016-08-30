@@ -5,13 +5,13 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2014-06-23
--- Last update: 2016-08-25
+-- Last update: 2016-08-29
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
 -- Description: 
 -------------------------------------------------------------------------------
--- Copyright (c) 2014 SLAC National Accelerator Laboratory
+-- Copyright (c) 2016 SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
 
 library ieee;
@@ -40,7 +40,9 @@ entity PciRxTransFifo is
       mAxisSlave  : in  AxiStreamSlaveType;
       tranRd      : in  sl;
       tranValid   : out sl;
-      tranSubId   : out slv(3 downto 0);
+      tranSubId   : out slv(1 downto 0);
+      tranSof     : out sl;
+      tranEof     : out sl;
       tranEofe    : out sl;
       tranLength  : out slv(8 downto 0);
       tranCnt     : out slv(8 downto 0));
@@ -53,11 +55,12 @@ architecture rtl of PciRxTransFifo is
       SEND_S);  
 
    type RegType is record
-      sof        : sl;
       tranWr     : sl;
-      tranSubId  : slv(3 downto 0);
+      tranSubId  : slv(1 downto 0);
       tranCnt    : slv(8 downto 0);
       tranLength : slv(8 downto 0);
+      tranSof    : sl;
+      tranEof    : sl;
       tranEofe   : sl;
       cnt        : slv(8 downto 0);
       size       : slv(8 downto 0);
@@ -67,11 +70,12 @@ architecture rtl of PciRxTransFifo is
    end record RegType;
    
    constant REG_INIT_C : RegType := (
-      sof        => '1',
       tranWr     => '0',
       tranSubId  => (others => '0'),
       tranCnt    => (others => '0'),
       tranLength => (others => '0'),
+      tranSof    => '1',
+      tranEof    => '1',
       tranEofe   => '0',
       cnt        => toSlv(1, 9),
       size       => toSlv(1, 9),
@@ -82,8 +86,7 @@ architecture rtl of PciRxTransFifo is
    signal r   : RegType := REG_INIT_C;
    signal rin : RegType;
 
-   signal reset      : sl;
-   signal tranAFull  : sl;
+   signal tranPause  : sl;
    signal axisMaster : AxiStreamMasterType;
    signal axisCtrl   : AxiStreamCtrlType;
 
@@ -92,7 +95,7 @@ architecture rtl of PciRxTransFifo is
    
 begin
 
-   comb : process (axisCtrl, r, reset, sAxisMaster, tranAFull) is
+   comb : process (axisCtrl, r, sAxisMaster, sAxisRst, tranPause) is
       variable v : RegType;
    begin
       -- Latch the current value
@@ -103,7 +106,7 @@ begin
       ssiResetFlags(v.axisMaster);
 
       -- Set the ready flag
-      v.sAxisSlave.tReady := sAxisMaster.tValid and not(axisCtrl.pause) and not(tranAFull);
+      v.sAxisSlave.tReady := sAxisMaster.tValid and not(axisCtrl.pause) and not(tranPause);
 
       -- Update the transaction length
       v.tranLength := r.cnt;
@@ -115,16 +118,17 @@ begin
             -- Check if moving data
             if v.sAxisSlave.tReady = '1' then
                -- Check the flag
-               if r.sof = '1' then
+               if r.tranEof = '1' then
                   -- Check for start of frame bit
                   if ssiGetUserSof(AXIS_32B_CONFIG_C, sAxisMaster) = '1' then
                      -- Reset the flags
-                     v.sof        := '0';
+                     v.tranSof    := '1';
+                     v.tranEof    := '0';
                      v.tranEofe   := '0';
                      -- Latch the FIFO data
                      v.axisMaster := sAxisMaster;
                      -- Latch the transaction data
-                     v.tranSubId  := sAxisMaster.tDest(3 downto 0);
+                     v.tranSubId  := sAxisMaster.tDest(1 downto 0);
                      -- Check tLast
                      if sAxisMaster.tLast = '1' then
                         -- Update the EOFE field
@@ -133,8 +137,8 @@ begin
                         v.tranWr   := '1';
                         -- Preset the counter
                         v.cnt      := toSlv(1, 9);
-                        -- Set the flag
-                        v.sof      := '1';
+                        -- Set the flags
+                        v.tranEof  := '1';
                      else
                         -- Reset the counter              
                         v.tranCnt          := (others => '0');
@@ -149,16 +153,23 @@ begin
                else
                   -- Latch the FIFO data
                   v.axisMaster := sAxisMaster;
+                  -- Check for another SOF in the middle of a packet
+                  if (ssiGetUserSof(AXIS_32B_CONFIG_C, sAxisMaster) = '1') and (sAxisMaster.tLast = '0') then
+                     v.tranEofe := '1';
+                  end if;
                   -- Check tLast
                   if sAxisMaster.tLast = '1' then
-                     -- Update the EOFE field
-                     v.tranEofe := ssiGetUserEofe(AXIS_32B_CONFIG_C, sAxisMaster);
+                     -- Check the flag
+                     if r.tranEofe = '0' then
+                        -- Update the EOFE field
+                        v.tranEofe := ssiGetUserEofe(AXIS_32B_CONFIG_C, sAxisMaster);
+                     end if;
                      -- Write to the transaction FIFO
-                     v.tranWr   := '1';
+                     v.tranWr  := '1';
                      -- Preset the counter
-                     v.cnt      := toSlv(1, 9);
-                     -- Set the flag
-                     v.sof      := '1';
+                     v.cnt     := toSlv(1, 9);
+                     -- Set the flags
+                     v.tranEof := '1';
                   else
                      -- Reset the counter              
                      v.tranCnt          := (others => '0');
@@ -205,15 +216,22 @@ begin
                   -- Increment the counter
                   v.tranCnt                         := r.tranCnt + 1;
                end if;
+               -- Check for another SOF in the middle of a packet
+               if (ssiGetUserSof(AXIS_32B_CONFIG_C, sAxisMaster) = '1') and (sAxisMaster.tLast = '0') then
+                  v.tranEofe := '1';
+               end if;
                -- Check the counter and tLast
                if (r.cnt = PCIE_MAX_RX_TRANS_LENGTH_C) or (sAxisMaster.tLast = '1') then
                   -- Check for EOF flag 
                   if (sAxisMaster.tLast = '1') then
-                     -- Update the EOFE field
-                     v.tranEofe := ssiGetUserEofe(AXIS_32B_CONFIG_C, sAxisMaster);
+                     -- Check the flag
+                     if r.tranEofe = '0' then
+                        -- Update the EOFE field
+                        v.tranEofe := ssiGetUserEofe(AXIS_32B_CONFIG_C, sAxisMaster);
+                     end if;
+                     -- Set the flags
+                     v.tranEof := '1';
                   end if;
-                  -- Set the flag
-                  v.sof               := sAxisMaster.tLast;
                   -- Write to the transaction FIFO
                   v.tranWr            := '1';
                   -- Preset the counter
@@ -231,9 +249,8 @@ begin
       ----------------------------------------------------------------------
       end case;
 
-
       -- Reset
-      if (reset = '1') then
+      if (sAxisRst = '1') then
          v := REG_INIT_C;
       end if;
 
@@ -253,18 +270,11 @@ begin
       end if;
    end process seq;
 
-   U_RstSync : entity work.RstSync
-      generic map (
-         TPD_G => TPD_G)
-      port map (
-         clk      => sAxisClk,
-         asyncRst => pciRst,
-         syncRst  => reset);   
-
    FIFO_DATA : entity work.AxiStreamFifo
       generic map (
          -- General Configurations
          TPD_G               => TPD_G,
+         INT_PIPE_STAGES_G   => 1,
          PIPE_STAGES_G       => 1,
          SLAVE_READY_EN_G    => false,
          VALID_THOLD_G       => 1,
@@ -278,13 +288,13 @@ begin
          ALTERA_RAM_G        => "M9K",
          FIFO_ADDR_WIDTH_G   => 9,
          FIFO_FIXED_THRESH_G => true,
-         FIFO_PAUSE_THRESH_G => 500,
+         FIFO_PAUSE_THRESH_G => 256,
          SLAVE_AXI_CONFIG_G  => PCI_AXIS_CONFIG_C,
          MASTER_AXI_CONFIG_G => PCI_AXIS_CONFIG_C) 
       port map (
          -- Slave Port
          sAxisClk    => sAxisClk,
-         sAxisRst    => reset,
+         sAxisRst    => sAxisRst,
          sAxisMaster => axisMaster,
          sAxisCtrl   => axisCtrl,
          -- Master Port
@@ -299,21 +309,26 @@ begin
          BRAM_EN_G    => true,
          FWFT_EN_G    => true,
          DATA_WIDTH_G => 23,
-         ADDR_WIDTH_G => 10)
+         ADDR_WIDTH_G => 10,
+         FULL_THRES_G => 512)
       port map (
-         rst                => reset,
+         rst                => sAxisRst,
          --Write Ports (wr_clk domain)
          wr_clk             => sAxisClk,
          wr_en              => r.tranWr,
-         din(22 downto 19)  => r.tranSubId,
+         din(22 downto 21)  => r.tranSubId,
+         din(20)            => r.tranSof,
+         din(19)            => r.tranEof,
          din(18)            => r.tranEofe,
          din(17 downto 9)   => r.tranLength,
          din(8 downto 0)    => r.tranCnt,
-         almost_full        => tranAFull,
+         prog_full          => tranPause,
          --Read Ports (rd_clk domain)
          rd_clk             => pciClk,
          rd_en              => tranRd,
-         dout(22 downto 19) => tranSubId,
+         dout(22 downto 21) => tranSubId,
+         dout(20)           => tranSof,
+         dout(19)           => tranEof,
          dout(18)           => tranEofe,
          dout(17 downto 9)  => tranLength,
          dout(8 downto 0)   => tranCnt,

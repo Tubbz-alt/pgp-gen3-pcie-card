@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-03
--- Last update: 2016-08-25
+-- Last update: 2016-08-29
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -55,57 +55,62 @@ architecture rtl of PciRxDma is
       TR_DONE_S);    
 
    type RegType is record
-      rst           : sl;
-      tranRd        : sl;
-      contEn        : sl;
-      frameErr      : sl;
-      tranEofe      : sl;
-      tranSubId     : slv(3 downto 0);
-      tranLength    : slv(9 downto 0);
-      tranCnt       : slv(9 downto 0);
-      cnt           : slv(9 downto 0);
-      dumpCnt       : slv(9 downto 0);
-      newAddr       : slv(29 downto 0);
-      maxFrameCheck : Slv24Array(0 to 3);
-      dmaDescToPci  : DescToPciType;
-      rxSlave       : AxiStreamSlaveType;
-      txMaster      : AxiStreamMasterType;
-      state         : StateType;
+      errDet       : sl;
+      tranRd       : sl;
+      contEn       : sl;
+      lengthErr    : sl;
+      tranEof      : sl;
+      tranEofe     : sl;
+      tranSubId    : slv(1 downto 0);
+      tranLength   : slv(9 downto 0);
+      tranCnt      : slv(9 downto 0);
+      cnt          : slv(9 downto 0);
+      dumpCnt      : slv(9 downto 0);
+      newAddr      : slv(29 downto 0);
+      maxFrame     : slv(23 downto 0);
+      dmaDescToPci : DescToPciType;
+      rxSlave      : AxiStreamSlaveType;
+      txMaster     : AxiStreamMasterType;
+      state        : StateType;
    end record RegType;
    
    constant REG_INIT_C : RegType := (
-      rst           => '1',
-      tranRd        => '0',
-      contEn        => '0',
-      frameErr      => '0',
-      tranEofe      => '0',
-      tranSubId     => (others => '0'),
-      tranLength    => (others => '0'),
-      tranCnt       => (others => '0'),
-      cnt           => (others => '0'),
-      dumpCnt       => (others => '0'),
-      newAddr       => (others => '0'),
-      maxFrameCheck => (others => (others => '0')),
-      dmaDescToPci  => DESC_TO_PCI_INIT_C,
-      rxSlave       => AXI_STREAM_SLAVE_INIT_C,
-      txMaster      => AXI_STREAM_MASTER_INIT_C,
-      state         => IDLE_S);
+      errDet       => '0',
+      tranRd       => '0',
+      contEn       => '0',
+      lengthErr    => '0',
+      tranEof      => '0',
+      tranEofe     => '0',
+      tranSubId    => (others => '0'),
+      tranLength   => (others => '0'),
+      tranCnt      => (others => '0'),
+      cnt          => (others => '0'),
+      dumpCnt      => (others => '0'),
+      newAddr      => (others => '0'),
+      maxFrame     => (others => '0'),
+      dmaDescToPci => DESC_TO_PCI_INIT_C,
+      rxSlave      => AXI_STREAM_SLAVE_INIT_C,
+      txMaster     => AXI_STREAM_MASTER_INIT_C,
+      state        => IDLE_S);
 
    signal r   : RegType := REG_INIT_C;
    signal rin : RegType;
 
-   signal tranValid,
-      tranEofe : sl;
-   signal tranSubId : slv(3 downto 0);
-   signal tranLength,
-      tranCnt : slv(8 downto 0);
+   signal tranValid  : sl;
+   signal tranRd     : sl;
+   signal tranSof    : sl;
+   signal tranEof    : sl;
+   signal tranEofe   : sl;
+   signal tranSubId  : slv(1 downto 0);
+   signal tranLength : slv(8 downto 0);
+   signal tranCnt    : slv(8 downto 0);
 
    signal rxMaster : AxiStreamMasterType;
    signal rxSlave  : AxiStreamSlaveType;
    signal txSlave  : AxiStreamSlaveType;
 
-   -- attribute dont_touch      : string;
-   -- attribute dont_touch of r : signal is "true";
+   attribute dont_touch      : string;
+   attribute dont_touch of r : signal is "true";
    
 begin
 
@@ -120,25 +125,26 @@ begin
          sAxisSlave  => sAxisSlave,
          -- Streaming RX Interface
          pciClk      => pciClk,
-         pciRst      => r.rst,
+         pciRst      => pciRst,
          mAxisMaster => rxMaster,
          mAxisSlave  => rxSlave,
-         tranRd      => r.tranRd,
+         tranRd      => tranRd,
          tranValid   => tranValid,
          tranSubId   => tranSubId,
+         tranSof     => tranSof,
+         tranEof     => tranEof,
          tranEofe    => tranEofe,
          tranLength  => tranLength,
          tranCnt     => tranCnt);
 
    comb : process (dmaChannel, dmaDescFromPci, dmaTranFromPci, pciRst, r, rxMaster, tranCnt,
-                   tranEofe, tranLength, tranSubId, tranValid, txSlave) is
+                   tranEof, tranEofe, tranLength, tranSof, tranSubId, tranValid, txSlave) is
       variable v : RegType;
    begin
       -- Latch the current value
       v := r;
 
       -- Reset strobing signals
-      v.rst            := '0';
       v.tranRd         := '0';
       v.rxSlave.tReady := '0';
 
@@ -151,54 +157,46 @@ begin
       case r.state is
          ----------------------------------------------------------------------
          when IDLE_S =>
-            -- Check for data in the transaction FIFO and data FIFO
-            if (tranValid = '1') and (r.rst = '0') and (v.txMaster.tValid = '0') and (rxMaster.tValid = '1') then
-               -- Check for start of frame bit or Continue enabled
-               if (ssiGetUserSof(AXIS_32B_CONFIG_C, rxMaster) = '1') or (r.contEn = '1') then
+            -- Check for start of transaction w/ data
+            if (tranValid = '1') and (rxMaster.tValid = '1') then
+               -- Check for Continue enabled
+               if (r.contEn = '1') then
                   -- Send a request to the descriptor
                   v.dmaDescToPci.newReq := '1';
                   -- Next state
                   v.state               := ACK_WAIT_S;
-               else
-                  -- Blowoff data
-                  v.rxSlave.tReady := '1';
+               -- Check for tranSof and axisSof
+               elsif (tranSof = '1') and (ssiGetUserSof(AXIS_32B_CONFIG_C, rxMaster) = '1') then
+                  -- Send a request to the descriptor
+                  v.dmaDescToPci.newReq := '1';
+                  -- Next state
+                  v.state               := ACK_WAIT_S;
                end if;
+            end if;
+            -- Check for SOF state
+            if (r.contEn = '0') then
+               -- Set the flag
+               v.errDet         := '1';
+               -- Blowoff transaction and/or data
+               v.tranRd         := tranValid and not(tranSof);
+               v.rxSlave.tReady := rxMaster.tValid and not(ssiGetUserSof(AXIS_32B_CONFIG_C, rxMaster));
             end if;
          ----------------------------------------------------------------------
          when ACK_WAIT_S =>
-            -- Send a request to the descriptor
-            v.dmaDescToPci.newReq := '1';
             -- Wait for descriptor 
             if dmaDescFromPci.newAck = '1' then
                -- Reset request flag
                v.dmaDescToPci.newReq     := '0';
                -- Reset the error flag
-               v.frameErr                := '0';
+               v.lengthErr               := '0';
                -- Latch the descriptor values
                v.contEn                  := dmaDescFromPci.contEn;
                v.dmaDescToPci.doneAddr   := dmaDescFromPci.newAddr;
                v.newAddr(29 downto 0)    := dmaDescFromPci.newAddr;
+               v.maxFrame                := dmaDescFromPci.maxFrame;
                v.dmaDescToPci.doneLength := (others => '0');
-               if dmaDescFromPci.maxFrame = 0 then
-                  -- Set the error flag
-                  v.frameErr := '1';
-               elsif dmaDescFromPci.maxFrame = 1 then
-                  -- Set the error flag
-                  v.frameErr := '1';
-               elsif dmaDescFromPci.maxFrame = 2 then
-                  -- Set the error flag
-                  v.frameErr := '1';
-               elsif dmaDescFromPci.maxFrame = 3 then
-                  -- Set the error flag
-                  v.frameErr := '1';
-               else
-                  v.maxFrameCheck(0) := dmaDescFromPci.maxFrame - 1;
-                  v.maxFrameCheck(1) := dmaDescFromPci.maxFrame - 2;
-                  v.maxFrameCheck(2) := dmaDescFromPci.maxFrame - 3;
-                  v.maxFrameCheck(3) := dmaDescFromPci.maxFrame - 4;
-               end if;
                -- Next state
-               v.state := READ_TRANS_S;
+               v.state                   := READ_TRANS_S;
             end if;
          ----------------------------------------------------------------------
          when READ_TRANS_S =>
@@ -208,6 +206,7 @@ begin
                v.tranRd     := '1';
                -- Latch the transaction length
                v.tranSubId  := tranSubId;
+               v.tranEof    := tranEof;
                v.tranEofe   := tranEofe;
                v.tranLength := '0' & tranLength;
                v.tranCnt    := '0' & tranCnt;
@@ -259,7 +258,7 @@ begin
                v.txMaster.tData(11 downto 10) := "00";  --PCIe reserved
 
                -- Check for frame length error
-               if r.frameErr = '1' then
+               if r.lengthErr = '1' then
                   v.txMaster.tData(9 downto 0)   := toSlv(1, 10);  -- Force a length of 1
                   v.txMaster.tData(39 downto 36) := "0000";        -- Last DW Byte Enable
                else                                                --no error detected
@@ -276,16 +275,16 @@ begin
                v.dmaDescToPci.doneLength := r.dmaDescToPci.doneLength + 1;
 
                -- Check for frame length error
-               if ((r.dmaDescToPci.doneLength = r.maxFrameCheck(0)) and (r.contEn = '0')) then
+               if (r.dmaDescToPci.doneLength = r.maxFrame) then
                   -- Set the error flag
-                  v.frameErr := '1';
+                  v.lengthErr := '1';
                end if;
 
                -- Set AXIS tKeep
                v.txMaster.tKeep := x"FFFF";
 
                -- Check for frame length error
-               if (v.frameErr = '1') then
+               if (v.lengthErr = '1') and (r.contEn = '0') then
                   -- Assert the end of TLP packet flag
                   v.txMaster.tLast       := '1';  --EOF 
                   -- Let the descriptor know that we are done
@@ -297,13 +296,18 @@ begin
                -- Check if this is last data read
                elsif r.tranLength = 1 then
                   -- Assert the end of TLP packet flag
-                  v.txMaster.tLast := '1';        --EOF 
+                  v.txMaster.tLast := '1';        --EOF
+                  -- Check for continuous mode
+                  if r.contEn = '1' then
+                     -- Override the frame length checking
+                     v.lengthErr := '0';
+                     -- Update the flag
+                     v.contEn    := not(rxMaster.tLast or r.tranEof);
+                  end if;
                   -- Check if this is the end of frame
-                  if rxMaster.tLast = '1' then
+                  if (rxMaster.tLast = '1') or (r.tranEof = '1') then
                      -- Let the descriptor know that we are done
                      v.dmaDescToPci.doneReq := '1';
-                     -- Reset the flag
-                     v.contEn               := '0';
                      -- Next state
                      v.state                := TR_DONE_S;
                   else
@@ -325,44 +329,44 @@ begin
                v.txMaster.tValid := '1';
                v.txMaster.tData  := rxMaster.tData;
                v.txMaster.tKeep  := rxMaster.tKeep;
-               -- Increment the frameLength based on tKeep
-               if rxMaster.tKeep = x"000F" then
-                  -- Increment the counter by 1
+               -- Increment the frameLength based on WORD[0]
+               if rxMaster.tKeep(3 downto 0) = x"F" then
+                  -- Increment the counter
                   v.dmaDescToPci.doneLength := r.dmaDescToPci.doneLength + 1;
                   -- Check for frame length error
-                  if r.dmaDescToPci.doneLength = r.maxFrameCheck(0) then
+                  if v.dmaDescToPci.doneLength = r.maxFrame then
                      -- Set the error flag
-                     v.frameErr := '1';
+                     v.lengthErr := '1';
                   end if;
-               elsif rxMaster.tKeep = x"00FF" then
-                  -- Increment the counter by 1
+               end if;
+               -- Increment the frameLength based on WORD[1]
+               if rxMaster.tKeep(7 downto 4) = x"F" then
+                  -- Increment the counter
                   v.dmaDescToPci.doneLength := r.dmaDescToPci.doneLength + 2;
                   -- Check for frame length error
-                  if (r.dmaDescToPci.doneLength = r.maxFrameCheck(0))
-                     or (r.dmaDescToPci.doneLength = r.maxFrameCheck(1)) then
+                  if v.dmaDescToPci.doneLength = r.maxFrame then
                      -- Set the error flag
-                     v.frameErr := '1';
+                     v.lengthErr := '1';
                   end if;
-               elsif rxMaster.tKeep = x"0FFF" then
-                  -- Increment the counter by 1
+               end if;
+               -- Increment the frameLength based on WORD[2]
+               if rxMaster.tKeep(11 downto 8) = x"F" then
+                  -- Increment the counter
                   v.dmaDescToPci.doneLength := r.dmaDescToPci.doneLength + 3;
                   -- Check for frame length error
-                  if (r.dmaDescToPci.doneLength = r.maxFrameCheck(0))
-                     or (r.dmaDescToPci.doneLength = r.maxFrameCheck(1))
-                     or (r.dmaDescToPci.doneLength = r.maxFrameCheck(2)) then
+                  if v.dmaDescToPci.doneLength = r.maxFrame then
                      -- Set the error flag
-                     v.frameErr := '1';
+                     v.lengthErr := '1';
                   end if;
-               else
-                  -- Increment the counter by 1
+               end if;
+               -- Increment the frameLength based on WORD[3]
+               if rxMaster.tKeep(15 downto 12) = x"F" then
+                  -- Increment the counter
                   v.dmaDescToPci.doneLength := r.dmaDescToPci.doneLength + 4;
                   -- Check for frame length error
-                  if (r.dmaDescToPci.doneLength = r.maxFrameCheck(0))
-                     or (r.dmaDescToPci.doneLength = r.maxFrameCheck(1))
-                     or (r.dmaDescToPci.doneLength = r.maxFrameCheck(2))
-                     or (r.dmaDescToPci.doneLength = r.maxFrameCheck(3)) then
+                  if v.dmaDescToPci.doneLength = r.maxFrame then
                      -- Set the error flag
-                     v.frameErr := '1';
+                     v.lengthErr := '1';
                   end if;
                end if;
                -- Increment counter
@@ -374,12 +378,12 @@ begin
                   -- Check for continuous mode
                   if r.contEn = '1' then
                      -- Override the frame length checking
-                     v.frameErr := '0';
+                     v.lengthErr := '0';
                      -- Update the flag
-                     v.contEn   := not(rxMaster.tLast);
+                     v.contEn    := not(rxMaster.tLast or r.tranEof);
                   end if;
                   -- Check if this is the end of frame or error
-                  if (rxMaster.tLast = '1') or (v.frameErr = '1') then
+                  if (rxMaster.tLast = '1') or (r.tranEof = '1') or (v.lengthErr = '1') then
                      -- Let the descriptor know that we are done
                      v.dmaDescToPci.doneReq := '1';
                      -- Next state
@@ -393,8 +397,6 @@ begin
             end if;
          ----------------------------------------------------------------------
          when TR_DONE_S =>
-            -- Reset if error detected
-            v.rst := r.frameErr;
             -- Wait for descriptor to ACK signal
             if dmaDescFromPci.doneAck = '1' then
                -- Reset flag
@@ -405,15 +407,13 @@ begin
       ----------------------------------------------------------------------
       end case;
 
-      -- Latch the Status value when there is a DONE request event
-      if (v.dmaDescToPci.doneReq = '1') and (r.dmaDescToPci.doneReq = '0') then
-         v.dmaDescToPci.doneStatus(11 downto 8) := (others => '0');
-         v.dmaDescToPci.doneStatus(7)           := v.frameErr;
-         v.dmaDescToPci.doneStatus(6)           := v.tranEofe;
-         v.dmaDescToPci.doneStatus(5)           := v.contEn;
-         v.dmaDescToPci.doneStatus(4 downto 2)  := dmaChannel;
-         v.dmaDescToPci.doneStatus(1 downto 0)  := r.tranSubId(1 downto 0);
-      end if;
+      -- Update the done status
+      v.dmaDescToPci.doneStatus(11 downto 8) := (others => '0');
+      v.dmaDescToPci.doneStatus(7)           := v.lengthErr;
+      v.dmaDescToPci.doneStatus(6)           := v.tranEofe;
+      v.dmaDescToPci.doneStatus(5)           := v.contEn;
+      v.dmaDescToPci.doneStatus(4 downto 2)  := dmaChannel;
+      v.dmaDescToPci.doneStatus(1 downto 0)  := r.tranSubId;
 
       -- Reset
       if (pciRst = '1') then
@@ -425,6 +425,7 @@ begin
 
       -- Outputs
       rxSlave      <= v.rxSlave;
+      tranRd       <= v.tranRd;
       dmaDescToPci <= r.dmaDescToPci;
       
    end process comb;
@@ -436,32 +437,16 @@ begin
       end if;
    end process seq;
 
-   FIFO_TX : entity work.AxiStreamFifo
+   U_Pipeline : entity work.AxiStreamPipeline
       generic map (
-         -- General Configurations
-         TPD_G               => TPD_G,
-         PIPE_STAGES_G       => 1,
-         SLAVE_READY_EN_G    => true,
-         VALID_THOLD_G       => 1,
-         -- FIFO configurations
-         BRAM_EN_G           => false,
-         USE_BUILT_IN_G      => false,
-         GEN_SYNC_FIFO_G     => true,
-         CASCADE_SIZE_G      => 1,
-         FIFO_ADDR_WIDTH_G   => 4,
-         -- AXI Stream Port Configurations
-         SLAVE_AXI_CONFIG_G  => PCI_AXIS_CONFIG_C,
-         MASTER_AXI_CONFIG_G => PCI_AXIS_CONFIG_C)            
+         TPD_G         => TPD_G,
+         PIPE_STAGES_G => 1)
       port map (
-         -- Slave Port
-         sAxisClk    => pciClk,
-         sAxisRst    => pciRst,
+         axisClk     => pciClk,
+         axisRst     => pciRst,
          sAxisMaster => r.txMaster,
          sAxisSlave  => txSlave,
-         -- Master Port
-         mAxisClk    => pciClk,
-         mAxisRst    => pciRst,
          mAxisMaster => dmaIbMaster,
-         mAxisSlave  => dmaIbSlave);     
+         mAxisSlave  => dmaIbSlave);        
 
 end rtl;

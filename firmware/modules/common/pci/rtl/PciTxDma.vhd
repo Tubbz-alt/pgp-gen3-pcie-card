@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-03
--- Last update: 2016-08-15
+-- Last update: 2016-08-29
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -56,6 +56,7 @@ architecture rtl of PciTxDma is
       contEn    : sl;
       done      : sl;
       remLength : slv(23 downto 0);
+      idx       : natural range 0 to 3;
       rxSlave   : AxiStreamSlaveType;
       txMaster  : AxiStreamMasterType;
       state     : StateType;
@@ -66,6 +67,7 @@ architecture rtl of PciTxDma is
       contEn    => '0',
       done      => '0',
       remLength => (others => '0'),
+      idx       => 0,
       rxSlave   => AXI_STREAM_SLAVE_INIT_C,
       txMaster  => AXI_STREAM_MASTER_INIT_C,
       state     => IDLE_S);
@@ -82,7 +84,7 @@ architecture rtl of PciTxDma is
    signal axisMaster : AxiStreamMasterType;
    signal rxMaster   : AxiStreamMasterType;
    signal rxSlave    : AxiStreamSlaveType;
-   signal txSlave    : AxiStreamSlaveType;
+   signal txCtrl     : AxiStreamCtrlType;
    signal dmaCtrl    : AxiStreamCtrlType;
 
    -- attribute dont_touch               : string;
@@ -126,10 +128,11 @@ begin
          BRAM_EN_G           => true,
          USE_BUILT_IN_G      => false,
          GEN_SYNC_FIFO_G     => true,
-         CASCADE_SIZE_G      => 1,
+         CASCADE_SIZE_G      => 2,
          FIFO_ADDR_WIDTH_G   => 9,
          FIFO_FIXED_THRESH_G => true,
-         FIFO_PAUSE_THRESH_G => 256,  -- min. threshold =  (511 - 2*(PCIE_MAX_TX_TRANS_LENGTH_C/4))
+         FIFO_PAUSE_THRESH_G => 256,
+         CASCADE_PAUSE_SEL_G => 0,
          -- AXI Stream Port Configurations
          SLAVE_AXI_CONFIG_G  => PCI_AXIS_CONFIG_C,
          MASTER_AXI_CONFIG_G => PCI_AXIS_CONFIG_C)            
@@ -151,7 +154,7 @@ begin
 
    dmaSof <= '1' when(r.remLength = newLength) else '0';
 
-   comb : process (dmaSof, newControl, newLength, pciRst, r, rxMaster, start, txSlave) is
+   comb : process (dmaSof, newControl, newLength, pciRst, r, rxMaster, start, txCtrl) is
       variable v : RegType;
    begin
       -- Latch the current value
@@ -162,11 +165,12 @@ begin
       v.rxSlave.tReady := '0';
 
       -- Update tValid register
-      if txSlave.tReady = '1' then
-         v.txMaster.tValid := '0';
-         v.txMaster.tLast  := '0';
-         v.txMaster.tUser  := (others => '0');
-      end if;
+      v.txMaster.tValid := '0';
+      v.txMaster.tLast  := '0';
+      v.txMaster.tUser  := (others => '0');
+
+      -- Only 32-bit transfers
+      v.txMaster.tKeep := x"000F";
 
       case r.state is
          ----------------------------------------------------------------------
@@ -189,127 +193,75 @@ begin
          ----------------------------------------------------------------------
          when COLLECT_S =>
             -- Check if ready to move data 
-            if (v.txMaster.tValid = '0') and (rxMaster.tValid = '1') then
-               -- Ready for data
-               v.rxSlave.tReady  := '1';
+            if (txCtrl.pause = '0') and (rxMaster.tValid = '1') then
                -- Write to the FIFO
                v.txMaster.tValid := '1';
-               -- Check local & DMA SOF variable
-               if (r.sof = '1') and (dmaSof = '1') then
-                  -- Reset the flag
-                  v.sof := '0';
-                  -- Set the SOF bit
-                  ssiSetUserSof(PCI_AXIS_CONFIG_C, v.txMaster, '1');
-               end if;
+               -- Decrement the counter
+               v.remLength       := r.remLength - 1;
                -- Check for TLP SOF
                if ssiGetUserSof(PCI_AXIS_CONFIG_C, rxMaster) = '1' then
-                  -- Set the tKeep
-                  v.txMaster.tKeep              := x"000F";
+                  -- Accept the data
+                  v.rxSlave.tReady := '1';
+                  -- Check local & DMA SOF variable
+                  if (r.sof = '1') and (dmaSof = '1') then
+                     -- Reset the flag
+                     v.sof := '0';
+                     -- Set the SOF bit
+                     ssiSetUserSof(AXIS_32B_CONFIG_C, v.txMaster, '1');
+                  end if;
                   -- Blow off the 3-DW header and grab the 4th DW
                   v.txMaster.tData(31 downto 0) := rxMaster.tData(127 downto 96);
-                  -- Decrement the counter
-                  v.remLength                   := r.remLength - 1;
-                  -- Check if this is the last DMA word to transfer
-                  if r.remLength = 1 then
-                     -- Handshake with Memory Requester  
-                     v.done := '1';
-                     -- Check for not continuous mode
-                     if r.contEn = '0' then
-                        -- Reset the flag
-                        v.sof            := '1';
-                        -- Set the EOF bit
-                        v.txMaster.tLast := '1';
-                     end if;
-                     -- Next state
-                     v.state := IDLE_S;
-                  end if;
+                  -- Reset index pointer
+                  v.idx                         := 0;
                else
-                  -- Set the tKeep
-                  v.txMaster.tKeep := rxMaster.tKeep;
-                  -- Latch the data
-                  v.txMaster.tData := rxMaster.tData;
-                  -- Check RX tKeep 
-                  if rxMaster.tKeep(15 downto 12) = x"F" then
-                     -- Decrement the counter
-                     v.remLength := r.remLength - 4;
-                  elsif rxMaster.tKeep(11 downto 8) = x"F" then
-                     -- Decrement the counter
-                     v.remLength := r.remLength - 3;
-                  elsif rxMaster.tKeep(7 downto 4) = x"F" then
-                     -- Decrement the counter
-                     v.remLength := r.remLength - 2;
-                  else
-                     -- Decrement the counter
-                     v.remLength := r.remLength - 1;
-                  end if;
-                  ----------------------------------------------------------
-                  case r.remLength is
-                     when toSlv(1, 24) =>
-                        -- Set the tKeep
-                        v.txMaster.tKeep := x"000F";
-                        -- Handshake with Memory Requester  
-                        v.done           := '1';
-                        -- Check for not continuous mode
-                        if r.contEn = '0' then
-                           -- Reset the flag
-                           v.sof            := '1';
-                           -- Set the EOF bit
-                           v.txMaster.tLast := '1';
+                  -- Move the data
+                  v.txMaster.tData(31 downto 0) := rxMaster.tData((32*r.idx)+31 downto (32*r.idx));
+                  -- Check the index pointer
+                  case r.idx is
+                     when 0 =>
+                        if rxMaster.tKeep(7 downto 4) = x"F" then
+                           -- Preset index pointer
+                           v.idx := 1;
                         end if;
-                        -- Next state
-                        v.state := IDLE_S;
-                     when toSlv(2, 24) =>
-                        if rxMaster.tKeep(7 downto 0) = x"FF" then
-                           -- Set the tKeep
-                           v.txMaster.tKeep := x"00FF";
-                           -- Handshake with Memory Requester  
-                           v.done           := '1';
-                           -- Check for not continuous mode
-                           if r.contEn = '0' then
-                              -- Reset the flag
-                              v.sof            := '1';
-                              -- Set the EOF bit
-                              v.txMaster.tLast := '1';
-                           end if;
-                           -- Next state
-                           v.state := IDLE_S;
+                     when 1 =>
+                        if rxMaster.tKeep(11 downto 8) = x"F" then
+                           -- Preset index pointer
+                           v.idx := 2;
+                        else
+                           -- Reset index pointer
+                           v.idx := 0;
                         end if;
-                     when toSlv(3, 24) =>
-                        if rxMaster.tKeep(11 downto 0) = x"FFF" then
-                           -- Set the tKeep
-                           v.txMaster.tKeep := x"0FFF";
-                           -- Handshake with Memory Requester  
-                           v.done           := '1';
-                           -- Check for not continuous mode
-                           if r.contEn = '0' then
-                              -- Reset the flag
-                              v.sof            := '1';
-                              -- Set the EOF bit
-                              v.txMaster.tLast := '1';
-                           end if;
-                           -- Next state
-                           v.state := IDLE_S;
-                        end if;
-                     when toSlv(4, 24) =>
-                        if rxMaster.tKeep(15 downto 0) = x"FFFF" then
-                           -- Set the tKeep
-                           v.txMaster.tKeep := x"FFFF";
-                           -- Handshake with Memory Requester  
-                           v.done           := '1';
-                           -- Check for not continuous mode
-                           if r.contEn = '0' then
-                              -- Reset the flag
-                              v.sof            := '1';
-                              -- Set the EOF bit
-                              v.txMaster.tLast := '1';
-                           end if;
-                           -- Next state
-                           v.state := IDLE_S;
+                     when 2 =>
+                        if rxMaster.tKeep(15 downto 12) = x"F" then
+                           -- Preset index pointer
+                           v.idx := 3;
+                        else
+                           -- Reset index pointer
+                           v.idx := 0;
                         end if;
                      when others =>
-                        null;
+                        -- Reset index pointer
+                        v.idx := 0;
                   end case;
-               ----------------------------------------------------------
+                  -- Check the state of the pointer
+                  if v.idx = 0 then
+                     -- Accept the data
+                     v.rxSlave.tReady := '1';
+                  end if;
+               end if;
+               -- Check if this is the last DMA word to transfer
+               if r.remLength = 1 then
+                  -- Handshake with Memory Requester  
+                  v.done := '1';
+                  -- Check for not continuous mode
+                  if r.contEn = '0' then
+                     -- Reset the flag
+                     v.sof            := '1';
+                     -- Set the EOF bit
+                     v.txMaster.tLast := '1';
+                  end if;
+                  -- Next state
+                  v.state := IDLE_S;
                end if;
             end if;
       ----------------------------------------------------------------------
@@ -335,19 +287,38 @@ begin
       end if;
    end process seq;
 
-   PciTxDmaFifoMux_Inst : entity work.PciTxDmaFifoMux
+   FIFO_TX : entity work.AxiStreamFifo
       generic map (
-         TPD_G => TPD_G)
+         -- General Configurations
+         TPD_G               => TPD_G,
+         INT_PIPE_STAGES_G   => 1,
+         PIPE_STAGES_G       => 1,
+         SLAVE_READY_EN_G    => false,
+         VALID_THOLD_G       => 1,
+         -- FIFO configurations
+         CASCADE_SIZE_G      => 1,
+         BRAM_EN_G           => true,
+         XIL_DEVICE_G        => "7SERIES",
+         USE_BUILT_IN_G      => false,
+         GEN_SYNC_FIFO_G     => false,
+         ALTERA_SYN_G        => false,
+         ALTERA_RAM_G        => "M9K",
+         FIFO_ADDR_WIDTH_G   => 9,
+         FIFO_FIXED_THRESH_G => true,
+         FIFO_PAUSE_THRESH_G => 256,
+         -- AXI Stream Port Configurations
+         SLAVE_AXI_CONFIG_G  => AXIS_32B_CONFIG_C,
+         MASTER_AXI_CONFIG_G => AXIS_32B_CONFIG_C)            
       port map (
-         -- 128-bit Streaming RX Interface
-         pciClk      => pciClk,
-         pciRst      => pciRst,
+         -- Slave Port
+         sAxisClk    => pciClk,
+         sAxisRst    => pciRst,
          sAxisMaster => r.txMaster,
-         sAxisSlave  => txSlave,
-         -- 32-bit Streaming TX Interface
+         sAxisCtrl   => txCtrl,
+         -- Master Port
          mAxisClk    => mAxisClk,
          mAxisRst    => mAxisRst,
          mAxisMaster => mAxisMaster,
-         mAxisSlave  => mAxisSlave);           
+         mAxisSlave  => mAxisSlave);            
 
 end rtl;

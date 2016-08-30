@@ -4,9 +4,9 @@ use ieee.std_logic_1164.all;
 
 package Version is
 
-constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CEC83026"; -- MAKE_VERSION
+constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CEC83028"; -- MAKE_VERSION
 
-constant BUILD_STAMP_C : string := "PgpCardG3_3p125Gbps: Vivado v2016.2 (x86_64) Built Wed Aug 24 17:15:22 PDT 2016 by ruckman";
+constant BUILD_STAMP_C : string := "PgpCardG3_3p125Gbps: Vivado v2016.2 (x86_64) Built Mon Aug 29 18:47:39 PDT 2016 by ruckman";
 
 end Version;
 
@@ -104,4 +104,8 @@ end Version;
 --                          Changed MMCM to BANDWIDTH_G = "HIGH" (optimized for lowest output jitter
 --                          Minor bug fixes (still have not found the cause of the VC corruption bug yet)
 -- 
+-- 08/25/2016 (0xCEC83027): Fixed a flow control bug when a TX DMA starts the first memory request transaction
+-- 
+-- 08/29/2016 (0xCEC83028): Fixed VC corruption bug
+--
 -------------------------------------------------------------------------------

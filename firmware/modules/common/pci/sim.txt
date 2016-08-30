@@ -1,2 +1,0 @@
-tb/PciRxDmaTb.vhd
-tb/PciTxDmaFifoTb.vhd

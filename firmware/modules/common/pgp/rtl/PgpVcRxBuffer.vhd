@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-08-29
--- Last update: 2016-08-25
+-- Last update: 2016-08-29
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -76,6 +76,7 @@ architecture rtl of PgpVcRxBuffer is
       FWD_PAYLOAD_S);    
 
    type RegType is record
+      eofe       : sl;
       fifoError  : sl;
       vcPause    : sl;
       vcOverflow : sl;
@@ -91,6 +92,7 @@ architecture rtl of PgpVcRxBuffer is
    end record RegType;
    
    constant REG_INIT_C : RegType := (
+      eofe       => '0',
       fifoError  => '0',
       vcPause    => '0',
       vcOverflow => '0',
@@ -175,6 +177,7 @@ begin
       end if;
 
       -- Reset strobing signals
+      v.eofe           := '0';
       v.rxSlave.tReady := '0';
 
       -- Update tValid register
@@ -241,7 +244,7 @@ begin
                -- Latch the OpCode, which is used to address the trigger LUT
                v.trigLutIn.raddr := rxMaster.tData(23 downto 16);
                -- Check for EOF or SOF
-               if (rxMaster.tLast = '1') or (ssiGetUserSof(AXIS_32B_CONFIG_C, rxMaster) = '1') then
+               if (rxMaster.tLast = '1') then
                   -- Next state
                   v.state := IDLE_S;
                else
@@ -309,7 +312,7 @@ begin
                v.txMaster.tValid             := '1';
                v.txMaster.tData(31 downto 0) := r.trigLutOut.acceptCnt;
                -- Check for EOF
-               if rxMaster.tLast = '1' or (ssiGetUserSof(AXIS_32B_CONFIG_C, rxMaster) = '1') then
+               if rxMaster.tLast = '1' then
                   -- Set the EOF bit
                   v.txMaster.tLast := '1';
                   -- Set the EOFE bit
@@ -331,7 +334,7 @@ begin
                v.txMaster.tValid             := '1';
                v.txMaster.tData(31 downto 0) := r.trigLutOut.offset;
                -- Check for EOF
-               if rxMaster.tLast = '1' or (ssiGetUserSof(AXIS_32B_CONFIG_C, rxMaster) = '1') then
+               if rxMaster.tLast = '1' then
                   -- Set the EOF bit
                   v.txMaster.tLast := '1';
                   -- Set the EOFE bit
@@ -353,7 +356,7 @@ begin
                v.txMaster.tValid             := '1';
                v.txMaster.tData(31 downto 0) := r.trigLutOut.seconds;
                -- Check for EOF
-               if rxMaster.tLast = '1' or (ssiGetUserSof(AXIS_32B_CONFIG_C, rxMaster) = '1') then
+               if rxMaster.tLast = '1' then
                   -- Set the EOF bit
                   v.txMaster.tLast := '1';
                   -- Set the EOFE bit
@@ -373,16 +376,8 @@ begin
                v.rxSlave.tReady := '1';
                -- Write to the FIFO         
                v.txMaster       := rxMaster;
-               -- Check for second SOF
-               if (ssiGetUserSof(AXIS_32B_CONFIG_C, rxMaster) = '1') then
-                  -- Set the EOF bit
-                  v.txMaster.tLast := '1';
-                  -- Set the EOFE bit
-                  ssiSetUserEofe(AXIS_32B_CONFIG_C, v.txMaster, '1');
-                  -- Next state
-                  v.state          := IDLE_S;
                -- Check for EOF
-               elsif rxMaster.tLast = '1' then
+               if rxMaster.tLast = '1' then
                   -- Next state
                   v.state := IDLE_S;
                end if;
