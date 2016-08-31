@@ -4,9 +4,9 @@ use ieee.std_logic_1164.all;
 
 package Version is
 
-constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CEC83029"; -- MAKE_VERSION
+constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CEC8302A"; -- MAKE_VERSION
 
-constant BUILD_STAMP_C : string := "PgpCardG3_3p125Gbps: Vivado v2016.2 (x86_64) Built Tue Aug 30 15:17:49 PDT 2016 by ruckman";
+constant BUILD_STAMP_C : string := "PgpCardG3_3p125Gbps: Vivado v2016.2 (x86_64) Built Wed Aug 31 11:46:29 PDT 2016 by ruckman";
 
 end Version;
 
@@ -109,5 +109,7 @@ end Version;
 -- 08/29/2016 (0xCEC83028): Fixed VC corruption bug
 --
 -- 08/30/2016 (0xCEC83029): Increased PciRxDesc's & PciTxDesc's FIFOs from 9-bit width to 10-bit width
+--
+-- 08/31/2016 (0xCEC8302A): In PgpDmaLane, changed CASCADE_SIZE_G from 1 back to 4
 --
 -------------------------------------------------------------------------------

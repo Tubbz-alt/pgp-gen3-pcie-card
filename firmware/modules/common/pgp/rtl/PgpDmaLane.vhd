@@ -174,7 +174,7 @@ begin
       PgpVcRxBuffer_Inst : entity work.PgpVcRxBuffer
          generic map (
             TPD_G            => TPD_G,
-            CASCADE_SIZE_G   => 1,
+            CASCADE_SIZE_G   => 4,
             SLAVE_READY_EN_G => SLAVE_READY_EN_G,
             LANE_G           => LANE_G,
             VC_G             => vc)
