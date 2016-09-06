@@ -115,8 +115,8 @@ architecture rtl of PgpVcRxBuffer is
    signal txSlave  : AxiStreamSlaveType;
    signal axisCtrl : AxiStreamCtrlType;
 
-   attribute dont_touch      : string;
-   attribute dont_touch of r : signal is "true";
+   -- attribute dont_touch      : string;
+   -- attribute dont_touch of r : signal is "true";
    
 begin
    

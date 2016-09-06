@@ -4,9 +4,9 @@ use ieee.std_logic_1164.all;
 
 package Version is
 
-constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CEC83028"; -- MAKE_VERSION
+constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CEC8302B"; -- MAKE_VERSION
 
-constant BUILD_STAMP_C : string := "PgpCardG3_3p125Gbps_LSST: Vivado v2016.2 (x86_64) Built Mon Aug 29 21:03:37 PDT 2016 by ruckman";
+constant BUILD_STAMP_C : string := "PgpCardG3_3p125Gbps_LSST: Vivado v2016.2 (x86_64) Built Mon Sep  5 13:51:36 PDT 2016 by ruckman";
 
 end Version;
 
@@ -45,7 +45,7 @@ end Version;
 --
 -- 11/09/2015 (0xCEC8300F): Added AcceptCntRst Registers
 --                          Added LutDropCnt Registers
---                          Prevent EvrLinkUp=0x0 from reseting EVR Link Error counter
+--                          Prevent EvrLinkUp=0x0 from resetting EVR Link Error counter
 --
 -- 11/12/2015 (0xCEC83010): Added AcceptCnt Registers
 --                          Prevent AcceptCnt from counting if EVR lane is not enabled
@@ -107,5 +107,11 @@ end Version;
 -- 08/25/2016 (0xCEC83027): Fixed a flow control bug when a TX DMA starts the first memory request transaction
 -- 
 -- 08/29/2016 (0xCEC83028): Fixed VC corruption bug
+--
+-- 08/30/2016 (0xCEC83029): Increased PciRxDesc's & PciTxDesc's FIFOs from 9-bit width to 10-bit width
+--
+-- 08/31/2016 (0xCEC8302A): In PgpDmaLane, changed CASCADE_SIZE_G from 1 back to 4
+--
+-- 09/05/2016 (0xCEC8302B): Another fixed for VC corruption bug
 --
 -------------------------------------------------------------------------------
