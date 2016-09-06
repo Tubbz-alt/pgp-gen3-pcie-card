@@ -13,7 +13,13 @@
 -- PCI Transmit Descriptor Controller
 -- https://docs.google.com/spreadsheets/d/1K8m2aPMaHxYG6Ul3f4jVZ44NlyKDHtr_bLjtMZGRRxw/edit?usp=sharing
 -------------------------------------------------------------------------------
--- Copyright (c) 2016 SLAC National Accelerator Laboratory
+-- This file is part of 'SLAC PGP Gen3 Card'.
+-- It is subject to the license terms in the LICENSE.txt file found in the 
+-- top-level directory of this distribution and at: 
+--    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
+-- No part of 'SLAC PGP Gen3 Card', including this file, 
+-- may be copied, modified, propagated, or distributed except according to 
+-- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
 
 library ieee;

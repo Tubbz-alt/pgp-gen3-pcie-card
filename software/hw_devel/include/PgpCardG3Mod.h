@@ -8,7 +8,13 @@
 //---------------------------------------------------------------------------------
 //
 //---------------------------------------------------------------------------------
-// Copyright (c) 2013 by SLAC National Accelerator Laboratory. All rights reserved.
+// This file is part of 'SLAC PGP Gen3 Card'.
+// It is subject to the license terms in the LICENSE.txt file found in the 
+// top-level directory of this distribution and at: 
+//    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
+// No part of 'SLAC PGP Gen3 Card', including this file, 
+// may be copied, modified, propagated, or distributed except according to 
+// the terms contained in the LICENSE.txt file.
 //---------------------------------------------------------------------------------
 // Modification history:
 // 09/20/2013: created.
