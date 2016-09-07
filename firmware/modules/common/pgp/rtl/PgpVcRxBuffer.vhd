@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-08-29
--- Last update: 2016-09-05
+-- Last update: 2016-09-06
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -421,33 +421,16 @@ begin
       end if;
    end process seq;
 
-   FIFO_TX : entity work.AxiStreamFifo  -- Required as a work around for a bug in the AxisMux
+   U_Pipeline : entity work.AxiStreamPipeline
       generic map (
-         -- General Configurations
-         TPD_G               => TPD_G,
-         INT_PIPE_STAGES_G   => 0,
-         PIPE_STAGES_G       => 0,
-         SLAVE_READY_EN_G    => true,
-         VALID_THOLD_G       => 1,
-         -- FIFO configurations
-         BRAM_EN_G           => false,
-         USE_BUILT_IN_G      => false,
-         GEN_SYNC_FIFO_G     => true,
-         CASCADE_SIZE_G      => 1,
-         FIFO_ADDR_WIDTH_G   => 4,
-         -- AXI Stream Port Configurations
-         SLAVE_AXI_CONFIG_G  => AXIS_32B_CONFIG_C,
-         MASTER_AXI_CONFIG_G => AXIS_32B_CONFIG_C)      
+         TPD_G         => TPD_G,
+         PIPE_STAGES_G => 1)
       port map (
-         -- Slave Port
-         sAxisClk    => clk,
-         sAxisRst    => rst,
+         axisClk     => clk,
+         axisRst     => rst,
          sAxisMaster => r.txMaster,
          sAxisSlave  => txSlave,
-         -- Master Port
-         mAxisClk    => clk,
-         mAxisRst    => rst,
          mAxisMaster => mAxisMaster,
-         mAxisSlave  => mAxisSlave);          
+         mAxisSlave  => mAxisSlave);            
 
 end rtl;
