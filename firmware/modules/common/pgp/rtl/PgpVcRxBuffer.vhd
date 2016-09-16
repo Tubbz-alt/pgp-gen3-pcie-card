@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-08-29
--- Last update: 2016-09-06
+-- Last update: 2016-09-12
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -65,8 +65,7 @@ end PgpVcRxBuffer;
 architecture rtl of PgpVcRxBuffer is
 
    constant LUT_WAIT_C     : natural := 7;
-   -- constant CASCADE_SIZE_C : natural             := ite(SLAVE_READY_EN_G,1,CASCADE_SIZE_G);
-   constant CASCADE_SIZE_C : natural := 1;
+   constant CASCADE_SIZE_C : natural := ite(SLAVE_READY_EN_G, 1, CASCADE_SIZE_G);
 
    type StateType is (
       IDLE_S,
