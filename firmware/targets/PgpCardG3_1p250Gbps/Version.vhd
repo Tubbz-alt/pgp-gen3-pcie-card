@@ -13,9 +13,9 @@ use ieee.std_logic_1164.all;
 
 package Version is
 
-constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CEC8302B"; -- MAKE_VERSION
+constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CEC8302E"; -- MAKE_VERSION
 
-constant BUILD_STAMP_C : string := "PgpCardG3_1p250Gbps: Vivado v2016.2 (x86_64) Built Mon Sep  5 13:51:46 PDT 2016 by ruckman";
+constant BUILD_STAMP_C : string := "PgpCardG3_1p250Gbps: Vivado v2016.2 (x86_64) Built Sat Oct 22 10:01:54 PDT 2016 by ruckman";
 
 end Version;
 
@@ -122,5 +122,12 @@ end Version;
 -- 08/31/2016 (0xCEC8302A): In PgpDmaLane, changed CASCADE_SIZE_G from 1 back to 4
 --
 -- 09/05/2016 (0xCEC8302B): Another fixed for VC corruption bug
+--
+-- 09/06/2016 (0xCEC8302C): Turned back on the PgpVcRxBuffer's TX FIFO's pipelining after AxiStreamMux modification
+--
+-- 09/12/2016 (0xCEC8302D): In PgpVcRxBuffer, fixed bug that always forced CASCADE_SIZE_G to 1
+--
+-- 10/22/2016 (0xCEC8302E): Blowoff TX DMA stream before PGP PHY if PGP link down, 
+--                          which is done to force the TX descriptors to return to software (request from Jack Pines)
 --
 -------------------------------------------------------------------------------

@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2016-08-21
+-- Last update: 2016-10-22
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -88,6 +88,7 @@ architecture mapping of PgpApp is
    signal trigLutIn     : TrigLutInVectorArray(0 to 7, 0 to 3);
    signal trigLutOut    : TrigLutOutVectorArray(0 to 7, 0 to 3);
    signal pgpRxCtrls    : AxiStreamCtrlVectorArray(0 to 7, 0 to 3);
+   signal txSlaves      : AxiStreamSlaveVectorArray(0 to 7, 0 to 3);
    signal runDelay      : Slv32Array(0 to 7);
    signal acceptDelay   : Slv32Array(0 to 7);
    signal acceptCntRst  : slv(7 downto 0);
@@ -381,10 +382,10 @@ begin
             pgpTxMasters(1)  => pgpTxMasters(lane, 1),
             pgpTxMasters(2)  => pgpTxMasters(lane, 2),
             pgpTxMasters(3)  => pgpTxMasters(lane, 3),
-            pgpTxSlaves(0)   => pgpTxSlaves(lane, 0),
-            pgpTxSlaves(1)   => pgpTxSlaves(lane, 1),
-            pgpTxSlaves(2)   => pgpTxSlaves(lane, 2),
-            pgpTxSlaves(3)   => pgpTxSlaves(lane, 3),
+            pgpTxSlaves(0)   => txSlaves(lane, 0),
+            pgpTxSlaves(1)   => txSlaves(lane, 1),
+            pgpTxSlaves(2)   => txSlaves(lane, 2),
+            pgpTxSlaves(3)   => txSlaves(lane, 3),
             -- Frame Receive Interface
             pgpRxMasters(0)  => pgpRxMasters(lane, 0),
             pgpRxMasters(1)  => pgpRxMasters(lane, 1),
@@ -423,5 +424,12 @@ begin
             pgpRxRst         => pgpRxRstDly(lane),
             pciClk           => pciClk,
             pciRst           => pciRst); 
+
+      -- Blow off TX DMA if link is down (request from Jack Pines)
+      txSlaves(lane, 0).tReady <= pgpTxSlaves(lane, 0).tReady or not(pgpRxOut(lane).linkReady);
+      txSlaves(lane, 1).tReady <= pgpTxSlaves(lane, 1).tReady or not(pgpRxOut(lane).linkReady);
+      txSlaves(lane, 2).tReady <= pgpTxSlaves(lane, 2).tReady or not(pgpRxOut(lane).linkReady);
+      txSlaves(lane, 3).tReady <= pgpTxSlaves(lane, 3).tReady or not(pgpRxOut(lane).linkReady);
+      
    end generate GEN_LANE;
 end mapping;
