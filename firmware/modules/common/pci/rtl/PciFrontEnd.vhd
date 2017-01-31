@@ -205,8 +205,10 @@ architecture rtl of PciFrontEnd is
    type IrqStateType is (
       SI_IDLE,
       SI_SET,
+      SI_SYNC0,
       SI_SERV,
-      SI_CLR);         
+      SI_CLR,
+      SI_SYNC1);         
    signal irqState : IrqStateType := SI_IDLE;
 
    -- attribute KEEP_HIERARCHY : string;
@@ -496,8 +498,13 @@ begin
                   if locCfgOut.irqAck = '1' then
                      cfgIn.irqReq <= '0';
                      irqActive    <= '1';
-                     irqState     <= SI_SERV;
+                     irqState     <= SI_SYNC0;
                   end if;
+               ----------------------------------------------
+               when SI_SYNC0 =>
+                  if locCfgOut.irqAck = '0' then
+                     irqState <= SI_SERV;
+                  end if;                  
                ----------------------------------------------
                when SI_SERV =>
                   if (irqReq = '0') or (irqEnable = '0') then
@@ -510,8 +517,13 @@ begin
                   if locCfgOut.irqAck = '1' then
                      cfgIn.irqReq <= '0';
                      irqActive    <= '0';
-                     irqState     <= SI_IDLE;
+                     irqState     <= SI_SYNC1;
                   end if;
+               ----------------------------------------------
+               when SI_SYNC1 =>
+                  if locCfgOut.irqAck = '0' then
+                     irqState <= SI_IDLE;
+                  end if;                     
             ----------------------------------------------
             end case;
          end if;
