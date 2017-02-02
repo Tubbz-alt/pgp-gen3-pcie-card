@@ -13,9 +13,9 @@ use ieee.std_logic_1164.all;
 
 package Version is
 
-constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CEC8302F"; -- MAKE_VERSION
+constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CEC83030"; -- MAKE_VERSION
 
-constant BUILD_STAMP_C : string := "PgpCardG3_3p125Gbps: Vivado v2016.4 (x86_64) Built Tue Jan 31 12:21:15 PST 2017 by ruckman";
+constant BUILD_STAMP_C : string := "PgpCardG3_3p125Gbps: Vivado v2016.4 (x86_64) Built Tue Jan 31 16:00:12 PST 2017 by ruckman";
 
 end Version;
 
@@ -132,5 +132,6 @@ end Version;
 --
 -- 01/31/2017 (0xCEC8302F): Updated the PCIe core to Vivado 2016.4
 --                          In PciFrontEnd.vhd, update the IRQ state machine to wait for the locCfgOut.irqAck 0x1 -> 0x0 transition 
+-- 01/31/2017 (0xCEC83030): In PciFrontEnd.vhd, added 1 ms timeout of the IRQ before trying to interrupt again
 --
 -------------------------------------------------------------------------------

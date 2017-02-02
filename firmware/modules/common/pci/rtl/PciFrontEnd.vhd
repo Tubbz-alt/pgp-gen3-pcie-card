@@ -210,6 +210,7 @@ architecture rtl of PciFrontEnd is
       SI_CLR,
       SI_SYNC1);         
    signal irqState : IrqStateType := SI_IDLE;
+   signal irqTimer : slv(19 downto 0);
 
    -- attribute KEEP_HIERARCHY : string;
    -- attribute KEEP_HIERARCHY of
@@ -507,7 +508,9 @@ begin
                   end if;                  
                ----------------------------------------------
                when SI_SERV =>
-                  if (irqReq = '0') or (irqEnable = '0') then
+                  irqTimer <= irqTimer + 1;
+                  if (irqReq = '0') or (irqEnable = '0') or (irqTimer = 125000) then
+                     irqTimer        <= (others=>'0');
                      cfgIn.irqReq    <= '1';
                      cfgIn.irqAssert <= '0';
                      irqState        <= SI_CLR;
