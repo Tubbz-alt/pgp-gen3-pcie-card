@@ -164,19 +164,23 @@ package PciPkg is
    type IrqInType is record
       req    : sl;
       enable : sl;
+      cntRst : sl;
    end record;
    constant IRQ_IN_INIT_C : IrqInType := (
-      '0',
-      '0'); 
+      req    =>'0',
+      enable =>'0',
+      cntRst =>'0'); 
 
    ------------------------------------------------------------------------
    -- IrqOut Types/Constants                             
    ------------------------------------------------------------------------
    type IrqOutType is record
-      activeFlag : sl;
+      activeFlag  : sl;
+      irqRetryCnt : slv(29 downto 0);
    end record;
    constant IRQ_OUT_INIT_C : IrqOutType := (
-      (others => '0'));
+      activeFlag  => '0',
+      irqRetryCnt => (others => '0'));
 
    ------------------------------------------------------------------------
    -- 3-DW Header Types/Constants                             

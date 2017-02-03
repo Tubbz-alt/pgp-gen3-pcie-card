@@ -188,6 +188,7 @@ begin
    -------------------------------    
    irqIn.req    <= rxDmaIrqReq or txDmaIrqReq;
    irqIn.enable <= irqEnable;
+   irqIn.cntRst <= countRst or cardRst;
    serNumber    <= serialNumber;
 
    pciToPgp.pllRxRst(0)   <= pllRxRst(0) or cardRst;
@@ -686,8 +687,9 @@ begin
                      end if;
                   when x"05" =>
                      -- IRQ Enable
-                     regLocRdData(0)(1) <= irqOut.activeFlag;
-                     regLocRdData(0)(0) <= irqEnable;
+                     regLocRdData(0)(31 downto 2) <= irqOut.irqRetryCnt;
+                     regLocRdData(0)(1)           <= irqOut.activeFlag;
+                     regLocRdData(0)(0)           <= irqEnable;
                      if regWrEn = '1' then
                         irqEnable <= regWrData(0);
                      end if;
