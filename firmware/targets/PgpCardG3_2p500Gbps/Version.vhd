@@ -13,9 +13,9 @@ use ieee.std_logic_1164.all;
 
 package Version is
 
-constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CEC8302E"; -- MAKE_VERSION
+constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CEC83031"; -- MAKE_VERSION
 
-constant BUILD_STAMP_C : string := "PgpCardG3_2p500Gbps: Vivado v2016.2 (x86_64) Built Sat Oct 22 10:01:55 PDT 2016 by ruckman";
+constant BUILD_STAMP_C : string := "PgpCardG3_3p125Gbps: Vivado v2016.4 (x86_64) Built Thu Feb  2 11:53:06 PST 2017 by ruckman";
 
 end Version;
 
@@ -129,5 +129,12 @@ end Version;
 --
 -- 10/22/2016 (0xCEC8302E): Blowoff TX DMA stream before PGP PHY if PGP link down, 
 --                          which is done to force the TX descriptors to return to software (request from Jack Pines)
+--
+-- 01/31/2017 (0xCEC8302F): Updated the PCIe core to Vivado 2016.4
+--                          In PciFrontEnd.vhd, update the IRQ state machine to wait for the locCfgOut.irqAck 0x1 -> 0x0 transition 
+--
+-- 01/31/2017 (0xCEC83030): In PciFrontEnd.vhd, added 1 ms timeout of the IRQ before trying to interrupt again
+--
+-- 02/02/2017 (0xCEC83031): Added irqRetryCnt register
 --
 -------------------------------------------------------------------------------
