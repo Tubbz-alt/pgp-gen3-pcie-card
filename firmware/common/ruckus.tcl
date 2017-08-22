@@ -8,8 +8,9 @@ if { [SubmoduleCheck {surf}   {1.3.7} ] < 0 } {exit -1}
 ## Check for version 2016.4 of Vivado
 if { [VersionCheck 2016.4] < 0 } {exit -1}
 
-# Load ruckus files
 loadRuckusTcl "$::DIR_PATH/evr"
 loadRuckusTcl "$::DIR_PATH/general"
 loadRuckusTcl "$::DIR_PATH/pci"
 loadRuckusTcl "$::DIR_PATH/pgp"
+
+set_property strategy Performance_Explore [get_runs impl_1]
