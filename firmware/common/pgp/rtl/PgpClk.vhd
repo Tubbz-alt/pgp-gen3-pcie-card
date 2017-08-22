@@ -73,9 +73,9 @@ end PgpClk;
 -- Define architecture
 architecture PgpClk of PgpClk is
 
-   constant EVR_RATES_C : RealArray(0 to 1) := (
-      getRealMult(1, EVR_RATE_C),
-      getRealMult(2, EVR_RATE_C));
+   constant EVR_RATES_C : RealArray(0 to 1) := ( 
+      0 => 1.0*EVR_RATE_C,
+      0 => 2.0*EVR_RATE_C);
 
    signal gtClkDiv2,
       stableClock,
