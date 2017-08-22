@@ -15,6 +15,8 @@ create_clock -name evrRefClkP  -period 4.201 [get_ports evrRefClkP]
 create_clock -name evrRefClk   -period 8.402 [get_pins {PgpCardG3Core_Inst/EvrCore_Inst/EvrClk_Inst/BUFG_Inst/O}]
 create_clock -name evrRxClk    -period 8.402 [get_pins {PgpCardG3Core_Inst/EvrCore_Inst/EvrGtp7_Inst/Gtp7Core_Inst/gtpe2_i/RXOUTCLK}]
 
+set_clock_groups -asynchronous -group [get_clocks {evrRefClk}] -group [get_clocks -include_generated_clocks {evrRxClk}]
+
 #############################
 # EVR: Physical Constraints #
 #############################

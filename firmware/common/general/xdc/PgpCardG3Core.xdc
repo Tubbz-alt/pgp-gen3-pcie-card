@@ -35,20 +35,21 @@ create_clock -name stableClk  -period 8.000 [get_pins {PgpCardG3Core_Inst/PgpCor
 
 create_generated_clock  -name pciClk   [get_pins {PgpCardG3Core_Inst/PciCore_Inst/PciFrontEnd_Inst/PcieCore_Inst/U0/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/mmcm_i/CLKOUT3}]
 create_generated_clock  -name dnaClk   [get_pins {PgpCardG3Core_Inst/PciCore_Inst/PciApp_Inst/DeviceDna_Inst/GEN_7SERIES.DeviceDna7Series_Inst/BUFR_Inst/O}]
+create_generated_clock  -name dnaClkL  [get_pins {PgpCardG3Core_Inst/PciCore_Inst/PciApp_Inst/DeviceDna_Inst/GEN_7SERIES.DeviceDna7Series_Inst/DNA_CLK_INV_BUFR/O}]
 
 ##############################################
 # Crossing Domain Clocks: Timing Constraints #
 ##############################################
 
-set_clock_groups -asynchronous -group [get_clocks {pgpTxClk}] \
-                               -group [get_clocks {pgpRxClk*}] \
-                               -group [get_clocks {stableClk}] \
-                               -group [get_clocks {evrRefClk}] \
-                               -group [get_clocks {evrRxClk}] 
-
-set_clock_groups -asynchronous -group [get_clocks {pciClk}] -group [get_clocks {evrRxClk}]                                  
-set_clock_groups -asynchronous -group [get_clocks {pciClk}] -group [get_clocks {pgpTxClk}] 
-set_clock_groups -asynchronous -group [get_clocks {pciClk}] -group [get_clocks {dnaClk}]          
+set_clock_groups -asynchronous -group [get_clocks -include_generated_clocks {pgpRefClk}] \
+                               -group [get_clocks -include_generated_clocks {pciRefClkP}] \
+                               -group [get_clocks -include_generated_clocks {evrRefClkP}] \
+                               -group [get_clocks -include_generated_clocks {sysClk}] \
+                               -group [get_clocks -include_generated_clocks {stableClk}]                 
+set_clock_groups -asynchronous -group [get_clocks {pgpTxClk}] -group [get_clocks {evrRxClk}]        
+set_clock_groups -asynchronous -group [get_clocks {pciClk}] -group [get_clocks {dnaClk}] -group [get_clocks {dnaClkL}]         
+set_clock_groups -asynchronous -group [get_clocks pgpTxClk] -group [get_clocks -of_objects [get_pins PgpCardG3Core_Inst/PciCore_Inst/PciFrontEnd_Inst/PcieCore_Inst/U0/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/mmcm_i/CLKOUT3]]
+set_clock_groups -asynchronous -group [get_clocks stableClk] -group [get_clocks pgpTxClk]
                                  
 ######################################
 # BITSTREAM: .bit file Configuration #
