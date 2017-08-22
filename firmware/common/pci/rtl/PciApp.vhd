@@ -118,7 +118,7 @@ architecture rtl of PciApp is
    signal runDelay,
       acceptDelay : Slv32Array(0 to 7);
 
-   signal serialNumber : slv(63 downto 0);
+   signal serialNumber : slv(127 downto 0);
 
    -- Interrupt Signals
    signal irqEnable   : sl;
@@ -179,7 +179,7 @@ begin
    irqIn.req    <= rxDmaIrqReq or txDmaIrqReq;
    irqIn.enable <= irqEnable;
    irqIn.cntRst <= countRst or cardRst;
-   serNumber    <= serialNumber;
+   serNumber    <= serialNumber(63 downto 0);
 
    pciToPgp.pllRxRst(0)   <= pllRxRst(0) or cardRst;
    pciToPgp.pllRxRst(1)   <= pllRxRst(1) or cardRst;
