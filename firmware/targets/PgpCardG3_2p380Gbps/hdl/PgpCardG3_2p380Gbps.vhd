@@ -31,6 +31,9 @@ use work.StdRtlPkg.all;
 use work.Pgp2p380GbpsPkg.all;
 
 entity PgpCardG3_2p380Gbps is
+   generic (
+      TPD_G        : time := 1 ns;
+      BUILD_INFO_G : BuildInfoType);
    port (
       -- FLASH Interface 
       flashAddr  : out   slv(25 downto 0);
@@ -74,6 +77,8 @@ begin
 
    PgpCardG3Core_Inst : entity work.PgpCardG3Core
       generic map (
+         TPD_G                => TPD_G,
+         BUILD_INFO_G         => BUILD_INFO_G,
          LSST_MODE_G          => false,
          -- PGP Configurations
          PGP_RATE_G           => PGP_RATE_C,

@@ -30,10 +30,11 @@ use work.AxiStreamPkg.all;
 use work.SsiPkg.all;
 use work.PciPkg.all;
 use work.PgpCardG3Pkg.all;
-use work.Version.all;
 
 entity PciApp is
    generic (
+      TPD_G          : time;
+      BUILD_INFO_G   : BuildInfoType;     
       LSST_MODE_G    : boolean;
       DMA_LOOPBACK_G : boolean;
       PGP_RATE_G     : real);
@@ -83,20 +84,9 @@ end PciApp;
 
 architecture rtl of PciApp is
 
-   constant DMA_SIZE_C : natural := 8;
-
-   type RomType is array (0 to 63) of slv(31 downto 0);
-   function makeStringRom return RomType is
-      variable ret : RomType := (others => (others => '0'));
-      variable c   : character;
-   begin
-      for i in BUILD_STAMP_C'range loop
-         c                                                      := BUILD_STAMP_C(i);
-         ret((i-1)/4)(8*((i-1) mod 4)+7 downto 8*((i-1) mod 4)) := toSlv(character'pos(c), 8);
-      end loop;
-      return ret;
-   end function makeStringRom;
-   signal buildStampString : RomType := makeStringRom;
+   constant DMA_SIZE_C         : natural             := 8;   
+   constant BUILD_INFO_C       : BuildInfoRetType    := toBuildInfo(BUILD_INFO_G);
+   constant BUILD_STRING_ROM_C : Slv32Array(0 to 63) := BUILD_INFO_C.buildString;   
 
    -- Descriptor Signals
    signal dmaRxDescToPci,
@@ -546,10 +536,10 @@ begin
          regBusy <= flashBusy;
          if regAddr(11 downto 10) = "00" then
             if regAddr(9 downto 8) = "11" then
-               regRdData <= buildStampString(conv_integer(regAddr(7 downto 2)));
+               regRdData <= BUILD_STRING_ROM_C(conv_integer(regAddr(7 downto 2)));
             elsif regAddr(9 downto 2) = x"00" then
                -- Firmware Version
-               regRdData <= FPGA_VERSION_C;
+               regRdData <= BUILD_INFO_C.fwVersion;
             elsif regAddr(9 downto 2) = x"01" then
                -- Serial Number Version (lower word)
                regRdData <= serialNumber(31 downto 0);

@@ -28,6 +28,8 @@ use work.PgpCardG3Pkg.all;
 
 entity PgpCardG3Core is
    generic (
+      TPD_G                : time;
+      BUILD_INFO_G         : BuildInfoType;   
       LSST_MODE_G          : boolean;
       -- PGP Configurations
       PGP_RATE_G           : real;
@@ -186,6 +188,8 @@ begin
    ------------
    PciCore_Inst : entity work.PciCore
       generic map (
+         TPD_G          => TPD_G,
+         BUILD_INFO_G   => BUILD_INFO_G,     
          LSST_MODE_G    => LSST_MODE_G,
          DMA_LOOPBACK_G => DMA_LOOPBACK_C,
          -- PGP Configurations
