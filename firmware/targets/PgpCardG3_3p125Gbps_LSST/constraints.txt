@@ -1,5 +1,0 @@
-../../modules/common/evr/xdc/PgpCardG3Evr.xdc
-../../modules/common/pci/xdc/PgpCardG3Pci.xdc
-../../modules/common/pgp/xdc/Pgp3p125Gbps.xdc
-../../modules/common/general/xdc/PgpCardG3Core.xdc
-../../modules/common/general/xdc/PgpCardG3Pinout.xdc
