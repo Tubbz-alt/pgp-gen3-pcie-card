@@ -119,8 +119,10 @@ begin
    Synchronizer_Inst : entity work.Synchronizer
       port map (
          clk     => evrClk,
-         dataIn  => pciToEvr.enable,
-         dataOut => fromPci.enable);       
+         dataIn  => pciToEvr.enable(0),
+         dataOut => fromPci.enable(0));       
+
+   fromPci.enable(7 downto 1) <= (others=>fromPci.enable(0));
 
    SYNC_TRIG_CODES :
    for i in 0 to 7 generate
@@ -164,7 +166,7 @@ begin
                r.toPci.runCodeCnt <= (others => (others => '0'));
             else
                for i in 0 to 7 loop
-                  if (fromPci.enable = '1') and (r.eventStream = fromPci.runCode(i)) and (rxLinkUp = '1') then
+                  if (fromPci.enable(0) = '1') and (r.eventStream = fromPci.runCode(i)) and (rxLinkUp = '1') then
                      r.toPci.runCodeCnt(i) <= r.toPci.runCodeCnt(i) + 1;
                   end if;
                end loop;
@@ -197,12 +199,12 @@ begin
                r.toPgp(i).seconds <= r.seconds;
                r.toPgp(i).offset  <= r.offset;
                -- Check for run code event 
-               if (fromPci.enable = '1') and (r.eventStream = fromPci.runCode(i)) and (rxLinkUp = '1') then
+               if (fromPci.enable(0) = '1') and (r.eventStream = fromPci.runCode(i)) and (rxLinkUp = '1') then
                   -- Latch the seconds and offset
                   r.toPgp(i).run <= '1';
                end if;
                -- Check for accept code event 
-               if (fromPci.enable = '1') and (r.eventStream = fromPci.acceptCode(i)) and (rxLinkUp = '1') then
+               if (fromPci.enable(0) = '1') and (r.eventStream = fromPci.acceptCode(i)) and (rxLinkUp = '1') then
                   r.toPgp(i).accept <= '1';
                end if;
             end loop;
