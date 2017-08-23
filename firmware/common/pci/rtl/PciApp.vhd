@@ -198,7 +198,7 @@ begin
    pciToEvr.countRst <= countRst or cardRst;
    pciToEvr.pllRst   <= evrPllRst or cardRst;
    pciToEvr.evrReset <= evrReset or cardRst;
-   pciToEvr.enable   <= evrEnable;
+   pciToEvr.enable   <= (others=>evrEnable);
 
    pciToEvr.preScale <= (others=>(others=>'0'));
    pciToEvr.trgCode  <= (others=>(others=>'0'));
