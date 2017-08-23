@@ -148,8 +148,6 @@ package PgpCardG3Pkg is
       enable     : sl;
       runCode    : Slv8Array(0 to 7);
       acceptCode : Slv8Array(0 to 7);
-      reset      : sl;                 -- CL
-      update     : slv       (0 to 7); -- CL
       preScale   : Slv8Array (0 to 7); -- CL
       trgCode    : Slv8Array (0 to 7); -- CL
       trgDelay   : Slv32Array(0 to 7); -- CL
@@ -163,8 +161,6 @@ package PgpCardG3Pkg is
       enable     => '0',
       runCode    => (others => x"00"),
       acceptCode => (others => x"00"),
-      reset     => '0',
-      update    => (others => '0'),
       preScale  => (others => (others => '0')),
       trgCode   => (others => (others => '0')),
       trgDelay  => (others => (others => '0')),

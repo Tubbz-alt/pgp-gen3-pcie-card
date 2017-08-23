@@ -159,7 +159,7 @@ begin
             dataOut => trgPolarity);
 
     Synchronizer_enable : entity work.Synchronizer
-        port map (PgpCardG3
+        port map (
             clk     => rxClk,
             dataIn  => pciToCl.enable(LANE_G),
             dataOut => enable);

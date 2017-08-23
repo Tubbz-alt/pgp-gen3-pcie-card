@@ -1,17 +1,32 @@
-
+-------------------------------------------------------------------------------
+-- Title      : PGP Card Gen3 Camera Link Top Level 2.5Gbps
+-------------------------------------------------------------------------------
+-- File       : PgpCardG3_CLinkBase
+-- Created    : 2017-08-22
+-- Platform   : 
+-- Standard   : VHDL'93/02
+-------------------------------------------------------------------------------
+-- This file is part of 'SLAC PGP Gen3 Card'.
+-- It is subject to the license terms in the LICENSE.txt file found in the 
+-- top-level directory of this distribution and at: 
+--    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
+-- No part of 'SLAC PGP Gen3 Card', including this file, 
+-- may be copied, modified, propagated, or distributed except according to 
+-- the terms contained in the LICENSE.txt file.
+-------------------------------------------------------------------------------
 library ieee;
 use ieee.std_logic_1164.all;
 
 use work.StdRtlPkg.all;
-use work.PgpCardG3ClinkPkg.all;
-use work.Clink2p500GbpsPkg.all;
+use work.CLinkPkg.all;
+use work.CLink2p500GbpsPkg.all;
 
 entity PgpCardG3_CLinkBase is
-   generic (
-      DEBUG_G              : boolean    := true;
-
+  generic (
+      BUILD_INFO_G         : BuildInfoType;
       -- Configurations
-      LINE_RATE_G          : real       := LINE_RATE_C;
+      GTP_RATE_G           : real       := PGP_RATE_C;
+      CLK_RATE_INT_G       : integer    := CLK_RATE_INT_C;
       -- MGT Configurations
       CLK_DIV_G            : integer    := CLK_DIV_C;
       CLK25_DIV_G          : integer    := CLK25_DIV_C;
@@ -101,10 +116,8 @@ begin
    -----------
    CLinkCore_Inst : entity work.CLinkCore
       generic map (
-         DEBUG_G              => DEBUG_G,
-
          -- Configurations
-         LINE_RATE_G          => LINE_RATE_G,
+         GTP_RATE_G           => GTP_RATE_G,
          -- MGT Configurations
          CLK_DIV_G            => CLK_DIV_G,
          CLK25_DIV_G          => CLK25_DIV_G,
@@ -169,12 +182,11 @@ begin
    ------------
    -- PCIe Core
    ------------
-   PciCore_Inst : entity work.PciCore
+   PciCore_Inst : entity work.PciCLinkCore
       generic map (
-         DEBUG_G    => DEBUG_G,
-
          -- Configurations
-         LINE_RATE_G => LINE_RATE_G)
+         BUILD_INFO_G  => BUILD_INFO_G,
+         GTP_RATE_G    => GT_RATE_G)
       port map (
          -- FLASH Interface
          flashAddr  => flashAddr,

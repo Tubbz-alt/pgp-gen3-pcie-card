@@ -106,15 +106,15 @@ begin
    evrToPci <= r.toPci;
    evrToCl  <= r.toCl;
 
-   evrRst   <= fromPci.reset;
+   evrRst   <= fromPci.evrReset;
    pllRst   <= fromPci.pllRst;
 -- enable   <= fromPci.enable;
 
    RstSync_0 : entity work.RstSync
       port map (
          clk      => evrClk,
-         asyncRst => pciToEvr.reset,
-         syncRst  => fromPci.reset);
+         asyncRst => pciToEvr.evrReset,
+         syncRst  => fromPci.evrReset);
 
    -- RstSync_1 : entity work.RstSync
    -- port map (
@@ -197,7 +197,7 @@ begin
       variable i : natural;
    begin
       if rising_edge(evrClk) then
-         if (fromPci.reset = '1') then
+         if (fromPci.evrReset = '1') then
             count_to_3 <= (others => '0');
             evt140     <= '0';
 

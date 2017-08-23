@@ -89,6 +89,7 @@ begin
          stableClk      => stableClk); 
 
    EvrGtp7_Inst : entity work.EvrGtp7
+      generic map ( STABLE_CLOCK_PERIOD_G  => STABLE_CLOCK_PERIOD_G)
       port map (
          -- GT Clocking
          stableClk        => stableClk,
@@ -111,7 +112,7 @@ begin
          rxData           => rxData,
          rxDataK          => rxDataK);
 
-   EvrApp_Inst : entity work.EvrApp_Grabber
+   EvrApp_Inst : entity work.EvrCLinkApp
       generic map (
          DEBUG_G  => DEBUG_G)
       port map (

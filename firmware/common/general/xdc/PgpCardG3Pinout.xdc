@@ -21,6 +21,32 @@ set_property PACKAGE_PIN AC34 [get_ports led[6]]
 set_property PACKAGE_PIN AA32 [get_ports led[7]]
 set_property IOSTANDARD LVCMOS25 [get_ports led[*]]
 
+set_property PACKAGE_PIN H29  [get_ports led_r[0]]
+set_property PACKAGE_PIN K30  [get_ports led_b[0]]
+set_property PACKAGE_PIN J30  [get_ports led_g[0]]
+
+set_property PACKAGE_PIN G29  [get_ports led_r[1]]
+set_property PACKAGE_PIN G30  [get_ports led_b[1]]
+set_property PACKAGE_PIN K31  [get_ports led_g[1]]
+
+set_property PACKAGE_PIN G32  [get_ports led_r[2]]
+set_property PACKAGE_PIN K33  [get_ports led_b[2]]
+set_property PACKAGE_PIN J34  [get_ports led_g[2]]
+
+set_property PACKAGE_PIN H33  [get_ports led_r[3]]
+set_property PACKAGE_PIN G34  [get_ports led_b[3]]
+set_property PACKAGE_PIN L32  [get_ports led_g[3]]
+
+set_property PACKAGE_PIN J31  [get_ports led_r[4]]
+set_property PACKAGE_PIN H31  [get_ports led_b[4]]
+set_property PACKAGE_PIN G31  [get_ports led_g[4]]
+
+set_property PACKAGE_PIN L29  [get_ports led_r[5]]
+set_property PACKAGE_PIN L30  [get_ports led_b[5]]
+set_property PACKAGE_PIN H32  [get_ports led_g[5]]
+
+set_property IOSTANDARD LVCMOS33 [get_ports led_*[*]]
+
 set_property PACKAGE_PIN AB25 [get_ports flashAddr[0]]
 set_property PACKAGE_PIN AB24 [get_ports flashAddr[1]]
 set_property PACKAGE_PIN AA25 [get_ports flashAddr[2]]
