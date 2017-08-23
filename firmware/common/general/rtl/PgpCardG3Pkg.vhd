@@ -145,7 +145,7 @@ package PgpCardG3Pkg is
       countRst   : sl;
       pllRst     : sl;
       evrReset   : sl;
-      enable     : sl;
+      enable     : slv(7 downto 0);
       runCode    : Slv8Array(0 to 7);
       acceptCode : Slv8Array(0 to 7);
       preScale   : Slv8Array (0 to 7); -- CL
@@ -158,7 +158,7 @@ package PgpCardG3Pkg is
       countRst   => '0',
       pllRst     => '0',
       evrReset   => '0',
-      enable     => '0',
+      enable     => (others => '0'),
       runCode    => (others => x"00"),
       acceptCode => (others => x"00"),
       preScale  => (others => (others => '0')),
