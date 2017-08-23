@@ -22,6 +22,7 @@ use ieee.std_logic_arith.all;
 use work.StdRtlPkg.all;
 use work.AxiStreamPkg.all;
 use work.SsiPkg.all;
+use work.Pgp2bPkg.all;
 
 entity CLinkRxBuffer is 
    generic (

@@ -1,3 +1,4 @@
+
 export GIT_BYPASS = 1
 
 # Use the common config
