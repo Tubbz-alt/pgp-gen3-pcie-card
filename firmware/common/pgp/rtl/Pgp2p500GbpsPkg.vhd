@@ -30,6 +30,7 @@ package Pgp2p500GbpsPkg is
 
    -- PGP Configurations
    constant PGP_RATE_C : real := 2.500E+9;  -- 2.50 Gbps
+   constant CLK_RATE_INT_C : integer := 125000000;
 
    -- MGT Configurations
    constant CLK_DIV_C        : integer    := 2;

@@ -30,6 +30,7 @@ package Pgp1p250GbpsPkg is
 
    -- PGP Configurations
    constant PGP_RATE_C : real := 1.250E+9;  -- 1.25 Gbps
+   constant CLK_RATE_INT_C : integer := 62500000;
 
    -- MGT Configurations
    constant CLK_DIV_C        : integer    := 4;
