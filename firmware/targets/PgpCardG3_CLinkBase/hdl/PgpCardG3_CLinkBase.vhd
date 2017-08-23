@@ -145,9 +145,7 @@ begin
    -----------
    -- EVR Core
    -----------
-   EvrCore_Inst : entity work.EvrCore
-      generic map (
-         DEBUG_G    => DEBUG_G)
+   EvrCore_Inst : entity work.EvrCLinkCore
       port map (
          -- External Interfaces
          pciToEvr   => pciToEvr,

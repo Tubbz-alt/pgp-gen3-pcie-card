@@ -24,9 +24,6 @@ use work.AxiStreamPkg.all;
 
 package CLinkPkg is
 
-   constant EVR_ACCEPT_DELAY_C : integer := 9;     -- accepted delayed by (2^EVR_ACCEPT_DELAY_C)-1
-   constant EVR_RATE_C         : real := 2.38E+9;  -- 2.38 Gbps
-
    type ClToPciType is record -- Cl Clock Domain
       dmaTxIbMaster     : AxiStreamMasterArray(0 to 7);
       dmaTxObSlave      : AxiStreamSlaveArray (0 to 7);
@@ -130,42 +127,6 @@ package CLinkPkg is
       nanosec  => (others => '0'));       
 
    type EvrToClArray is array (integer range<>) of EvrToClType;
-
-   -- EVR -> PCIe Parallel Interface
-   type EvrToPciType is record          --evrClk Domain
-      linkUp    : sl;
-      evt140    : sl;
-      errorCnt  : slv(31 downto 0);
-   end record;
-
-   constant EVR_TO_PCI_INIT_C : EvrToPciType := (
-      linkUp    => '0',
-      evt140    => '0',
-      errorCnt  => (others => '0'));
-
-   -- PCIe -> EVR Parallel Interface
-   type PciToEvrType is record          -- pciClk Domain
-      reset     : sl;
-      pllRst    : sl;
-      errCntRst : sl;
-      enable    : slv       (0 to 7);
-      update    : slv       (0 to 7);
-      preScale  : Slv8Array (0 to 7);
-      trgCode   : Slv8Array (0 to 7);
-      trgDelay  : Slv32Array(0 to 7);
-      trgWidth  : Slv32Array(0 to 7);
-   end record;
-
-   constant PCI_TO_EVR_INIT_C : PciToEvrType := (
-      reset     => '0',
-      pllRst    => '0',
-      errCntRst => '0',
-      enable    => (others => '0'),
-      update    => (others => '0'),
-      preScale  => (others => (others => '0')),
-      trgCode   => (others => (others => '0')),
-      trgDelay  => (others => (others => '0')),
-      trgWidth  => (others => (others => '0')));
 
    constant idle_string : slv(495 downto 0) := X"45524242524120474D45524120464E4B4C4941204552414D20435259544F5241424F4C415220544F52414C45434541434C204E41494F4154204E4143534C";
 
