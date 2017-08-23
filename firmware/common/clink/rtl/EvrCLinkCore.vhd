@@ -20,6 +20,7 @@ use ieee.std_logic_1164.all;
 
 use work.StdRtlPkg.all;
 use work.CLinkPkg.all;
+use work.PgpCardG3Pkg.all;
 
 entity EvrCLinkCore is
    generic (
@@ -113,8 +114,6 @@ begin
          rxDataK          => rxDataK);
 
    EvrApp_Inst : entity work.EvrCLinkApp
-      generic map (
-         DEBUG_G  => DEBUG_G)
       port map (
          -- External Interfaces
          pciToEvr => pciToEvr,

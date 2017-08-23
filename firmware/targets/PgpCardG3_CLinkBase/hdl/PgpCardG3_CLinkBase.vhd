@@ -19,7 +19,8 @@ use ieee.std_logic_1164.all;
 
 use work.StdRtlPkg.all;
 use work.CLinkPkg.all;
-use work.CLink2p500GbpsPkg.all;
+use work.PgpCardG3Pkg.all;
+use work.Pgp2p500GbpsPkg.all;
 
 entity PgpCardG3_CLinkBase is
   generic (
@@ -39,10 +40,9 @@ entity PgpCardG3_CLinkBase is
       QPLL_FBDIV_45_IN_G   : integer    := QPLL_FBDIV_45_IN_C;
       QPLL_REFCLK_DIV_IN_G : integer    := QPLL_REFCLK_DIV_IN_C;
       -- MMCM Configurations
-      MMCM_DIVCLK_DIVIDE_G : natural    := MMCM_DIVCLK_DIVIDE_C;
       MMCM_CLKFBOUT_MULT_G : real       := MMCM_CLKFBOUT_MULT_C;
       MMCM_GTCLK_DIVIDE_G  : real       := MMCM_GTCLK_DIVIDE_C;
-      MMCM_CLCLK_DIVIDE_G  : natural    := MMCM_CLCLK_DIVIDE_C;
+      MMCM_CLCLK_DIVIDE_G  : natural    := MMCM_PGPCLK_DIVIDE_C;
       MMCM_CLKIN_PERIOD_G  : real       := MMCM_CLKIN_PERIOD_C);
    port (
       -- FLASH Interface
@@ -103,9 +103,9 @@ architecture top_level of PgpCardG3_CLinkBase is
 begin
 
    led(1)   <= evrToPci.linkUp;
-   led(7)   <= pciToEvr.errCntRst;
+   led(7)   <= pciToEvr.countRst;
    led(2)   <= pciToEvr.pllRst;
-   led(3)   <= pciToEvr.reset;
+   led(3)   <= pciToEvr.evrReset;
 -- led(4)   <= pciToEvr.enable;
 
    tieToGnd <= (others => '0');
@@ -118,6 +118,7 @@ begin
       generic map (
          -- Configurations
          GTP_RATE_G           => GTP_RATE_G,
+         CLK_RATE_INT_G       => CLK_RATE_INT_G,
          -- MGT Configurations
          CLK_DIV_G            => CLK_DIV_G,
          CLK25_DIV_G          => CLK25_DIV_G,
@@ -130,7 +131,6 @@ begin
          QPLL_FBDIV_45_IN_G   => QPLL_FBDIV_45_IN_G,
          QPLL_REFCLK_DIV_IN_G => QPLL_REFCLK_DIV_IN_G,
          -- MMCM Configurations
-         MMCM_DIVCLK_DIVIDE_G => MMCM_DIVCLK_DIVIDE_G,
          MMCM_CLKFBOUT_MULT_G => MMCM_CLKFBOUT_MULT_G,
          MMCM_GTCLK_DIVIDE_G  => MMCM_GTCLK_DIVIDE_G,
          MMCM_CLCLK_DIVIDE_G  => MMCM_CLCLK_DIVIDE_G,
@@ -186,7 +186,7 @@ begin
       generic map (
          -- Configurations
          BUILD_INFO_G  => BUILD_INFO_G,
-         GTP_RATE_G    => GT_RATE_G)
+         GTP_RATE_G    => GTP_RATE_G)
       port map (
          -- FLASH Interface
          flashAddr  => flashAddr,

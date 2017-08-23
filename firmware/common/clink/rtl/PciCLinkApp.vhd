@@ -24,6 +24,7 @@ use work.AxiStreamPkg.all;
 use work.SsiPkg.all;
 use work.PciPkg.all;
 use work.CLinkPkg.all;
+use work.PgpCardG3Pkg.all;
 
 entity PciCLinkApp is
    generic (
@@ -84,20 +85,6 @@ architecture rtl of PciCLinkApp is
    constant BUILD_INFO_C       : BuildInfoRetType    := toBuildInfo(BUILD_INFO_G);
    constant BUILD_STRING_ROM_C : Slv32Array(0 to 63) := BUILD_INFO_C.buildString;   
 
-   type RomType is array (0 to 63) of slv(31 downto 0);
-   function makeStringRom return RomType is
-      variable ret : RomType := (others => (others => '0'));
-      variable c   : character;
-   begin
-      for i in BUILD_STAMP_C'range loop
-         c                                                      := BUILD_STAMP_C(i);
-         ret((i-1)/4)(8*((i-1) mod 4)+7 downto 8*((i-1) mod 4)) := toSlv(character'pos(c), 8);
-      end loop;
-      return ret;
-   end function makeStringRom;
-
-   signal buildStampString  : RomType := makeStringRom;
-
    signal ledOff            : sl;
 
    -- Descriptor Signals
@@ -130,7 +117,7 @@ architecture rtl of PciCLinkApp is
           rebootTimer,
           scratchPad        : slv(31 downto 0);
 
-   signal serialNumber      : slv(63 downto 0);
+   signal serialNumber      : slv(127 downto 0);
 
    -- Interrupt Signals
    signal irqEnable         : sl;
@@ -186,24 +173,11 @@ architecture rtl of PciCLinkApp is
 
    signal pci_read_en       : slv( 0 DOWNTO 0);
    signal pci_read_addr     : slv(11 DOWNTO 0);
-   signal sertfg_fifo_rden  : slv( 0 DOWNTO 0);
-   signal sertfg_fifo_valid : slv( 0 DOWNTO 0);
-   signal sertfg_fifo_rd    : slv( 7 DOWNTO 0);
+   signal serFifoRdEn       : slv( 0 DOWNTO 0);
+   signal serFifoValid      : slv( 0 DOWNTO 0);
+   signal serFifoRd         : slv( 7 DOWNTO 0);
 
    signal ledCycles         : slv(26 downto 0) := (others => '0');
-
-   COMPONENT pci_read_sertfg_ila
-   PORT (
-      clk    : IN STD_LOGIC;
-      probe0 : IN STD_LOGIC_VECTOR( 0 DOWNTO 0);
-      probe1 : IN STD_LOGIC_VECTOR(11 DOWNTO 0);
-      probe2 : IN STD_LOGIC_VECTOR( 0 DOWNTO 0);
-      probe3 : IN STD_LOGIC_VECTOR( 0 DOWNTO 0);
-      probe4 : IN STD_LOGIC_VECTOR( 7 DOWNTO 0);
-      probe5 : IN STD_LOGIC_VECTOR( 7 DOWNTO 0);
-      probe6 : IN STD_LOGIC_VECTOR( 7 DOWNTO 0)
-   );
-   END COMPONENT;
 
 begin
    
@@ -214,11 +188,11 @@ begin
    -------------------------------    
    irqIn.req            <= rxDmaIrqReq  or txDmaIrqReq;
    irqIn.enable         <= irqEnable;
-   serNumber            <= serialNumber;
+   serNumber            <= serialNumber(63 downto 0);
 
    pciToEvr.evrReset    <=                 evrReset or cardRst;
    pciToEvr.pllRst      <= evrPllRst    or evrReset or cardRst;
-   pciToEvr.countReset  <= evrErrCntRst or evrReset or cardRst;
+   pciToEvr.countRst    <= evrErrCntRst or evrReset or cardRst;
 
    pciToEvr.enable      <= enable;
    pciToEvr.preScale    <= preScale;
@@ -404,7 +378,7 @@ begin
          dnaValid => open);   
 
    -- Register Controller
-   PciRegCtrl_Inst : entity work.PciRegCtrl_CLink
+   PciRegCtrl_Inst : entity work.PciRegCtrl
       port map (
          -- PCI Interface         
          regTranFromPci => regTranFromPci,
@@ -527,7 +501,7 @@ begin
             trgDelay                  <= (others => toSlv(  880, 32));
             trgWidth                  <= (others => toSlv(   80, 32));
 
-            pciToCl.sertc_fifo_wr_en <= (others => '0');
+            pciToCl.serFifoWrEn      <= (others => '0');
          else
             -- Check for enabled timer
             if (rebootEn = '1') then
@@ -538,14 +512,14 @@ begin
                end if;
             end if;
 
-            pciToCl.sertc_fifo_wr_en  <= (others => '0');
-            pciToCl.sertfg_fifo_rd_en <= (others => '0');
+            pciToCl.serFifoWrEn       <= (others => '0');
+            pciToCl.serFifoRdEn       <= (others => '0');
 
             regBusy                    <= '0';
 
             if (regAddr(11 downto 10) = "00") then
                if (regAddr(9 downto 8) = "11" ) then
-                  regRdData <= buildStampString(conv_integer(regAddr(7 downto 2)));
+                  regRdData <= BUILD_STRING_ROM_C(conv_integer(regAddr(7 downto 2)));
                else
                   case regAddr(9 downto 2) is
                      -------------------------------
@@ -674,17 +648,17 @@ begin
                         -- regAddr: 0x68 - 0x6F    sertc bytes
                         elsif (regAddr(9 downto 5) = 13) then
                            if (regWrEn = '1') then
-                              pciToCl.sertc_fifo_wr   (lane) <= regWrData(7 downto 0);
-                              pciToCl.sertc_fifo_wr_en(lane) <= '1';
+                              pciToCl.serFifoWr  (lane) <= regWrData(7 downto 0);
+                              pciToCl.serFifoWrEn(lane) <= '1';
                            end if;
 
                         -- regAddr: 0x70 - 0x77    sertfg bytes
                         elsif (regAddr(9 downto 5) = 14) then
                            if (regRdEn = '1') then
-                              pciToCl.sertfg_fifo_rd_en(lane) <= '1';
+                              pciToCl.serFifoRdEn(lane) <= '1';
 
-                              if (clToPci.sertfg_fifo_valid(lane) = '1') then
-                                 regRdData(7 downto 0) <= clToPci.sertfg_fifo_rd(lane);
+                              if (clToPci.serFifoValid(lane) = '1') then
+                                 regRdData(7 downto 0) <= clToPci.serFifoRd(lane);
                               else
                                  regRdData(7 downto 0) <= X"FF";
                               end if;

@@ -25,6 +25,8 @@ use UNISIM.VCOMPONENTS.ALL;
 use work.CLinkPkg.all;
 use work.AxiStreamPkg.all;
 use work.SsiPkg.all;
+use work.StdRtlPkg.all;
+use work.Pgp2bPkg.all;
 
 --***********************************Entity Declaration*************************
 
@@ -116,25 +118,25 @@ architecture RTL of CLinkRx is
     signal   idleStream                    : std_logic_vector(495 downto 0);
     signal   idleCount                     : natural range 0 to 65535 :=  0;
 
-    constant RATE_CMP_C : positive          := ite(CLK_RATE_INT_G=125000000,  125499999,  62749999);
-    constant cycles_1m  : positive          := ite(CLK_RATE_INT_G=125000000,  117187500,  58593750);
-    constant cycles_1p  : positive          := ite(CLK_RATE_INT_G=125000000,  132812500,  66406250);
-    constant cycles_2m  : positive          := ite(CLK_RATE_INT_G=125000000,  238281250, 119140625);
-    constant cycles_2p  : positive          := ite(CLK_RATE_INT_G=125000000,  261718750, 130859375);
-    constant cycles_3m  : positive          := ite(CLK_RATE_INT_G=125000000,  359375000, 179687500);
-    constant cycles_3p  : positive          := ite(CLK_RATE_INT_G=125000000,  390625000, 195312500);
-    constant cycles_4m  : positive          := ite(CLK_RATE_INT_G=125000000,  480468750, 240234375);
-    constant cycles_4p  : positive          := ite(CLK_RATE_INT_G=125000000,  519531250, 259765625);
-    constant cycles_5m  : positive          := ite(CLK_RATE_INT_G=125000000,  601562500, 300781250);
-    constant cycles_5p  : positive          := ite(CLK_RATE_INT_G=125000000,  648437500, 324218750);
-    constant cycles_6m  : positive          := ite(CLK_RATE_INT_G=125000000,  722656250, 361328125);
-    constant cycles_6p  : positive          := ite(CLK_RATE_INT_G=125000000,  777343750, 388671875);
-    constant cycles_7m  : positive          := ite(CLK_RATE_INT_G=125000000,  843750000, 421875000);
-    constant cycles_7p  : positive          := ite(CLK_RATE_INT_G=125000000,  906250000, 453125000);
-    constant cycles_8m  : positive          := ite(CLK_RATE_INT_G=125000000,  964843750, 482421875);
-    constant cycles_8p  : positive          := ite(CLK_RATE_INT_G=125000000, 1035156250, 517578125);
-    constant cycles_9m  : positive          := ite(CLK_RATE_INT_G=125000000, 1085937500, 542968750);
-    constant cycles_9p  : positive          := ite(CLK_RATE_INT_G=125000000, 1164062500, 582031250);
+    constant RATE_CMP_C : integer := ite(CLK_RATE_INT_G=125000000,  125499999,  62749999);
+    constant cycles_1m  : integer := ite(CLK_RATE_INT_G=125000000,  117187500,  58593750);
+    constant cycles_1p  : integer := ite(CLK_RATE_INT_G=125000000,  132812500,  66406250);
+    constant cycles_2m  : integer := ite(CLK_RATE_INT_G=125000000,  238281250, 119140625);
+    constant cycles_2p  : integer := ite(CLK_RATE_INT_G=125000000,  261718750, 130859375);
+    constant cycles_3m  : integer := ite(CLK_RATE_INT_G=125000000,  359375000, 179687500);
+    constant cycles_3p  : integer := ite(CLK_RATE_INT_G=125000000,  390625000, 195312500);
+    constant cycles_4m  : integer := ite(CLK_RATE_INT_G=125000000,  480468750, 240234375);
+    constant cycles_4p  : integer := ite(CLK_RATE_INT_G=125000000,  519531250, 259765625);
+    constant cycles_5m  : integer := ite(CLK_RATE_INT_G=125000000,  601562500, 300781250);
+    constant cycles_5p  : integer := ite(CLK_RATE_INT_G=125000000,  648437500, 324218750);
+    constant cycles_6m  : integer := ite(CLK_RATE_INT_G=125000000,  722656250, 361328125);
+    constant cycles_6p  : integer := ite(CLK_RATE_INT_G=125000000,  777343750, 388671875);
+    constant cycles_7m  : integer := ite(CLK_RATE_INT_G=125000000,  843750000, 421875000);
+    constant cycles_7p  : integer := ite(CLK_RATE_INT_G=125000000,  906250000, 453125000);
+    constant cycles_8m  : integer := ite(CLK_RATE_INT_G=125000000,  964843750, 482421875);
+    constant cycles_8p  : integer := ite(CLK_RATE_INT_G=125000000, 1035156250, 517578125);
+    constant cycles_9m  : integer := ite(CLK_RATE_INT_G=125000000, 1085937500, 542968750);
+    constant cycles_9p  : integer := ite(CLK_RATE_INT_G=125000000, 1164062500, 582031250);
 
     signal   rx16Master : AxiStreamMasterType;
     signal   rx16Slave  : AxiStreamSlaveType;

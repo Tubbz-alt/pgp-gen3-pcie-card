@@ -150,7 +150,7 @@ begin
          mAxisMaster => dmaStreamMaster,
          mAxisSlave  => dmaStreamSlave);        
 
-   comb : process (axis16Ctrl, r, rst, rx32Master, tx32Slave) is
+   comb : process (axis16Ctrl, r, rst, rx32Master, tx32Slave, frameRate, trgToFrameDly, frameCount, seconds, nanosec) is
       variable v : RegType;
    begin
       -- Latch the current value

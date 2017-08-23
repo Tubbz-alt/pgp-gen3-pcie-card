@@ -21,6 +21,7 @@ use ieee.std_logic_arith.all;
 
 use work.StdRtlPkg.all;
 use work.CLinkPkg.all;
+use work.PgpCardG3Pkg.all;
 
 entity EvrCLinkApp is
    port (
@@ -129,8 +130,8 @@ begin
    RstSync_2 : entity work.RstSync
       port map (
          clk      => evrClk,
-         asyncRst => pciToEvr.errCntRst,
-         syncRst  => fromPci.errCntRst);
+         asyncRst => pciToEvr.countRst,
+         syncRst  => fromPci.countRst);
 
    SynchronizerVector_enable : entity work.SynchronizerVector
       generic map (
@@ -226,7 +227,7 @@ begin
             r.toPci.evt140 <= evt140;
 
             -- Error Counting
-            if    (fromPci.errCntRst = '1') then
+            if    (fromPci.countRst = '1') then
                r.toPci.errorCnt <= (others => '0');
             elsif (r.rxError = '0') and (rxError = '1') and (r.toPci.errorCnt /= x"FFFFFFFF") then
                r.toPci.errorCnt <= r.toPci.errorCnt + 1;

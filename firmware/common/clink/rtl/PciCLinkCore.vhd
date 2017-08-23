@@ -24,6 +24,7 @@ use work.AxiStreamPkg.all;
 use work.SsiPkg.all;
 use work.PciPkg.all;
 use work.CLinkPkg.all;
+use work.PgpCardG3Pkg.all;
 
 entity PciCLinkCore is
    generic (

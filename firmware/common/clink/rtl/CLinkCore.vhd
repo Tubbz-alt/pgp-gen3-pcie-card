@@ -25,8 +25,6 @@ use work.CLinkPkg.all;
 
 entity CLinkCore is
    generic (
-      DEBUG_G               : boolean              := true;
-
       TPD_G                 : time                 := 1 ns;
       --------------------------------------------------------------------------
       -- GT Settings
@@ -52,10 +50,9 @@ entity CLinkCore is
       QPLL_FBDIV_45_IN_G    : integer;
       QPLL_REFCLK_DIV_IN_G  : integer;
       -- MMCM Configurations
-      MMCM_DIVCLK_DIVIDE_G  : natural;
       MMCM_CLKFBOUT_MULT_G  : real;
       MMCM_GTCLK_DIVIDE_G   : real;
-      MMCM_GTPCLK_DIVIDE_G  : natural;
+      MMCM_CLCLK_DIVIDE_G   : natural;
       MMCM_CLKIN_PERIOD_G   : real);          
    port (
       -- Parallel Interface
@@ -179,10 +176,9 @@ begin
          QPLL_FBDIV_45_IN_G   => QPLL_FBDIV_45_IN_G,
          QPLL_REFCLK_DIV_IN_G => QPLL_REFCLK_DIV_IN_G,
          -- MMCM Configurations
-         MMCM_DIVCLK_DIVIDE_G => MMCM_DIVCLK_DIVIDE_G,
          MMCM_CLKFBOUT_MULT_G => MMCM_CLKFBOUT_MULT_G,
          MMCM_GTCLK_DIVIDE_G  => MMCM_GTCLK_DIVIDE_G,
-         MMCM_PGPCLK_DIVIDE_G => MMCM_GTPCLK_DIVIDE_G,
+         MMCM_PGPCLK_DIVIDE_G => MMCM_CLCLK_DIVIDE_G,
          MMCM_CLKIN_PERIOD_G  => MMCM_CLKIN_PERIOD_G)
       port map (
          -- GT Clocking [3:0]
@@ -206,8 +202,8 @@ begin
          evrClk             => evrClk,
          evrRst             => evrRst,
          stableClk          => stableClock,
-         clClk              => locClk,
-         clRst              => locRst);    
+         pgpClk             => locClk,
+         pgpRst             => locRst);    
 
    GTP_WEST : for lane in 0 to 3 generate
       rxChBondIn(lane) <= "0000";
@@ -499,7 +495,6 @@ begin
 
       U_CLinkTx : entity work.CLinkTx 
          generic map (
-            DEBUG_G        => DEBUG_G,
             CLK_RATE_INT_G => CLK_RATE_INT_G,
             LANE_G         => lane)
          port map (
@@ -508,9 +503,9 @@ begin
             pciClk       => pciClk,
 
             -- GTP Interface
-            TX_CLK       => locClk,
-            TX_DATA      => txData  (lane),
-            TX_CTRL      => txDataK (lane),
+            txClk        => locClk,
+            txData       => txData  (lane),
+            txCtrl       => txDataK (lane),
 
             -- Parallel Interface
             pciToCl      => pciToCl,
@@ -551,8 +546,8 @@ begin
             frameCount      => clToPci.frameCount        (lane),
             frameRate       => clToPci.frameRate         (lane),
 
-            sertfg_byte     => clToPci.sertfg_fifo_rd    (lane),
-            sertfg_valid    => clToPci.sertfg_fifo_valid (lane),
+            serTfgByte      => clToPci.serFifoRd         (lane),
+            serTfgValid     => clToPci.serFifoValid      (lane),
 
             dmaStreamMaster => dmaStreamMaster           (lane),
             dmaStreamSlave  => dmaStreamSlave            (lane)
@@ -575,7 +570,7 @@ begin
             dmaDescFromPci => pciToCl.dmaRxDescFromPci (lane),
             dmaDescToPci   => clToPci.dmaRxDescToPci   (lane),
             dmaTranFromPci => pciToCl.dmaRxTranFromPci (lane),
-            dmaChannel     => toSlv(lane, 4));
+            dmaChannel     => toSlv(lane, 3));
    end generate;
 
 end;
