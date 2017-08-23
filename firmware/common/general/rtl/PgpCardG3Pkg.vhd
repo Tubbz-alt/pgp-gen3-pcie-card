@@ -128,12 +128,14 @@ package PgpCardG3Pkg is
    -- EVR -> PCIe Parallel Interface
    type EvrToPciType is record          --evrClk Domain
       linkUp     : sl;
+      evt140     : sl;
       errorCnt   : slv(31 downto 0);
       seconds    : slv(31 downto 0);
       runCodeCnt : Slv32Array(0 to 7);
    end record;
    constant EVR_TO_PCI_INIT_C : EvrToPciType := (
       linkUp     => '0',
+      evt140     => '0',
       errorCnt   => (others => '0'),
       seconds    => (others => '0'),
       runCodeCnt => (others => (others => '0')));
@@ -146,6 +148,13 @@ package PgpCardG3Pkg is
       enable     : sl;
       runCode    : Slv8Array(0 to 7);
       acceptCode : Slv8Array(0 to 7);
+      reset      : sl;                 -- CL
+      update     : slv       (0 to 7); -- CL
+      preScale   : Slv8Array (0 to 7); -- CL
+      trgCode    : Slv8Array (0 to 7); -- CL
+      trgDelay   : Slv32Array(0 to 7); -- CL
+      trgWidth   : Slv32Array(0 to 7); -- CL
+
    end record;
    constant PCI_TO_EVR_INIT_C : PciToEvrType := (
       countRst   => '0',
@@ -153,7 +162,13 @@ package PgpCardG3Pkg is
       evrReset   => '0',
       enable     => '0',
       runCode    => (others => x"00"),
-      acceptCode => (others => x"00"));  
+      acceptCode => (others => x"00"),
+      reset     => '0',
+      update    => (others => '0'),
+      preScale  => (others => (others => '0')),
+      trgCode   => (others => (others => '0')),
+      trgDelay  => (others => (others => '0')),
+      trgWidth  => (others => (others => '0')));
 
    type TrigLutInType is record         --pgpClk Domain
       raddr : slv(7 downto 0);

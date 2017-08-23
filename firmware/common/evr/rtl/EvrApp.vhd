@@ -87,6 +87,7 @@ begin
    evrToPci.errorCnt   <= r.toPci.errorCnt;
    evrToPci.seconds    <= r.toPci.seconds;
    evrToPci.runCodeCnt <= r.toPci.runCodeCnt;
+   evrToPci.evt140     <= '0';
 
    evrToPgp <= r.toPgp;
 
