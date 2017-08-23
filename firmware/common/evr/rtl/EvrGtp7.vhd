@@ -1,5 +1,5 @@
 -------------------------------------------------------------------------------
--- Title      : 
+-- Title      :
 -------------------------------------------------------------------------------
 -- File       : EvrGtp7.vhd
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
@@ -9,7 +9,7 @@
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
--- Description: 
+-- Description:
 -------------------------------------------------------------------------------
 -- This file is part of 'SLAC PGP Gen3 Card'.
 -- It is subject to the license terms in the LICENSE.txt file found in the 
@@ -28,19 +28,21 @@ use ieee.std_logic_arith.all;
 use work.StdRtlPkg.all;
 
 entity EvrGtp7 is
+   generic (
+      STABLE_CLOCK_PERIOD_G : real := 4.0E-9);              -- units of seconds
    port (
       -- GT Clocking
-      stableClk        : in  sl;        -- GT needs a stable clock to "boot up"
+      stableClk        : in  sl;         -- GT needs a stable clock to "boot up"
       gtQPllOutRefClk  : in  slv(1 downto 0);
       gtQPllOutClk     : in  slv(1 downto 0);
       gtQPllLock       : in  slv(1 downto 0);
       gtQPllRefClkLost : in  slv(1 downto 0);
       gtQPllReset      : out slv(1 downto 0);
       -- Gt Serial IO
-      gtTxP            : out sl;        -- GT Serial Transmit Positive
-      gtTxN            : out sl;        -- GT Serial Transmit Negative
-      gtRxP            : in  sl;        -- GT Serial Receive Positive
-      gtRxN            : in  sl;        -- GT Serial Receive Negative
+      gtTxP            : out sl;         -- GT Serial Transmit Positive
+      gtTxN            : out sl;         -- GT Serial Transmit Negative
+      gtRxP            : in  sl;         -- GT Serial Receive Positive
+      gtRxN            : in  sl;         -- GT Serial Receive Negative
       -- Rx clocking
       evrRxClk         : out sl;
       evrRxRst         : in  sl;
@@ -48,26 +50,26 @@ entity EvrGtp7 is
       rxLinkUp         : out sl;
       rxError          : out sl;
       rxData           : out slv(15 downto 0);
-      rxDataK          : out slv(1 downto 0));
+      rxDataK          : out slv( 1 downto 0));
 end EvrGtp7;
 
 architecture mapping of EvrGtp7 is
 
    signal gtRxResetDone,
-      dataValid,
-      evrRxRecClk,
-      linkUp : sl;
+          dataValid,
+          evrRxRecClk,
+          linkUp       : sl;
    signal decErr,
-      dispErr : slv(1 downto 0);
+          dispErr      : slv( 1 downto 0);
    signal cnt      : slv(23 downto 0);
-   signal gtRxData : slv(19 downto 0);
-   signal data     : slv(15 downto 0);
-   signal dataK    : slv(1 downto 0);
-   
+   signal gtRxData     : slv(19 downto 0);
+   signal data         : slv(15 downto 0);
+   signal dataK        : slv( 1 downto 0);
+
 begin
    -------------------------------
    -- Output Bus Mapping
-   ------------------------------- 
+   -------------------------------
    rxError  <= not(dataValid) and linkUp;
    rxLinkUp <= linkUp;
    evrRxClk <= evrRxRecClk;
@@ -78,7 +80,7 @@ begin
    --------------------------------------------------------------------------------------------------
    Decoder8b10b_Inst : entity work.Decoder8b10b
       generic map (
-         RST_POLARITY_G => '0',         -- Active low polarity
+         RST_POLARITY_G => '0',          -- Active low polarity
          NUM_BYTES_G    => 2)
       port map (
          clk      => evrRxRecClk,
@@ -97,15 +99,15 @@ begin
    process(evrRxRecClk, gtQPllLock, gtRxResetDone)
    begin
       if (gtRxResetDone = '0') or (gtQPllLock(1) = '0') then
-         cnt    <= (others => '0');
-         linkUp <= '0';
+            cnt    <= (others => '0');
+            linkUp <= '0';
       elsif rising_edge(evrRxRecClk) then
          if cnt = x"FFFFFF" then
-            linkUp <= '1';
-         else
-            cnt <= cnt + 1;
+               linkUp <= '1';
+            else
+               cnt <= cnt + 1;
+            end if;
          end if;
-      end if;
    end process;
 
    --------------------------------------------------------------------------------------------------
@@ -119,6 +121,8 @@ begin
          SIM_GTRESET_SPEEDUP_G => "FALSE",
          SIM_VERSION_G         => "1.0",
          SIMULATION_G          => false,
+
+         STABLE_CLOCK_PERIOD_G => STABLE_CLOCK_PERIOD_G,
          -- TX/RX Settings
          RXOUT_DIV_G           => 2,
          TXOUT_DIV_G           => 2,
@@ -203,6 +207,6 @@ begin
          -- Misc.
          loopbackIn       => (others => '0'),
          txPowerDown      => (others => '1'),
-         rxPowerDown      => (others => '0'));         
+         rxPowerDown      => (others => '0'));
 
 end mapping;
