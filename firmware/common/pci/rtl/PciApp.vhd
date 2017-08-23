@@ -200,6 +200,11 @@ begin
    pciToEvr.evrReset <= evrReset or cardRst;
    pciToEvr.enable   <= evrEnable;
 
+   pciToEvr.preScale <= (others=>(others=>'0'));
+   pciToEvr.trgCode  <= (others=>(others=>'0'));
+   pciToEvr.trgDelay <= (others=>(others=>'0'));
+   pciToEvr.trgWidth <= (others=>(others=>'0'));
+
    MAP_PGP_DMA_LANES :
    for lane in 0 to DMA_SIZE_C-1 generate
       
