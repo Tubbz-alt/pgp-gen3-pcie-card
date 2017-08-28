@@ -66,9 +66,7 @@ end ClClk;
 -- Define architecture
 architecture ClClk of ClClk is
 
-   constant EVR_RATES_C : RealArray(0 to 1) := (
-      getRealMult(1, EVR_RATE_C),
-      getRealMult(2, EVR_RATE_C));
+   constant EVR_RATES_C : RealArray(0 to 1) := (1.0* EVR_RATE_C, 2.0* EVR_RATE_C);
 
    signal gtClkDiv2,
       stableClock,
