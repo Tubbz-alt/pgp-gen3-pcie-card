@@ -1,7 +1,7 @@
 export GIT_BYPASS = 0
 
 # Define Firmware Version Number
-export PRJ_VERSION = 0xDEAD0001
+export PRJ_VERSION = 0xDEAD0002
 
 # Define target part
 export PRJ_PART = XC7A200TFFG1156-3

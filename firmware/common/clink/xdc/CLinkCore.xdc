@@ -32,7 +32,7 @@ resize_pblock [get_pblocks PGP_APP_GRP] -add {CLOCKREGION_X0Y1:CLOCKREGION_X1Y3}
 
 create_clock -name pgpRefClk  -period  4.00 [get_ports pgpRefClkP]
 create_clock -name sysClk     -period 20.00 [get_ports sysClk]
-create_clock -name stableClk  -period 8.000 [get_pins {CLinkCore_Inst/PgpClk_Inst/IBUFDS_GTE2_Inst/ODIV2}]
+create_clock -name stableClk  -period 8.000 [get_pins {CLinkCore_Inst/ClClk_Inst/IBUFDS_GTE2_Inst/ODIV2}]
 
 create_generated_clock  -name pciClk [get_pins {PciCore_Inst/PciFrontEnd_Inst/PcieCore_Inst/U0/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/mmcm_i/CLKOUT3}]
 create_generated_clock  -name dnaClk [get_pins {PciCore_Inst/PciApp_Inst/Iprog7Series_Inst/DIVCLK_GEN.BUFR_ICPAPE2/O}]

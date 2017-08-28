@@ -3,7 +3,7 @@
 -------------------------------------------------------------------------------
 -- File       : CLinkCore.vhd
 -- Created    : 2017-08-22
--- Platform   : 
+-- Platform   :
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
 -- This file is part of 'SLAC PGP Gen3 Card'.
@@ -50,10 +50,11 @@ entity CLinkCore is
       QPLL_FBDIV_45_IN_G    : integer;
       QPLL_REFCLK_DIV_IN_G  : integer;
       -- MMCM Configurations
+      MMCM_DIVCLK_DIVIDE_G  : natural;
       MMCM_CLKFBOUT_MULT_G  : real;
       MMCM_GTCLK_DIVIDE_G   : real;
       MMCM_CLCLK_DIVIDE_G   : natural;
-      MMCM_CLKIN_PERIOD_G   : real);          
+      MMCM_CLKIN_PERIOD_G   : real);
    port (
       -- Parallel Interface
       pciToCl    : in  PciToClType;
@@ -73,7 +74,7 @@ entity CLinkCore is
       evrClk     : in  sl;
       evrRst     : in  sl;
       pciClk     : in  sl;
-      pciRst     : in  sl);      
+      pciRst     : in  sl);
 end CLinkCore;
 
 architecture mapping of CLinkCore is
@@ -85,7 +86,7 @@ architecture mapping of CLinkCore is
       clk    : IN STD_LOGIC;
       probe0 : IN STD_LOGIC_VECTOR(7 DOWNTO 0)
    );
-   END COMPONENT  ;
+   END COMPONENT;
 
    -----------------------------------------------------------------------------
 
@@ -167,18 +168,19 @@ begin
          dataIn  => pciToCl.rxPllRst(1),
          dataOut => eastQPllRst(1));
 
-   PgpClk_Inst : entity work.PgpClk
+   ClClk_Inst : entity work.ClClk
       generic map (
          -- Configurations
-         PGP_RATE_G           => GTP_RATE_G,
+         GTP_RATE_G           => GTP_RATE_G,
          -- Quad PLL Configurations
          QPLL_FBDIV_IN_G      => QPLL_FBDIV_IN_G,
          QPLL_FBDIV_45_IN_G   => QPLL_FBDIV_45_IN_G,
          QPLL_REFCLK_DIV_IN_G => QPLL_REFCLK_DIV_IN_G,
          -- MMCM Configurations
+         MMCM_DIVCLK_DIVIDE_G => MMCM_DIVCLK_DIVIDE_G,
          MMCM_CLKFBOUT_MULT_G => MMCM_CLKFBOUT_MULT_G,
          MMCM_GTCLK_DIVIDE_G  => MMCM_GTCLK_DIVIDE_G,
-         MMCM_PGPCLK_DIVIDE_G => MMCM_CLCLK_DIVIDE_G,
+         MMCM_CLCLK_DIVIDE_G => MMCM_CLCLK_DIVIDE_G,
          MMCM_CLKIN_PERIOD_G  => MMCM_CLKIN_PERIOD_G)
       port map (
          -- GT Clocking [3:0]
@@ -196,14 +198,14 @@ begin
          eastQPllReset      => eastQPllReset,
          eastQPllRst        => eastQPllRst,
          -- GT CLK Pins
-         pgpRefClkP         => clRefClkP,
-         pgpRefClkN         => clRefClkN,
+         clRefClkP          => clRefClkP,
+         clRefClkN          => clRefClkN,
          -- Global Signals
          evrClk             => evrClk,
          evrRst             => evrRst,
          stableClk          => stableClock,
-         pgpClk             => locClk,
-         pgpRst             => locRst);    
+         clClk              => locClk,
+         clRst              => locRst);    
 
    GTP_WEST : for lane in 0 to 3 generate
       rxChBondIn(lane) <= "0000";
@@ -307,37 +309,37 @@ begin
             gtTxN            => clTxN(lane),
             gtRxP            => clRxP(lane),
             gtRxN            => clRxN(lane),
-            rxOutClkOut      => rxUsrClk   (lane),
-            rxUsrClkIn       => rxUsrClk   (lane),
-            rxUsrClk2In      => rxUsrClk   (lane),
+            rxOutClkOut      => rxUsrClk     (lane),
+            rxUsrClkIn       => rxUsrClk     (lane),
+            rxUsrClk2In      => rxUsrClk     (lane),
             rxUserRdyOut     => open,
             rxMmcmResetOut   => open,
             rxMmcmLockedIn   => '1',
-            rxUserResetIn    => rxReset    (lane),
-            rxResetDoneOut   => rxResetDone(lane),
+            rxUserResetIn    => rxReset      (lane),
+            rxResetDoneOut   => rxResetDone  (lane),
             rxDataValidIn    => '1',
             rxSlideIn        => '0',
-            rxDataOut        => rxData     (lane),
-            rxCharIsKOut     => rxDataK    (lane),
-            rxDecErrOut      => rxDecErr   (lane),
-            rxDispErrOut     => rxDispErr  (lane),
-            rxPolarityIn     => rxPolarity (lane),
+            rxDataOut        => rxData       (lane),
+            rxCharIsKOut     => rxDataK      (lane),
+            rxDecErrOut      => rxDecErr     (lane),
+            rxDispErrOut     => rxDispErr    (lane),
+            rxPolarityIn     => rxPolarity   (lane),
             rxBufStatusOut   => open,
             rxChBondLevelIn  => slv(to_unsigned(0, 3)),
-            rxChBondIn       => rxChBondIn (lane),
-            rxChBondOut      => rxChBondOut(lane),
-            txOutClkOut      => txUsrClk   (lane),
+            rxChBondIn       => rxChBondIn   (lane),
+            rxChBondOut      => rxChBondOut  (lane),
+            txOutClkOut      => txUsrClk     (lane),
             txUsrClkIn       => locClk,
             txUsrClk2In      => locClk,
             txUserRdyOut     => open,
             txMmcmResetOut   => open,
             txMmcmLockedIn   => '1',
-            txUserResetIn    => txReset    (lane),
-            txResetDoneOut   => txResetDone(lane),
-            txDataIn         => txData     (lane),
-            txCharIsKIn      => txDataK    (lane),
+            txUserResetIn    => txReset      (lane),
+            txResetDoneOut   => txResetDone  (lane),
+            txDataIn         => txData       (lane),
+            txCharIsKIn      => txDataK      (lane),
             txBufStatusOut   => open,
-            loopbackIn       => rxLoopback (lane));
+            loopbackIn       => rxLoopback   (lane));
    end generate GTP_WEST;
 
    GTP_EAST : for lane in 4 to 7 generate
@@ -442,37 +444,37 @@ begin
             gtTxN            => clTxN(lane),
             gtRxP            => clRxP(lane),
             gtRxN            => clRxN(lane),
-            rxOutClkOut      => rxUsrClk   (lane),
-            rxUsrClkIn       => rxUsrClk   (lane),
-            rxUsrClk2In      => rxUsrClk   (lane),
+            rxOutClkOut      => rxUsrClk     (lane),
+            rxUsrClkIn       => rxUsrClk     (lane),
+            rxUsrClk2In      => rxUsrClk     (lane),
             rxUserRdyOut     => open,
             rxMmcmResetOut   => open,
             rxMmcmLockedIn   => '1',
-            rxUserResetIn    => rxReset    (lane),
-            rxResetDoneOut   => rxResetDone(lane),
+            rxUserResetIn    => rxReset      (lane),
+            rxResetDoneOut   => rxResetDone  (lane),
             rxDataValidIn    => '1',
             rxSlideIn        => '0',
-            rxDataOut        => rxData     (lane),
-            rxCharIsKOut     => rxDataK    (lane),
-            rxDecErrOut      => rxDecErr   (lane),
-            rxDispErrOut     => rxDispErr  (lane),
-            rxPolarityIn     => rxPolarity (lane),
+            rxDataOut        => rxData       (lane),
+            rxCharIsKOut     => rxDataK      (lane),
+            rxDecErrOut      => rxDecErr     (lane),
+            rxDispErrOut     => rxDispErr    (lane),
+            rxPolarityIn     => rxPolarity   (lane),
             rxBufStatusOut   => open,
             rxChBondLevelIn  => slv(to_unsigned(0, 3)),
-            rxChBondIn       => rxChBondIn (lane),
-            rxChBondOut      => rxChBondOut(lane),
-            txOutClkOut      => txUsrClk   (lane),
+            rxChBondIn       => rxChBondIn   (lane),
+            rxChBondOut      => rxChBondOut  (lane),
+            txOutClkOut      => txUsrClk     (lane),
             txUsrClkIn       => locClk,
             txUsrClk2In      => locClk,
             txUserRdyOut     => open,
             txMmcmResetOut   => open,
             txMmcmLockedIn   => '1',
-            txUserResetIn    => txReset    (lane),
-            txResetDoneOut   => txResetDone(lane),
-            txDataIn         => txData     (lane),
-            txCharIsKIn      => txDataK    (lane),
+            txUserResetIn    => txReset      (lane),
+            txResetDoneOut   => txResetDone  (lane),
+            txDataIn         => txData       (lane),
+            txCharIsKIn      => txDataK      (lane),
             txBufStatusOut   => open,
-            loopbackIn       => rxLoopback (lane));
+            loopbackIn       => rxLoopback   (lane));
    end generate GTP_EAST;
 
    SYNC_LANES :
@@ -496,7 +498,7 @@ begin
       U_CLinkTx : entity work.CLinkTx 
          generic map (
             CLK_RATE_INT_G => CLK_RATE_INT_G,
-            LANE_G         => lane)
+            LANE_G       => lane)
          port map (
             -- System Interface
             systemReset  => txRstDly(lane),
@@ -518,9 +520,9 @@ begin
 
       U_CLinkRx : entity work.CLinkRx 
          generic map (
-            TPD_G          => TPD_G,
+            TPD_G           => TPD_G,
             CLK_RATE_INT_G => CLK_RATE_INT_G,
-            LANE_G         => lane)
+            LANE_G          => lane)
          port map (
             -- System Interface
             systemReset     => rxRstDly                  (lane),
@@ -558,10 +560,10 @@ begin
             TPD_G => TPD_G)
          port map (
             -- 32-bit Streaming RX Interface
-            sAxisClk       => rxUsrClk                 (lane),
-            sAxisRst       => rxRstDly                 (lane),
-            sAxisMaster    => dmaStreamMaster          (lane),
-            sAxisSlave     => dmaStreamSlave           (lane),
+            sAxisClk       => rxUsrClk                   (lane),
+            sAxisRst       => rxRstDly                   (lane),
+            sAxisMaster    => dmaStreamMaster            (lane),
+            sAxisSlave     => dmaStreamSlave             (lane),
             -- 128-bit Streaming TX Interface
             pciClk         => pciClk,
             pciRst         => pciRst,
