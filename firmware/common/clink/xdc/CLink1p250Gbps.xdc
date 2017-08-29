@@ -11,8 +11,8 @@
 # PGP: Timing Constraints #
 ###########################
 
-create_clock -name pgpGtClk  -period 16.000 [get_pins {CLinkCore_Inst/ClClk_Inst/U_BUFG_1/O}]
-create_clock -name pgpTxClk  -period 16.000 [get_pins {CLinkCore_Inst/ClClk_Inst/U_BUFG_2/O}]
+create_clock -name pgpGtClk  -period 16.000 [get_pins {CLinkCore_Inst/ClClk_Inst/BUFG_1/O}]
+create_clock -name pgpTxClk  -period 16.000 [get_pins {CLinkCore_Inst/ClClk_Inst/BUFG_2/O}]
 
 create_clock -name pgpRxClk0 -period 16.000 [get_pins CLinkCore_Inst/GTP_WEST[0].Gtp7Core_Inst/gtpe2_i/RXOUTCLK]
 create_clock -name pgpRxClk1 -period 16.000 [get_pins CLinkCore_Inst/GTP_WEST[1].Gtp7Core_Inst/gtpe2_i/RXOUTCLK]
