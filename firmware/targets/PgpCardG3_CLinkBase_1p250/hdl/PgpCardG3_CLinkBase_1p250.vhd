@@ -40,7 +40,6 @@ entity PgpCardG3_CLinkBase_1p250 is
       QPLL_FBDIV_45_IN_G   : integer    := QPLL_FBDIV_45_IN_C;
       QPLL_REFCLK_DIV_IN_G : integer    := QPLL_REFCLK_DIV_IN_C;
       -- MMCM Configurations
-      MMCM_DIVCLK_DIVIDE_G : natural    := MMCM_DIVCLK_DIVIDE_C;
       MMCM_CLKFBOUT_MULT_G : real       := MMCM_CLKFBOUT_MULT_C;
       MMCM_GTCLK_DIVIDE_G  : real       := MMCM_GTCLK_DIVIDE_C;
       MMCM_CLCLK_DIVIDE_G  : natural    := MMCM_PGPCLK_DIVIDE_C;
@@ -74,12 +73,12 @@ entity PgpCardG3_CLinkBase_1p250 is
       evrTxP     : out   sl;
       evrTxN     : out   sl;
       -- Ports
-      clRefClkP  : in    sl;            -- 250 MHz
-      clRefClkN  : in    sl;            -- 250 MHz
-      clRxP      : in    slv(7 downto 0);
-      clRxN      : in    slv(7 downto 0);
-      clTxP      : out   slv(7 downto 0);
-      clTxN      : out   slv(7 downto 0);
+      pgpRefClkP : in    sl;            -- 250 MHz
+      pgpRefClkN : in    sl;            -- 250 MHz
+      pgpRxP     : in    slv(7 downto 0);
+      pgpRxN     : in    slv(7 downto 0);
+      pgpTxP     : out   slv(7 downto 0);
+      pgpTxN     : out   slv(7 downto 0);
       -- User LEDs
       led_r      : out   slv(5 downto 0);
       led_b      : out   slv(5 downto 0);
@@ -132,7 +131,6 @@ begin
          QPLL_FBDIV_45_IN_G   => QPLL_FBDIV_45_IN_G,
          QPLL_REFCLK_DIV_IN_G => QPLL_REFCLK_DIV_IN_G,
          -- MMCM Configurations
-         MMCM_DIVCLK_DIVIDE_G => MMCM_DIVCLK_DIVIDE_G,
          MMCM_CLKFBOUT_MULT_G => MMCM_CLKFBOUT_MULT_G,
          MMCM_GTCLK_DIVIDE_G  => MMCM_GTCLK_DIVIDE_G,
          MMCM_CLCLK_DIVIDE_G  => MMCM_CLCLK_DIVIDE_G,
@@ -143,12 +141,12 @@ begin
          pciToCl    => pciToCl,
          clToPci    => clToPci,
          -- Camera Link Fiber Links
-         clRefClkP  => clRefClkP,
-         clRefClkN  => clRefClkN,
-         clRxP      => clRxP,
-         clRxN      => clRxN,
-         clTxP      => clTxP,
-         clTxN      => clTxN,
+         clRefClkP  => pgpRefClkP,
+         clRefClkN  => pgpRefClkN,
+         clRxP      => pgpRxP,
+         clRxN      => pgpRxN,
+         clTxP      => pgpTxP,
+         clTxN      => pgpTxN,
          -- Global Signals
          clClk      => clClk,
          clRst      => clRst,
