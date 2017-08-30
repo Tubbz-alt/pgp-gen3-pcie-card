@@ -300,6 +300,7 @@ begin
             FTS_LANE_DESKEW_EN_G     => "FALSE")       -- Default
          port map (
             stableClkIn      => stableClock,
+            gtRxRefClkBufg   => stableClock,
             qPllRefClkIn     => westQPllRefClk,
             qPllClkIn        => westQPllClk,
             qPllLockIn       => westQPllLock,
@@ -435,6 +436,7 @@ begin
             FTS_LANE_DESKEW_EN_G     => "FALSE")       -- Default
          port map (
             stableClkIn      => stableClock,
+            gtRxRefClkBufg   => stableClock,
             qPllRefClkIn     => eastQPllRefClk,
             qPllClkIn        => eastQPllClk,
             qPllLockIn       => eastQPllLock,
