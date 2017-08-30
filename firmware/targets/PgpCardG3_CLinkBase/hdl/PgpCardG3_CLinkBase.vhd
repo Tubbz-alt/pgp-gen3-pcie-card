@@ -74,12 +74,12 @@ entity PgpCardG3_CLinkBase is
       evrTxP     : out   sl;
       evrTxN     : out   sl;
       -- Ports
-      clRefClkP  : in    sl;            -- 250 MHz
-      clRefClkN  : in    sl;            -- 250 MHz
-      clRxP      : in    slv(7 downto 0);
-      clRxN      : in    slv(7 downto 0);
-      clTxP      : out   slv(7 downto 0);
-      clTxN      : out   slv(7 downto 0);
+      pgpRefClkP : in    sl;            -- 250 MHz
+      pgpRefClkN : in    sl;            -- 250 MHz
+      pgpRxP     : in    slv(7 downto 0);
+      pgpRxN     : in    slv(7 downto 0);
+      pgpTxP     : out   slv(7 downto 0);
+      pgpTxN     : out   slv(7 downto 0);
       -- User LEDs
       led_r      : out   slv(5 downto 0);
       led_b      : out   slv(5 downto 0);
@@ -143,12 +143,12 @@ begin
          pciToCl    => pciToCl,
          clToPci    => clToPci,
          -- Camera Link Fiber Links
-         clRefClkP  => clRefClkP,
-         clRefClkN  => clRefClkN,
-         clRxP      => clRxP,
-         clRxN      => clRxN,
-         clTxP      => clTxP,
-         clTxN      => clTxN,
+         clRefClkP  => pgpRefClkP,
+         clRefClkN  => pgpRefClkN,
+         clRxP      => pgpRxP,
+         clRxN      => pgpRxN,
+         clTxP      => pgpTxP,
+         clTxN      => pgpTxN,
          -- Global Signals
          clClk      => clClk,
          clRst      => clRst,
