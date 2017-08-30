@@ -40,7 +40,6 @@ entity PgpCardG3_CLinkBase is
       QPLL_FBDIV_45_IN_G   : integer    := QPLL_FBDIV_45_IN_C;
       QPLL_REFCLK_DIV_IN_G : integer    := QPLL_REFCLK_DIV_IN_C;
       -- MMCM Configurations
-      MMCM_DIVCLK_DIVIDE_G : natural    := MMCM_DIVCLK_DIVIDE_C;
       MMCM_CLKFBOUT_MULT_G : real       := MMCM_CLKFBOUT_MULT_C;
       MMCM_GTCLK_DIVIDE_G  : real       := MMCM_GTCLK_DIVIDE_C;
       MMCM_CLCLK_DIVIDE_G  : natural    := MMCM_PGPCLK_DIVIDE_C;
@@ -132,7 +131,6 @@ begin
          QPLL_FBDIV_45_IN_G   => QPLL_FBDIV_45_IN_G,
          QPLL_REFCLK_DIV_IN_G => QPLL_REFCLK_DIV_IN_G,
          -- MMCM Configurations
-         MMCM_DIVCLK_DIVIDE_G => MMCM_DIVCLK_DIVIDE_G,
          MMCM_CLKFBOUT_MULT_G => MMCM_CLKFBOUT_MULT_G,
          MMCM_GTCLK_DIVIDE_G  => MMCM_GTCLK_DIVIDE_G,
          MMCM_CLCLK_DIVIDE_G  => MMCM_CLCLK_DIVIDE_G,
