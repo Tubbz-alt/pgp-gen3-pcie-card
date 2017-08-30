@@ -48,7 +48,6 @@ package Pgp1p250GbpsPkg is
    -- MMCM Configurations
    constant MMCM_CLKIN_PERIOD_C  : real    := 8.000;
    constant MMCM_CLKFBOUT_MULT_C : real    := 12.500;
-   constant MMCM_DIVCLK_DIVIDE_C : natural := 1;
    constant MMCM_GTCLK_DIVIDE_C  : real    := 12.500;
    constant MMCM_PGPCLK_DIVIDE_C : natural := 25;
    

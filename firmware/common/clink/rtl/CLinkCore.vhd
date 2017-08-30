@@ -50,7 +50,6 @@ entity CLinkCore is
       QPLL_FBDIV_45_IN_G    : integer;
       QPLL_REFCLK_DIV_IN_G  : integer;
       -- MMCM Configurations
-      MMCM_DIVCLK_DIVIDE_G  : natural;
       MMCM_CLKFBOUT_MULT_G  : real;
       MMCM_GTCLK_DIVIDE_G   : real;
       MMCM_CLCLK_DIVIDE_G   : natural;
@@ -168,19 +167,18 @@ begin
          dataIn  => pciToCl.rxPllRst(1),
          dataOut => eastQPllRst(1));
 
-   ClClk_Inst : entity work.ClClk
+   PgpClk_Inst : entity work.PgpClk
       generic map (
          -- Configurations
-         GTP_RATE_G           => GTP_RATE_G,
+         PGP_RATE_G           => GTP_RATE_G,
          -- Quad PLL Configurations
          QPLL_FBDIV_IN_G      => QPLL_FBDIV_IN_G,
          QPLL_FBDIV_45_IN_G   => QPLL_FBDIV_45_IN_G,
          QPLL_REFCLK_DIV_IN_G => QPLL_REFCLK_DIV_IN_G,
          -- MMCM Configurations
-         MMCM_DIVCLK_DIVIDE_G => MMCM_DIVCLK_DIVIDE_G,
          MMCM_CLKFBOUT_MULT_G => MMCM_CLKFBOUT_MULT_G,
          MMCM_GTCLK_DIVIDE_G  => MMCM_GTCLK_DIVIDE_G,
-         MMCM_CLCLK_DIVIDE_G => MMCM_CLCLK_DIVIDE_G,
+         MMCM_PGPCLK_DIVIDE_G => MMCM_CLCLK_DIVIDE_G,
          MMCM_CLKIN_PERIOD_G  => MMCM_CLKIN_PERIOD_G)
       port map (
          -- GT Clocking [3:0]
@@ -198,14 +196,14 @@ begin
          eastQPllReset      => eastQPllReset,
          eastQPllRst        => eastQPllRst,
          -- GT CLK Pins
-         clRefClkP          => clRefClkP,
-         clRefClkN          => clRefClkN,
+         pgpRefClkP         => clRefClkP,
+         pgpRefClkN         => clRefClkN,
          -- Global Signals
          evrClk             => evrClk,
          evrRst             => evrRst,
          stableClk          => stableClock,
-         clClk              => locClk,
-         clRst              => locRst);    
+         pgpClk             => locClk,
+         pgpRst             => locRst);    
 
    GTP_WEST : for lane in 0 to 3 generate
       rxChBondIn(lane) <= "0000";
