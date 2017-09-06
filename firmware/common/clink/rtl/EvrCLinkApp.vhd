@@ -109,7 +109,7 @@ begin
 
    evrRst   <= fromPci.evrReset;
    pllRst   <= fromPci.pllRst;
--- enable   <= fromPci.enable;
+   enable   <= fromPci.enable;
 
    RstSync_0 : entity work.RstSync
       port map (
