@@ -40,7 +40,7 @@ entity PciCLinkCore is
       flashWe    : out   sl;
       -- Parallel Interface
       clToPci    : in    ClToPciType;
-      pciToCl    : inout PciToClType;
+      pciToCl    : out   PciToClType;
       evrToPci   : in    EvrToPciType;
       pciToEvr   : out   PciToEvrType;
       -- PCIe Ports 
@@ -182,9 +182,9 @@ begin
          irqOut           => irqOut,
          -- Parallel Interface
          clToPci          => clToPci,
-         PciToCl          => PciToCl,
-         PciToEvr         => PciToEvr,
-         EvrToPci         => EvrToPci,
+         pciToCl          => pciToCl,
+         pciToEvr         => pciToEvr,
+         evrToPci         => evrToPci,
          --Global Signals
          clClk            => clClk,
          clRst            => clRst,

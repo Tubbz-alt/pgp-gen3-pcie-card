@@ -86,11 +86,6 @@ architecture rtl of EvrCLinkApp is
    signal r       : RegType      := REG_INIT_C;
    signal fromPci : PciToEvrType := PCI_TO_EVR_INIT_C;
 
-   attribute dont_touch : string;
-   attribute dont_touch of
-      r,
-      fromPci : signal is "TRUE";
-
    signal count_to_3    : slv(28 downto 0)      := (others => '0');
    signal evt140        : sl                    := '0';
 
@@ -101,6 +96,13 @@ architecture rtl of EvrCLinkApp is
 
    signal enable,
           got_code      : slv       (0 to 7)    := (others => '0');
+
+   attribute dont_touch : string;
+   attribute dont_touch of
+      r,
+      enable,
+      got_code,
+      fromPci : signal is "TRUE";
 
 begin
 

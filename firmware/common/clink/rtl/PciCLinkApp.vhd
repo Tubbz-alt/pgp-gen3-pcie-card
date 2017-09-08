@@ -62,7 +62,7 @@ entity PciCLinkApp is
       irqOut           : in    IrqOutType;
       -- Parallel Interface
       clToPci          : in    ClToPciType;
-      pciToCl          : inout PciToClType;
+      pciToCl          : out   PciToClType;
       evrToPci         : in    EvrToPciType;
       pciToEvr         : out   PciToEvrType;
       --Global Signals
@@ -90,8 +90,7 @@ architecture rtl of PciCLinkApp is
    -- Descriptor Signals
    signal dmaRxDescToPci,
           dmaTxDescToPci    : DescToPciArray  (0 to (DMA_SIZE_C-1));
-   signal dmaRxDescFromPci,
-          dmaTxDescFromPci  : DescFromPciArray(0 to (DMA_SIZE_C-1));
+   signal dmaRxDescFromPci  : DescFromPciArray(0 to (DMA_SIZE_C-1));
 
    -- Register Controller
    signal cardRst,
@@ -112,7 +111,6 @@ architecture rtl of PciCLinkApp is
    signal regWrData,
           regRdData,
           regRxRdData,
-          regTxRdData,
           regFlashRdData,
           rebootTimer,
           scratchPad        : slv(31 downto 0);
@@ -122,7 +120,6 @@ architecture rtl of PciCLinkApp is
    -- Interrupt Signals
    signal irqEnable         : sl;
    signal rxDmaIrqReq       : sl;
-   signal txDmaIrqReq       : sl;
 
    --EVR Signals     
    signal evrLinkUp,
@@ -186,8 +183,9 @@ begin
    -------------------------------
    -- Input/Output mapping
    -------------------------------    
-   irqIn.req            <= rxDmaIrqReq  or txDmaIrqReq;
+   irqIn.req            <= rxDmaIrqReq;
    irqIn.enable         <= irqEnable;
+   irqIn.cntRst         <= '0';
    serNumber            <= serialNumber(63 downto 0);
 
    pciToEvr.evrReset    <=                 evrReset or cardRst;
@@ -232,7 +230,7 @@ begin
       pciToCl.dmaTxTranFromPci(lane) <= dmaTxTranFromPci       (lane);
       pciToCl.dmaRxTranFromPci(lane) <= dmaRxTranFromPci       (lane);
 
-      pciToCl.dmaTxDescFromPci(lane) <= dmaTxDescFromPci       (lane);
+      pciToCl.dmaTxDescFromPci(lane) <= DESC_FROM_PCI_INIT_C;
       pciToCl.dmaRxDescFromPci(lane) <= dmaRxDescFromPci       (lane);
 
       pciToCl.dmaTxIbSlave    (lane) <= dmaTxIbSlave           (lane);
@@ -728,7 +726,7 @@ begin
             elsif (regAddr(11 downto 10) = "01") then
                regRdData <= regRxRdData;
             elsif (regAddr(11 downto 10) = "10") then
-               regRdData <= regTxRdData;
+               regRdData <= (others=>'0');
             else
                regBusy   <= flashBusy;
                regRdData <= regFlashRdData;

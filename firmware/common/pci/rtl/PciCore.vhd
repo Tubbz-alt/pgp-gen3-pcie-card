@@ -188,10 +188,10 @@ begin
          irqIn            => irqIn,
          irqOut           => irqOut,
          -- Parallel Interface
-         PgpToPci         => PgpToPci,
-         PciToPgp         => PciToPgp,
-         PciToEvr         => PciToEvr,
-         EvrToPci         => EvrToPci,
+         pgpToPci         => PgpToPci,
+         pciToPgp         => PciToPgp,
+         pciToEvr         => PciToEvr,
+         evrToPci         => EvrToPci,
          --Global Signals
          pgpClk           => pgpClk,
          pgpRst           => pgpRst,

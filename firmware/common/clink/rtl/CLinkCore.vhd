@@ -22,6 +22,7 @@ use ieee.numeric_std.all;
 use work.StdRtlPkg.all;
 use work.AxiStreamPkg.all;
 use work.CLinkPkg.all;
+use work.PciPkg.all;
 
 entity CLinkCore is
    generic (
@@ -132,11 +133,15 @@ architecture mapping of CLinkCore is
    signal dmaStreamMaster     : AxiStreamMasterArray(0 to 7);
    signal dmaStreamSlave      : AxiStreamSlaveArray (0 to 7);
 
-begin
+begin          
 
    stableClk             <= stableClock;
    clClk                 <= locClk;
    clRst                 <= locRst;
+   rxReset               <= pciToCl.rxRst;
+   txReset               <= pciToCl.txRst;
+   rxPolarity            <= (others=>'0');
+   rxLoopback            <= (others=>(others=>'0'));
 
    clToPci.txPllLock(0) <= westQPllLock(0);
    clToPci.txPllLock(1) <= eastQPllLock(0);
@@ -513,6 +518,20 @@ begin
             pciToCl      => pciToCl,
             evrToCl      => evrToCl(lane)
          );
+
+      clToPci.dmaTxIbMaster(lane)  <= AXI_STREAM_MASTER_INIT_C;
+      clToPci.dmaTxObSlave(lane)   <= AXI_STREAM_SLAVE_INIT_C;
+      clToPci.dmaTxDescToPci(lane) <= DESC_TO_PCI_INIT_C;
+      clToPci.locLinkReady(lane)   <= '0';
+      clToPci.remLinkReady(lane)   <= '0';
+      clToPci.cellErrorCnt(lane)   <= (others=>'0');
+      clToPci.linkDownCnt(lane)    <= (others=>'0');
+      clToPci.linkErrorCnt(lane)   <= (others=>'0');
+      clToPci.fifoErrorCnt(lane)   <= (others=>'0');
+      clToPci.rxCount(lane,0)      <= (others=>'0');
+      clToPci.rxCount(lane,1)      <= (others=>'0');
+      clToPci.rxCount(lane,2)      <= (others=>'0');
+      clToPci.rxCount(lane,3)      <= (others=>'0');
 
       -----------------------------
       -- Receive
