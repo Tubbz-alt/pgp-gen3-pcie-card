@@ -76,6 +76,8 @@ architecture rtl of EvrApp is
    signal r       : RegType      := REG_INIT_C;
    signal fromPci : PciToEvrType := PCI_TO_EVR_INIT_C;
 
+   signal fromPciEnable : sl;
+   
    attribute dont_touch : string;
    attribute dont_touch of
       r,
@@ -120,9 +122,7 @@ begin
       port map (
          clk     => evrClk,
          dataIn  => pciToEvr.enable(0),
-         dataOut => fromPci.enable(0));       
-
-   fromPci.enable(7 downto 1) <= (others=>fromPci.enable(0));
+         dataOut => fromPciEnable);       
 
    SYNC_TRIG_CODES :
    for i in 0 to 7 generate
@@ -138,6 +138,8 @@ begin
             rd_clk            => evrClk,
             dout(7 downto 0)  => fromPci.runCode(i),
             dout(15 downto 8) => fromPci.acceptCode(i));  
+            
+         fromPci.enable(i) <= fromPciEnable;   
    end generate SYNC_TRIG_CODES;
 
    process (evrClk)
