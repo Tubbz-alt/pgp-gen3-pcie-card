@@ -24,7 +24,8 @@ use work.PgpCardG3Pkg.all;
 
 entity EvrCLinkCore is
    generic (
-      STABLE_CLOCK_PERIOD_G : real := 4.0E-9);              -- units of seconds
+      TIMING_SELECT         : string := "LCLS1";
+      STABLE_CLOCK_PERIOD_G : real   := 4.0E-9);              -- units of seconds
    port (
       -- External Interfaces
       pciToEvr   : in  PciToEvrType;
@@ -49,6 +50,7 @@ end EvrCLinkCore;
 architecture mapping of EvrCLinkCore is
 
    signal stableClk,
+      drpClk,
       locClk,
       locRst,
       rxLinkUp,
@@ -62,10 +64,10 @@ architecture mapping of EvrCLinkCore is
           qPllReset,
           rxDataK         : slv( 1 downto 0);
    signal rxData : slv(15 downto 0);
-
-   attribute KEEP_HIERARCHY : string;
-   attribute KEEP_HIERARCHY of
-      EvrApp_Inst : label is "TRUE";
+   
+   --attribute KEEP_HIERARCHY : string;
+   --attribute KEEP_HIERARCHY of
+   --   EvrApp_Inst : label is "TRUE";
    
 begin
 
@@ -93,7 +95,7 @@ begin
       generic map ( STABLE_CLOCK_PERIOD_G  => STABLE_CLOCK_PERIOD_G)
       port map (
          -- GT Clocking
-         stableClk        => stableClk,
+         stableClk        => drpClk,
          gtQPllOutRefClk  => qPllRefClk,
          gtQPllOutClk     => qPllClk,
          gtQPllLock       => qPllLock,
@@ -113,8 +115,34 @@ begin
          rxData           => rxData,
          rxDataK          => rxDataK);
 
-   EvrApp_Inst : entity work.EvrCLinkApp
-      port map (
+   GEN_EVR : if TIMING_SELECT = "LCLS1" generate
+     drpClk <= stableClk;
+     EvrApp_Inst : entity work.EvrCLinkApp
+       port map (
+         -- External Interfaces
+         pciToEvr => pciToEvr,
+         evrToPci => evrToPci,
+         evrToCl  => evrToCl,
+         -- MGT physical channel
+         rxLinkUp => rxLinkUp,
+         rxError  => rxError,
+         rxData   => rxData,
+         rxDataK  => rxDataK,
+         -- PLL Reset
+         pllRst   => pllRst,
+         -- Global Signals
+         clClk    => clClk,
+         clRst    => clRst,
+         evrClk   => locClk,
+         evrRst   => locRst,
+         pciClk   => pciClk,
+         pciRst   => pciRst);
+   end generate;
+
+   GEN_TPR : if TIMING_SELECT = "LCLS2" generate
+     drpClk <= pciClk;
+     EvrApp_Inst : entity work.TprCLinkApp
+       port map (
          -- External Interfaces
          pciToEvr => pciToEvr,
          evrToPci => evrToPci,
@@ -133,6 +161,7 @@ begin
          evrRst   => locRst,
          pciClk   => pciClk,
          pciRst   => pciRst);             
+   end generate;
 
 end mapping;
 
