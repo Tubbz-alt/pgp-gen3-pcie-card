@@ -61,8 +61,8 @@ entity PciCore is
       pciTxN     : out   slv(3 downto 0);
       pciLinkUp  : out   sl;
       -- Global Signals
-      pgpClk     : in    sl;
-      pgpRst     : in    sl;
+      pgpClk     : in    slv(7 downto 0);
+      pgpRst     : in    slv(7 downto 0);
       evrClk     : in    sl;
       evrRst     : in    sl;
       pciClk     : out   sl;

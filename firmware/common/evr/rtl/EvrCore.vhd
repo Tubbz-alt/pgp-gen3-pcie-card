@@ -40,8 +40,6 @@ entity EvrCore is
       evrTxP     : out sl;
       evrTxN     : out sl;
       -- Global Signals
-      pgpClk     : in  sl;
-      pgpRst     : in  sl;
       evrClk     : out sl;
       evrRst     : out sl;
       pciClk     : in  sl;
@@ -125,8 +123,6 @@ begin
          -- PLL Reset
          pllRst   => pllRst,
          -- Global Signals
-         pgpClk   => pgpClk,
-         pgpRst   => pgpRst,
          evrClk   => locClk,
          evrRst   => locRst,
          pciClk   => pciClk,
