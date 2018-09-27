@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2016-08-29
+-- Last update: 2018-09-27
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -72,7 +72,7 @@ entity PgpDmaLane is
       pgpTxRst         : in  sl;
       pgpRxRst         : in  sl;
       pciClk           : in  sl;
-      pciRst           : in  sl);       
+      pciRst           : in  sl);
 end PgpDmaLane;
 
 architecture rtl of PgpDmaLane is
@@ -95,7 +95,7 @@ architecture rtl of PgpDmaLane is
    signal pgpTxSlave  : AxiStreamSlaveType;
 
    signal fifoErr : slv(3 downto 0);
-   
+
 begin
 
    --------------------
@@ -135,7 +135,7 @@ begin
          sAxisSlave   => txSlave,
          -- Masters
          mAxisMasters => txMasters,
-         mAxisSlaves  => txSlaves);    
+         mAxisSlaves  => txSlaves);
 
    GEN_VC_TX_BUFFER :
    for vc in 0 to 3 generate
@@ -155,7 +155,7 @@ begin
             FIFO_ADDR_WIDTH_G   => 4,
             -- AXI Stream Port Configurations
             SLAVE_AXI_CONFIG_G  => AXIS_32B_CONFIG_C,
-            MASTER_AXI_CONFIG_G => AXIS_16B_CONFIG_C)          
+            MASTER_AXI_CONFIG_G => AXIS_16B_CONFIG_C)
          port map (
             -- Slave Port
             sAxisClk    => pgpClk,
@@ -166,7 +166,7 @@ begin
             mAxisClk    => pgpClk,
             mAxisRst    => pgpTxRst,
             mAxisMaster => pgpTxMasters(vc),
-            mAxisSlave  => pgpTxSlaves(vc));       
+            mAxisSlave  => pgpTxSlaves(vc));
    end generate GEN_VC_TX_BUFFER;
 
    --------------------
@@ -179,11 +179,13 @@ begin
    for vc in 0 to 3 generate
       PgpVcRxBuffer_Inst : entity work.PgpVcRxBuffer
          generic map (
-            TPD_G            => TPD_G,
-            CASCADE_SIZE_G   => 4,
-            SLAVE_READY_EN_G => SLAVE_READY_EN_G,
-            LANE_G           => LANE_G,
-            VC_G             => vc)
+            TPD_G              => TPD_G,
+            SLAVE_AXI_CONFIG_G => AXIS_16B_CONFIG_C,
+            CASCADE_SIZE_G     => 4,
+            SLAVE_READY_EN_G   => SLAVE_READY_EN_G,
+            GEN_SYNC_FIFO_G    => true,
+            LANE_G             => LANE_G,
+            VC_G               => vc)
          port map (
             countRst      => countRst,
             -- EVR Trigger Interface
@@ -203,8 +205,11 @@ begin
             vcPause       => vcPause(vc),
             vcOverflow    => vcOverflow(vc),
             -- Global Signals
-            clk           => pgpClk,
-            rst           => pgpRxRst);          
+            sAxisClk      => pgpClk,
+            sAxisRst      => pgpRxRst,
+            mAxisClk      => pgpClk,
+            mAxisRst      => pgpRxRst);
+
    end generate GEN_VC_RX_BUFFER;
 
    AxiStreamMux_Inst : entity work.AxiStreamMux
@@ -221,7 +226,7 @@ begin
          sAxisSlaves  => rxSlaves,
          -- Masters
          mAxisMaster  => rxMaster,
-         mAxisSlave   => rxSlave);   
+         mAxisSlave   => rxSlave);
 
    PciRxDma_Inst : entity work.PciRxDma
       generic map (

@@ -34,6 +34,8 @@ entity PgpV3FrontEnd is
       -- Clocking and Resets
       pgpClk       : out slv(7 downto 0);
       pgpRst       : out slv(7 downto 0)                            := (others => '1');
+      pgpClk2x     : out sl;
+      pgpRst2x     : out sl;
       -- Non VC Rx Signals
       pgpRxIn      : in  Pgp3RxInArray(0 to 7);
       pgpRxOut     : out Pgp3RxOutArray(0 to 7)                     := (others => PGP3_RX_OUT_INIT_C);
@@ -75,9 +77,16 @@ begin
          -- NUM_LANES_G         => 4,
          NUM_LANES_G   => 2,
          NUM_VC_G      => 4,
+         SPEED_GRADE_G => 3,
          RATE_G        => "6.25Gbps",
          REFCLK_TYPE_G => PGP3_REFCLK_250_C)
       port map (
+         debugClk(0) => open,
+         debugClk(1) => open,
+         debugClk(2) => pgpClk2x,
+         debugRst(0) => open,
+         debugRst(1) => open,
+         debugRst(2) => pgpRst2x,         
          -- Stable Clock and Reset
          stableClk         => stableClk,
          stableRst         => stableRst,

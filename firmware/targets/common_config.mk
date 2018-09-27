@@ -1,5 +1,5 @@
 # Define Firmware Version Number
-export PRJ_VERSION = 0xCEC83101
+export PRJ_VERSION = 0xCEC83106
 
 # Define target part
 export PRJ_PART = XC7A200TFFG1156-3

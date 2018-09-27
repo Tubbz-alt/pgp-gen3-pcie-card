@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-08-29
--- Last update: 2016-09-12
+-- Last update: 2018-09-26
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -34,11 +34,13 @@ use work.Pgp2bPkg.all;
 
 entity PgpVcRxBuffer is
    generic (
-      TPD_G            : time := 1 ns;
-      CASCADE_SIZE_G   : natural;
-      SLAVE_READY_EN_G : boolean;
-      LANE_G           : natural;
-      VC_G             : natural); 
+      TPD_G              : time := 1 ns;
+      SLAVE_AXI_CONFIG_G : AxiStreamConfigType;
+      CASCADE_SIZE_G     : natural;
+      GEN_SYNC_FIFO_G    : boolean;
+      SLAVE_READY_EN_G   : boolean;
+      LANE_G             : natural;
+      VC_G               : natural);
    port (
       countRst      : in  sl;
       -- EVR Trigger Interface
@@ -58,13 +60,15 @@ entity PgpVcRxBuffer is
       vcPause       : out sl;
       vcOverflow    : out sl;
       -- Global Signals
-      clk           : in  sl;
-      rst           : in  sl);
+      sAxisClk      : in  sl;
+      sAxisRst      : in  sl;
+      mAxisClk      : in  sl;
+      mAxisRst      : in  sl);
 end PgpVcRxBuffer;
 
 architecture rtl of PgpVcRxBuffer is
 
-   constant LUT_WAIT_C     : natural := 7;
+   constant LUT_WAIT_C     : natural := ite(GEN_SYNC_FIFO_G, 7, 15);
    constant CASCADE_SIZE_C : natural := ite(SLAVE_READY_EN_G, 1, CASCADE_SIZE_G);
 
    type StateType is (
@@ -78,7 +82,7 @@ architecture rtl of PgpVcRxBuffer is
       RD_WR_HDR2_S,
       RD_WR_HDR3_S,
       RD_WR_HDR4_S,
-      FWD_PAYLOAD_S);    
+      FWD_PAYLOAD_S);
 
    type RegType is record
       eofe       : sl;
@@ -95,7 +99,7 @@ architecture rtl of PgpVcRxBuffer is
       txMaster   : AxiStreamMasterType;
       state      : StateType;
    end record RegType;
-   
+
    constant REG_INIT_C : RegType := (
       eofe       => '0',
       fifoError  => '0',
@@ -122,9 +126,9 @@ architecture rtl of PgpVcRxBuffer is
 
    -- attribute dont_touch      : string;
    -- attribute dont_touch of r : signal is "true";
-   
+
 begin
-   
+
    pgpRxCtrl <= axisCtrl;
 
    FIFO_RX : entity work.AxiStreamFifo
@@ -137,33 +141,30 @@ begin
          VALID_THOLD_G       => 1,
          -- FIFO configurations
          BRAM_EN_G           => true,
-         XIL_DEVICE_G        => "7SERIES",
-         USE_BUILT_IN_G      => false,
-         GEN_SYNC_FIFO_G     => true,
-         ALTERA_SYN_G        => false,
-         ALTERA_RAM_G        => "M9K",
+         GEN_SYNC_FIFO_G     => GEN_SYNC_FIFO_G,
          CASCADE_SIZE_G      => CASCADE_SIZE_C,
          FIFO_ADDR_WIDTH_G   => 10,
          FIFO_FIXED_THRESH_G => true,
          FIFO_PAUSE_THRESH_G => 512,
          CASCADE_PAUSE_SEL_G => (CASCADE_SIZE_C-1),
          -- AXI Stream Port Configurations
-         SLAVE_AXI_CONFIG_G  => AXIS_16B_CONFIG_C,
-         MASTER_AXI_CONFIG_G => AXIS_32B_CONFIG_C)        
+         SLAVE_AXI_CONFIG_G  => SLAVE_AXI_CONFIG_G,
+         MASTER_AXI_CONFIG_G => AXIS_32B_CONFIG_C)
       port map (
          -- Slave Port
-         sAxisClk    => clk,
-         sAxisRst    => rst,
+         sAxisClk    => sAxisClk,
+         sAxisRst    => sAxisRst,
          sAxisMaster => pgpRxMaster,
          sAxisSlave  => pgpRxSlave,
          sAxisCtrl   => axisCtrl,
          -- Master Port
-         mAxisClk    => clk,
-         mAxisRst    => rst,
+         mAxisClk    => mAxisClk,
+         mAxisRst    => mAxisRst,
          mAxisMaster => rxMaster,
-         mAxisSlave  => rxSlave);  
+         mAxisSlave  => rxSlave);
 
-   comb : process (axisCtrl, countRst, enHeaderCheck, r, rst, rxMaster, trigLutOut, txSlave) is
+   comb : process (axisCtrl, countRst, enHeaderCheck, mAxisRst, r, rxMaster,
+                   trigLutOut, txSlave) is
       variable v : RegType;
    begin
       -- Latch the current value
@@ -396,7 +397,7 @@ begin
       v.txMaster.tKeep := (others => '1');
 
       -- Reset
-      if (rst = '1') then
+      if (mAxisRst = '1') then
          v := REG_INIT_C;
       end if;
 
@@ -410,12 +411,12 @@ begin
       trigLutIn  <= r.trigLutIn;
       lutDropCnt <= r.lutDropCnt;
       rxSlave    <= v.rxSlave;
-      
+
    end process comb;
 
-   seq : process (clk) is
+   seq : process (mAxisClk) is
    begin
-      if rising_edge(clk) then
+      if rising_edge(mAxisClk) then
          r <= rin after TPD_G;
       end if;
    end process seq;
@@ -425,11 +426,11 @@ begin
          TPD_G         => TPD_G,
          PIPE_STAGES_G => 1)
       port map (
-         axisClk     => clk,
-         axisRst     => rst,
+         axisClk     => mAxisClk,
+         axisRst     => mAxisRst,
          sAxisMaster => r.txMaster,
          sAxisSlave  => txSlave,
          mAxisMaster => mAxisMaster,
-         mAxisSlave  => mAxisSlave);            
+         mAxisSlave  => mAxisSlave);
 
 end rtl;

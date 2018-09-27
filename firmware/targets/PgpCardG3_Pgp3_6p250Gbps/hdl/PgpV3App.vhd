@@ -57,6 +57,8 @@ entity PgpV3App is
       -- Global Signals
       pgpClk       : in  slv(7 downto 0);
       pgpRst       : in  slv(7 downto 0);
+      pgpClk2x     : in sl;
+      pgpRst2x     : in sl;      
       evrClk       : in  sl;
       evrRst       : in  sl;
       pciClk       : in  sl;
@@ -360,6 +362,8 @@ begin
             pgpClk           => pgpClk(i),
             pgpTxRst         => pgpTxRstDly(i),
             pgpRxRst         => pgpRxRstDly(i),
+            pgpClk2x         => pgpClk2x,
+            pgpRst2x         => pgpRst2x,             
             pciClk           => pciClk,
             pciRst           => pciRst);
 

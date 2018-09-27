@@ -54,6 +54,9 @@ end PgpV3Core;
 
 architecture mapping of PgpV3Core is
 
+   signal   pgpClk2x     : sl;
+   signal   pgpRst2x     : sl;
+
    signal locClk : slv(7 downto 0);
    signal locRst : slv(7 downto 0);
 
@@ -92,6 +95,8 @@ begin
          -- Clocking and Resets
          pgpClk       => locClk,
          pgpRst       => locRst,
+         pgpClk2x     => pgpClk2x,
+         pgpRst2x     => pgpRst2x,
          -- Non VC Rx Signals
          pgpRxIn      => pgpRxIn,
          pgpRxOut     => pgpRxOut,
@@ -171,6 +176,8 @@ begin
          -- Global Signals
          pgpClk       => locClk,
          pgpRst       => locRst,
+         pgpClk2x     => pgpClk2x,
+         pgpRst2x     => pgpRst2x,         
          evrClk       => evrClk,
          evrRst       => evrRst,
          pciClk       => pciClk,
