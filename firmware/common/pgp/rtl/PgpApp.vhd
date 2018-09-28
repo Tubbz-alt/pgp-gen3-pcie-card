@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2016-10-22
+-- Last update: 2018-09-28
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -67,7 +67,7 @@ entity PgpApp is
       evrClk       : in  sl;
       evrRst       : in  sl;
       pciClk       : in  sl;
-      pciRst       : in  sl);       
+      pciRst       : in  sl);
 end PgpApp;
 
 architecture mapping of PgpApp is
@@ -94,7 +94,7 @@ architecture mapping of PgpApp is
    signal acceptCntRst  : slv(7 downto 0);
    signal evrOpCodeMask : slv(7 downto 0);
    signal evrSyncWord   : Slv32Array(0 to 7);
-   
+
 begin
 
    -- Outputs
@@ -120,7 +120,7 @@ begin
          port map (
             clk      => pgpClk,
             asyncRst => PciToPgp.pllTxRst(i),
-            syncRst  => pllTxReset(i)); 
+            syncRst  => pllTxReset(i));
 
       RstSync_1 : entity work.RstSync
          generic map (
@@ -128,12 +128,12 @@ begin
          port map (
             clk      => pgpClk,
             asyncRst => PciToPgp.pllRxRst(i),
-            syncRst  => pllRxReset(i));             
+            syncRst  => pllRxReset(i));
    end generate GEN_PLL_RST;
 
    GEN_SYNC_LANE :
    for i in 0 to 7 generate
-      
+
       RstSync_2 : entity work.PwrUpRst
          generic map (
             TPD_G      => TPD_G,
@@ -141,7 +141,7 @@ begin
          port map (
             clk    => pgpClk,
             arst   => PciToPgp.pgpTxRst(i),
-            rstOut => pgpTxReset(i));  
+            rstOut => pgpTxReset(i));
 
       RstSync_3 : entity work.PwrUpRst
          generic map (
@@ -150,7 +150,7 @@ begin
          port map (
             clk    => pgpClk,
             arst   => PciToPgp.pgpRxRst(i),
-            rstOut => pgpRxReset(i));           
+            rstOut => pgpRxReset(i));
 
       -- Add registers to help with timing
       process(pgpClk)
@@ -174,7 +174,7 @@ begin
             dataOut(0) => enHeaderCheck(i, 0),
             dataOut(1) => enHeaderCheck(i, 1),
             dataOut(2) => enHeaderCheck(i, 2),
-            dataOut(3) => enHeaderCheck(i, 3));  
+            dataOut(3) => enHeaderCheck(i, 3));
 
       SynchronizerVector_1 : entity work.SynchronizerVector
          generic map (
@@ -183,7 +183,7 @@ begin
          port map (
             clk     => evrClk,
             dataIn  => PciToPgp.runDelay(i),
-            dataOut => runDelay(i)); 
+            dataOut => runDelay(i));
 
       SynchronizerVector_2 : entity work.SynchronizerVector
          generic map (
@@ -192,7 +192,7 @@ begin
          port map (
             clk     => evrClk,
             dataIn  => PciToPgp.acceptDelay(i),
-            dataOut => acceptDelay(i)); 
+            dataOut => acceptDelay(i));
 
       SynchronizerVector_3 : entity work.SynchronizerVector
          generic map (
@@ -201,7 +201,7 @@ begin
          port map (
             clk     => pgpClk,
             dataIn  => PciToPgp.evrSyncWord(i),
-            dataOut => evrSyncWord(i));             
+            dataOut => evrSyncWord(i));
 
       RstSync_0 : entity work.RstSync
          generic map (
@@ -209,7 +209,7 @@ begin
          port map (
             clk      => pgpClk,
             asyncRst => PciToPgp.acceptCntRst(i),
-            syncRst  => acceptCntRst(i));             
+            syncRst  => acceptCntRst(i));
 
    end generate GEN_SYNC_LANE;
 
@@ -219,7 +219,7 @@ begin
       port map (
          clk      => pgpClk,
          asyncRst => PciToPgp.countRst,
-         syncRst  => countRst);     
+         syncRst  => countRst);
 
    SynchronizerVector_4 : entity work.SynchronizerVector
       generic map (
@@ -228,7 +228,7 @@ begin
       port map (
          clk     => pgpClk,
          dataIn  => PciToPgp.loopback,
-         dataOut => loopback);  
+         dataOut => loopback);
 
    SynchronizerVector_5 : entity work.SynchronizerVector
       generic map (
@@ -237,7 +237,7 @@ begin
       port map (
          clk     => pgpClk,
          dataIn  => PciToPgp.evrSyncEn,
-         dataOut => evrSyncEn);    
+         dataOut => evrSyncEn);
 
    SynchronizerVector_6 : entity work.SynchronizerVector
       generic map (
@@ -246,7 +246,7 @@ begin
       port map (
          clk     => pgpClk,
          dataIn  => PciToPgp.evrSyncSel,
-         dataOut => evrSyncSel);           
+         dataOut => evrSyncSel);
 
    SynchronizerVector_7 : entity work.SynchronizerVector
       generic map (
@@ -255,7 +255,7 @@ begin
       port map (
          clk     => pgpClk,
          dataIn  => PciToPgp.evrOpCodeMask,
-         dataOut => evrOpCodeMask);              
+         dataOut => evrOpCodeMask);
 
    -------------------
    -- PGP Lane Mapping
@@ -307,10 +307,12 @@ begin
             --Global Signals
             pciClk        => pciClk,
             pciRst        => pciRst,
-            pgpClk        => pgpClk,
-            pgpRst        => pgpRst,
+            pgpTxClk      => pgpClk,
+            pgpTxRst      => pgpRst,
+            pgpRxClk      => pgpClk,
+            pgpRxRst      => pgpRst,
             evrClk        => evrClk,
-            evrRst        => evrRst);     
+            evrRst        => evrRst);
 
       -------------------------------
       -- Lane Status and Health
@@ -351,7 +353,7 @@ begin
             pgpRxCtrl(3)    => pgpRxCtrls(lane, 3),
             -- Global Signals
             pgpClk          => pgpClk,
-            pgpRst          => pgpRst);    
+            pgpRst          => pgpRst);
 
       ---------------
       -- DMA channels
@@ -360,7 +362,7 @@ begin
          generic map (
             TPD_G            => TPD_G,
             LANE_G           => lane,
-            SLAVE_READY_EN_G => SLAVE_READY_EN_G)          
+            SLAVE_READY_EN_G => SLAVE_READY_EN_G)
          port map (
             countRst         => countRst,
             -- DMA TX Interface
@@ -423,13 +425,13 @@ begin
             pgpTxRst         => pgpTxRstDly(lane),
             pgpRxRst         => pgpRxRstDly(lane),
             pciClk           => pciClk,
-            pciRst           => pciRst); 
+            pciRst           => pciRst);
 
       -- Blow off TX DMA if link is down (request from Jack Pines)
       txSlaves(lane, 0).tReady <= pgpTxSlaves(lane, 0).tReady or not(pgpRxOut(lane).linkReady);
       txSlaves(lane, 1).tReady <= pgpTxSlaves(lane, 1).tReady or not(pgpRxOut(lane).linkReady);
       txSlaves(lane, 2).tReady <= pgpTxSlaves(lane, 2).tReady or not(pgpRxOut(lane).linkReady);
       txSlaves(lane, 3).tReady <= pgpTxSlaves(lane, 3).tReady or not(pgpRxOut(lane).linkReady);
-      
+
    end generate GEN_LANE;
 end mapping;

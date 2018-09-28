@@ -77,7 +77,6 @@ begin
          -- NUM_LANES_G         => 4,
          NUM_LANES_G   => 2,
          NUM_VC_G      => 4,
-         SPEED_GRADE_G => 3,
          RATE_G        => "6.25Gbps",
          REFCLK_TYPE_G => PGP3_REFCLK_250_C)
       port map (

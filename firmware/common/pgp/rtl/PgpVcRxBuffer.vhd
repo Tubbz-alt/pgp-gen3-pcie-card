@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-08-29
--- Last update: 2018-09-26
+-- Last update: 2018-09-28
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -34,13 +34,15 @@ use work.Pgp2bPkg.all;
 
 entity PgpVcRxBuffer is
    generic (
-      TPD_G              : time := 1 ns;
-      SLAVE_AXI_CONFIG_G : AxiStreamConfigType;
-      CASCADE_SIZE_G     : natural;
-      GEN_SYNC_FIFO_G    : boolean;
-      SLAVE_READY_EN_G   : boolean;
-      LANE_G             : natural;
-      VC_G               : natural);
+      TPD_G               : time     := 1 ns;
+      SLAVE_AXI_CONFIG_G  : AxiStreamConfigType;
+      CASCADE_SIZE_G      : natural;
+      GEN_SYNC_FIFO_G     : boolean;
+      SLAVE_READY_EN_G    : boolean;
+      FIFO_ADDR_WIDTH_G   : positive := 10;
+      FIFO_PAUSE_THRESH_G : positive := 512;
+      LANE_G              : natural;
+      VC_G                : natural);
    port (
       countRst      : in  sl;
       -- EVR Trigger Interface
@@ -68,7 +70,7 @@ end PgpVcRxBuffer;
 
 architecture rtl of PgpVcRxBuffer is
 
-   constant LUT_WAIT_C     : natural := ite(GEN_SYNC_FIFO_G, 7, 15);
+   constant LUT_WAIT_C     : natural := 7;
    constant CASCADE_SIZE_C : natural := ite(SLAVE_READY_EN_G, 1, CASCADE_SIZE_G);
 
    type StateType is (
@@ -131,7 +133,7 @@ begin
 
    pgpRxCtrl <= axisCtrl;
 
-   FIFO_RX : entity work.AxiStreamFifo
+   FIFO_RX : entity work.AxiStreamFifoV2
       generic map (
          -- General Configurations
          TPD_G               => TPD_G,
@@ -143,9 +145,9 @@ begin
          BRAM_EN_G           => true,
          GEN_SYNC_FIFO_G     => GEN_SYNC_FIFO_G,
          CASCADE_SIZE_G      => CASCADE_SIZE_C,
-         FIFO_ADDR_WIDTH_G   => 10,
+         FIFO_ADDR_WIDTH_G   => FIFO_ADDR_WIDTH_G,
          FIFO_FIXED_THRESH_G => true,
-         FIFO_PAUSE_THRESH_G => 512,
+         FIFO_PAUSE_THRESH_G => FIFO_PAUSE_THRESH_G,
          CASCADE_PAUSE_SEL_G => (CASCADE_SIZE_C-1),
          -- AXI Stream Port Configurations
          SLAVE_AXI_CONFIG_G  => SLAVE_AXI_CONFIG_G,

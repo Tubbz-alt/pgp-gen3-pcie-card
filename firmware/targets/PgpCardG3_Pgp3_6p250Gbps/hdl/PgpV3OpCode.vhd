@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2018-09-21
+-- Last update: 2018-09-28
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -57,10 +57,12 @@ entity PgpV3OpCode is
       -- Global Signals
       pciClk        : in  sl;
       pciRst        : in  sl;
-      pgpClk        : in  sl;
-      pgpRst        : in  sl;
+      pgpTxClk      : in  sl;
+      pgpTxRst      : in  sl;
+      pgpRxClk      : in  sl;
+      pgpRxRst      : in  sl;
       evrClk        : in  sl;
-      evrRst        : in  sl);      
+      evrRst        : in  sl);
 end PgpV3OpCode;
 
 architecture rtl of PgpV3OpCode is
@@ -154,7 +156,7 @@ begin
          wr_en  => pgpOpCodeEn,
          din    => pgpOpCode,
          -- Read Ports (rd_clk domain)
-         rd_clk => pgpClk,
+         rd_clk => pgpTxClk,
          rd_en  => '1',
          valid  => opCodeEn,
          dout   => opCode);
@@ -169,7 +171,7 @@ begin
          din(63 downto 32)  => delay.seconds,
          din(31 downto 0)   => delay.offset,
          -- Read Ports (rd_clk domain)
-         rd_clk             => pgpClk,
+         rd_clk             => pgpTxClk,
          rd_en              => '1',
          valid              => fromEvr.run,
          dout(63 downto 32) => fromEvr.seconds,
@@ -184,7 +186,7 @@ begin
          wr_en   => delay.accept,
          din(0)  => '0',
          -- Read Ports (rd_clk domain)
-         rd_clk  => pgpClk,
+         rd_clk  => pgpTxClk,
          rd_en   => '1',
          valid   => fromEvr.accept,
          dout(0) => open);
@@ -197,7 +199,7 @@ begin
          wr_clk => evrClk,
          din    => evrToPgp.seconds,
          -- Read Ports (rd_clk domain)
-         rd_clk => pgpClk,
+         rd_clk => pgpTxClk,
          dout   => seconds);
 
    SynchronizerFifo_4 : entity work.SynchronizerFifo
@@ -208,7 +210,7 @@ begin
          wr_clk => pciClk,
          din    => pgpLocData,
          -- Read Ports (rd_clk domain)
-         rd_clk => pgpClk,
+         rd_clk => pgpTxClk,
          dout   => locData);
 
    -------------------------------
@@ -223,7 +225,7 @@ begin
             ADDR_WIDTH_G => 8)
          port map (
             -- Port A
-            clka                => pgpClk,
+            clka                => pgpTxClk,
             wea                 => r.we,
             addra               => r.waddr,
             dina(96)            => r.valid,
@@ -231,7 +233,7 @@ begin
             dina(63 downto 32)  => r.offset,
             dina(31 downto 0)   => r.acceptCnt,
             -- Port B
-            clkb                => pgpClk,
+            clkb                => pgpRxClk,
             addrb               => trigLutIn(vc).raddr,
             doutb(96)           => trigLutOut(vc).accept,
             doutb(95 downto 64) => trigLutOut(vc).seconds,
@@ -243,7 +245,7 @@ begin
    -- Look Up Table Writing Process
    -------------------------------     
    comb : process (acceptCntRst, evrSyncEn, evrSyncSel, evrSyncWord, fromEvr,
-                   pgpRst, r, seconds) is
+                   pgpTxRst, r, seconds) is
       variable v : RegType;
    begin
       -- Latch the current value
@@ -293,7 +295,7 @@ begin
       end if;
 
       -- Reset
-      if (pgpRst = '1') then
+      if (pgpTxRst = '1') then
          v := REG_INIT_C;
       end if;
 
@@ -306,9 +308,9 @@ begin
 
    end process comb;
 
-   seq : process (pgpClk) is
+   seq : process (pgpTxClk) is
    begin
-      if rising_edge(pgpClk) then
+      if rising_edge(pgpTxClk) then
          r <= rin after TPD_G;
       end if;
    end process seq;

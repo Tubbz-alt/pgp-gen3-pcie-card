@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2018-09-24
+-- Last update: 2018-09-28
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -57,8 +57,8 @@ entity PgpV3App is
       -- Global Signals
       pgpClk       : in  slv(7 downto 0);
       pgpRst       : in  slv(7 downto 0);
-      pgpClk2x     : in sl;
-      pgpRst2x     : in sl;      
+      pgpClk2x     : in  sl;
+      pgpRst2x     : in  sl;
       evrClk       : in  sl;
       evrRst       : in  sl;
       pciClk       : in  sl;
@@ -93,8 +93,8 @@ begin
    -- Outputs
    pgpRxCtrl <= pgpRxCtrls;
 
-   pgpToPci.pllTxReady <= (others=>'1');
-   pgpToPci.pllRxReady <= (others=>'1');
+   pgpToPci.pllTxReady <= (others => '1');
+   pgpToPci.pllRxReady <= (others => '1');
 
    GEN_LANE :
    for i in 0 to 7 generate
@@ -175,7 +175,7 @@ begin
 
       U_loopback : entity work.Synchronizer
          generic map (
-            TPD_G   => TPD_G)
+            TPD_G => TPD_G)
          port map (
             clk     => pgpClk(i),
             dataIn  => PciToPgp.loopback(i),
@@ -247,8 +247,10 @@ begin
             --Global Signals
             pciClk        => pciClk,
             pciRst        => pciRst,
-            pgpClk        => pgpClk(i),
-            pgpRst        => pgpRst(i),
+            pgpTxClk      => pgpClk(i),
+            pgpTxRst      => pgpRst(i),
+            pgpRxClk      => pgpClk2x,
+            pgpRxRst      => pgpRst2x,
             evrClk        => evrClk,
             evrRst        => evrRst);
 
@@ -363,7 +365,7 @@ begin
             pgpTxRst         => pgpTxRstDly(i),
             pgpRxRst         => pgpRxRstDly(i),
             pgpClk2x         => pgpClk2x,
-            pgpRst2x         => pgpRst2x,             
+            pgpRst2x         => pgpRst2x,
             pciClk           => pciClk,
             pciRst           => pciRst);
 

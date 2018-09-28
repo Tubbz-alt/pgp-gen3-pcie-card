@@ -139,7 +139,7 @@ begin
 
    GEN_VC_TX_BUFFER :
    for vc in 0 to 3 generate
-      FIFO_VC_TX : entity work.AxiStreamFifo
+      FIFO_VC_TX : entity work.AxiStreamFifoV2
          generic map (
             -- General Configurations
             TPD_G               => TPD_G,

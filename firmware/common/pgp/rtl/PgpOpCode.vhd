@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2016-08-13
+-- Last update: 2018-09-28
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -57,10 +57,12 @@ entity PgpOpCode is
       -- Global Signals
       pciClk        : in  sl;
       pciRst        : in  sl;
-      pgpClk        : in  sl;
-      pgpRst        : in  sl;
+      pgpTxClk      : in  sl;
+      pgpTxRst      : in  sl;
+      pgpRxClk      : in  sl;
+      pgpRxRst      : in  sl;      
       evrClk        : in  sl;
-      evrRst        : in  sl);       
+      evrRst        : in  sl);
 end PgpOpCode;
 
 architecture rtl of PgpOpCode is
@@ -76,7 +78,7 @@ architecture rtl of PgpOpCode is
       seconds   : slv(31 downto 0);
       offset    : slv(31 downto 0);
    end record;
-   
+
    constant REG_INIT_C : RegType := (
       evrSyncEn => '0',
       ready     => '0',
@@ -86,7 +88,7 @@ architecture rtl of PgpOpCode is
       waddr     => (others => '0'),
       acceptCnt => (others => '0'),
       seconds   => (others => '0'),
-      offset    => (others => '0'));   
+      offset    => (others => '0'));
 
    signal r   : RegType := REG_INIT_C;
    signal rin : RegType;
@@ -115,7 +117,7 @@ begin
          din(31 downto 0)   => evrToPgp.offset,
          dout(64)           => delay.run,
          dout(63 downto 32) => delay.seconds,
-         dout(31 downto 0)  => delay.offset); 
+         dout(31 downto 0)  => delay.offset);
 
    EvrOpCodeDelay_1 : entity work.EvrOpCodeDelay
       port map(
@@ -127,7 +129,7 @@ begin
          din(31 downto 0)   => (others => '0'),
          dout(64)           => delay.accept,
          dout(63 downto 32) => open,
-         dout(31 downto 0)  => open);  
+         dout(31 downto 0)  => open);
 
    -------------------------------
    -- Output Bus Mapping
@@ -151,10 +153,10 @@ begin
          wr_en  => pgpOpCodeEn,
          din    => pgpOpCode,
          -- Read Ports (rd_clk domain)
-         rd_clk => pgpClk,
+         rd_clk => pgpTxClk,
          rd_en  => '1',
          valid  => opCodeEn,
-         dout   => opCode);           
+         dout   => opCode);
 
    SynchronizerFifo_1 : entity work.SynchronizerFifo
       generic map(
@@ -166,7 +168,7 @@ begin
          din(63 downto 32)  => delay.seconds,
          din(31 downto 0)   => delay.offset,
          -- Read Ports (rd_clk domain)
-         rd_clk             => pgpClk,
+         rd_clk             => pgpTxClk,
          rd_en              => '1',
          valid              => fromEvr.run,
          dout(63 downto 32) => fromEvr.seconds,
@@ -181,10 +183,10 @@ begin
          wr_en   => delay.accept,
          din(0)  => '0',
          -- Read Ports (rd_clk domain)
-         rd_clk  => pgpClk,
+         rd_clk  => pgpTxClk,
          rd_en   => '1',
          valid   => fromEvr.accept,
-         dout(0) => open);    
+         dout(0) => open);
 
    SynchronizerFifo_3 : entity work.SynchronizerFifo
       generic map(
@@ -194,8 +196,8 @@ begin
          wr_clk => evrClk,
          din    => evrToPgp.seconds,
          -- Read Ports (rd_clk domain)
-         rd_clk => pgpClk,
-         dout   => seconds);     
+         rd_clk => pgpTxClk,
+         dout   => seconds);
 
    SynchronizerFifo_4 : entity work.SynchronizerFifo
       generic map(
@@ -205,8 +207,8 @@ begin
          wr_clk => pciClk,
          din    => pgpLocData,
          -- Read Ports (rd_clk domain)
-         rd_clk => pgpClk,
-         dout   => locData);          
+         rd_clk => pgpTxClk,
+         dout   => locData);
 
    -------------------------------
    -- Look up Table
@@ -215,12 +217,12 @@ begin
    for vc in 0 to 3 generate
       SimpleDualPortRam_Inst : entity work.SimpleDualPortRam
          generic map(
-            BRAM_EN_G    => true,       -- Using BRAM to make the "Place and Route" faster
+            BRAM_EN_G    => true,  -- Using BRAM to make the "Place and Route" faster
             DATA_WIDTH_G => 97,
             ADDR_WIDTH_G => 8)
          port map (
             -- Port A
-            clka                => pgpClk,
+            clka                => pgpTxClk,
             wea                 => r.we,
             addra               => r.waddr,
             dina(96)            => r.valid,
@@ -228,18 +230,19 @@ begin
             dina(63 downto 32)  => r.offset,
             dina(31 downto 0)   => r.acceptCnt,
             -- Port B
-            clkb                => pgpClk,
+            clkb                => pgpRxClk,
             addrb               => trigLutIn(vc).raddr,
             doutb(96)           => trigLutOut(vc).accept,
             doutb(95 downto 64) => trigLutOut(vc).seconds,
             doutb(63 downto 32) => trigLutOut(vc).offset,
-            doutb(31 downto 0)  => trigLutOut(vc).acceptCnt);            
+            doutb(31 downto 0)  => trigLutOut(vc).acceptCnt);
    end generate GEN_LUT;
 
    -------------------------------
    -- Look Up Table Writing Process
    -------------------------------     
-   comb : process (acceptCntRst, evrSyncEn, evrSyncSel, evrSyncWord, fromEvr, pgpRst, r, seconds) is
+   comb : process (acceptCntRst, evrSyncEn, evrSyncSel, evrSyncWord, fromEvr,
+                   pgpTxRst, r, seconds) is
       variable v : RegType;
    begin
       -- Latch the current value
@@ -289,7 +292,7 @@ begin
       end if;
 
       -- Reset
-      if (pgpRst = '1') then
+      if (pgpTxRst = '1') then
          v := REG_INIT_C;
       end if;
 
@@ -299,14 +302,14 @@ begin
       -- Outputs
       evrSyncStatus <= r.evrSyncEn;
       acceptCnt     <= r.acceptCnt;
-      
+
    end process comb;
 
-   seq : process (pgpClk) is
+   seq : process (pgpTxClk) is
    begin
-      if rising_edge(pgpClk) then
+      if rising_edge(pgpTxClk) then
          r <= rin after TPD_G;
       end if;
    end process seq;
-   
+
 end rtl;
