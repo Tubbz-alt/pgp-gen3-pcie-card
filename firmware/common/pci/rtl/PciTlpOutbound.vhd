@@ -162,6 +162,8 @@ begin
       ----------------------------------------------------------------------
       end case;
 
+      sAxisSlave <= v.sAxisSlave;
+
       -- Reset
       if (pciRst = '1') then
          v := REG_INIT_C;
@@ -171,7 +173,6 @@ begin
       rin <= v;
 
       -- Outputs
-      sAxisSlave    <= v.sAxisSlave;
       dmaTxObMaster <= r.dmaTxObMaster;
       regObMaster   <= r.regObMaster;
       

@@ -217,6 +217,8 @@ begin
       ----------------------------------------------------------------------
       end case;
 
+      sAxisSlave   <= v.rxSlave;      
+      
       -- Reset
       if (pciRst = '1') then
          v := REG_INIT_C;
@@ -226,7 +228,6 @@ begin
       rin <= v;
 
       -- Outputs
-      sAxisSlave   <= v.rxSlave;
       axisHdr      <= getPcieHdr(r.txMaster);      
       
    end process comb;

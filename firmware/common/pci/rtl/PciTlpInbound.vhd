@@ -172,6 +172,10 @@ begin
       ----------------------------------------------------------------------
       end case;
 
+      regIbSlave   <= v.regIbSlave;
+      dmaTxIbSlave <= v.dmaTxIbSlave;
+      dmaRxIbSlave <= v.dmaRxIbSlave;
+
       -- Reset
       if (pciRst = '1') then
          v := REG_INIT_C;
@@ -182,9 +186,6 @@ begin
 
       -- Outputs
       trnPending   <= r.trnPending;
-      regIbSlave   <= v.regIbSlave;
-      dmaTxIbSlave <= v.dmaTxIbSlave;
-      dmaRxIbSlave <= v.dmaRxIbSlave;
       mAxisMaster  <= r.txMaster;
 
    end process comb;

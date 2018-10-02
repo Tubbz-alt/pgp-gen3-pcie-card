@@ -54,10 +54,10 @@ entity PgpCardG3_Pgp3_6p250Gbps is
       -- PGP Ports
       pgpRefClkP : in    sl;            -- 250 MHz
       pgpRefClkN : in    sl;            -- 250 MHz
-      pgpRxP     : in    slv(1 downto 0);
-      pgpRxN     : in    slv(1 downto 0);
-      pgpTxP     : out   slv(1 downto 0);
-      pgpTxN     : out   slv(1 downto 0));
+      pgpRxP     : in    slv(3 downto 0);
+      pgpRxN     : in    slv(3 downto 0);
+      pgpTxP     : out   slv(3 downto 0);
+      pgpTxN     : out   slv(3 downto 0));
 end PgpCardG3_Pgp3_6p250Gbps;
 
 architecture top_level of PgpCardG3_Pgp3_6p250Gbps is

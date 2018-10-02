@@ -359,6 +359,7 @@ begin
             lutDropCnt(2)    => pgpToPci.lutDropCnt(i, 2),
             lutDropCnt(3)    => pgpToPci.lutDropCnt(i, 3),
             -- Diagnostic Monitoring Interface
+            linkReady        => pgpRxOut(i).linkReady,
             fifoError        => fifoError(i),
             --Global Signals
             pgpClk           => pgpClk(i),

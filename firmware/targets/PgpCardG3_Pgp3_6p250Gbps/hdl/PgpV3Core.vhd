@@ -39,10 +39,10 @@ entity PgpV3Core is
       -- GT Pins
       pgpRefClkP : in  sl;
       pgpRefClkN : in  sl;
-      pgpRxP     : in  slv(1 downto 0);
-      pgpRxN     : in  slv(1 downto 0);
-      pgpTxP     : out slv(1 downto 0);
-      pgpTxN     : out slv(1 downto 0);
+      pgpRxP     : in  slv(3 downto 0);
+      pgpRxN     : in  slv(3 downto 0);
+      pgpTxP     : out slv(3 downto 0);
+      pgpTxN     : out slv(3 downto 0);
       -- Global Signals
       pgpClk     : out slv(7 downto 0);
       pgpRst     : out slv(7 downto 0);

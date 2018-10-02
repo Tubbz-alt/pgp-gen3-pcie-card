@@ -398,6 +398,8 @@ begin
       -- Always 32-bit transactions
       v.txMaster.tKeep := (others => '1');
 
+      rxSlave    <= v.rxSlave;      
+      
       -- Reset
       if (mAxisRst = '1') then
          v := REG_INIT_C;
@@ -412,7 +414,6 @@ begin
       vcOverflow <= r.vcOverflow;
       trigLutIn  <= r.trigLutIn;
       lutDropCnt <= r.lutDropCnt;
-      rxSlave    <= v.rxSlave;
 
    end process comb;
 

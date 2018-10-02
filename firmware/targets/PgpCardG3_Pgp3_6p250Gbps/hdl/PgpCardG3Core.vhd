@@ -56,10 +56,10 @@ entity PgpCardG3Pgp3Core is
       -- PGP Ports
       pgpRefClkP : in    sl;
       pgpRefClkN : in    sl;
-      pgpRxP     : in    slv(1 downto 0);
-      pgpRxN     : in    slv(1 downto 0);
-      pgpTxP     : out   slv(1 downto 0);
-      pgpTxN     : out   slv(1 downto 0));
+      pgpRxP     : in    slv(3 downto 0);
+      pgpRxN     : in    slv(3 downto 0);
+      pgpTxP     : out   slv(3 downto 0);
+      pgpTxN     : out   slv(3 downto 0));
 end PgpCardG3Pgp3Core;
 
 architecture rtl of PgpCardG3Pgp3Core is

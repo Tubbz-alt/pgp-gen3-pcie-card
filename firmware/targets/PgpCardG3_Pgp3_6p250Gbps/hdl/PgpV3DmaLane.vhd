@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2018-09-28
+-- Last update: 2018-10-01
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -64,6 +64,7 @@ entity PgpV3DmaLane is
       trigLutIn        : out TrigLutInArray(0 to 3)       := (others => TRIG_LUT_IN_INIT_C);
       lutDropCnt       : out Slv8Array(0 to 3)            := (others => x"00");
       -- Diagnostic Monitoring Interface
+      linkReady        : in  sl;
       fifoError        : out sl                           := '0';
       vcPause          : out slv(3 downto 0)              := (others => '0');
       vcOverflow       : out slv(3 downto 0)              := (others => '0');
@@ -80,7 +81,7 @@ end PgpV3DmaLane;
 architecture rtl of PgpV3DmaLane is
 
    constant CASCADE_SIZE_C : PositiveArray(3 downto 0) := (
-      0 => 48,  -- VC0 - data path 1095232 bytes @ 120 Hz + commands on RX
+      0 => 16,  -- VC0 - data path 1095232 bytes @ 120 Hz + commands on RX
       1 => 1,                           -- VC1 - register access
       2 => 4,   -- VC2 - debug data path 32768 bytes @ 120 Hz 
       3 => 1);  -- VC3 - monitoring data path less than 1 kbyte @ 1Hz
@@ -103,9 +104,20 @@ architecture rtl of PgpV3DmaLane is
    signal pgpTxMaster : AxiStreamMasterType := AXI_STREAM_MASTER_INIT_C;
    signal pgpTxSlave  : AxiStreamSlaveType  := AXI_STREAM_SLAVE_FORCE_C;
 
-   signal fifoErr : slv(3 downto 0);
+   signal fifoErr  : slv(3 downto 0);
+   signal linkDown : sl;
 
 begin
+
+   U_RstSync : entity work.RstSync
+      generic map (
+         TPD_G          => TPD_G,
+         IN_POLARITY_G  => '0',
+         OUT_POLARITY_G => '1')
+      port map (
+         clk      => pgpClk2x,
+         asyncRst => linkReady,
+         syncRst  => linkDown);
 
    --------------------
    -- TX DMA Controller
@@ -130,7 +142,7 @@ begin
          mAxisMaster    => txMaster,
          mAxisSlave     => txSlave);
 
-   ENABLE_PGP : if (LANE_G = 0) generate
+   ENABLE_PGP : if (LANE_G < 4) generate
 
       AxiStreamDeMux_Inst : entity work.AxiStreamDeMux
          generic map (
@@ -154,13 +166,12 @@ begin
             generic map (
                -- General Configurations
                TPD_G               => TPD_G,
-               INT_PIPE_STAGES_G   => 1,
-               PIPE_STAGES_G       => 1,
+               INT_PIPE_STAGES_G   => 0,
+               PIPE_STAGES_G       => 0,
                SLAVE_READY_EN_G    => true,
                VALID_THOLD_G       => 1,
                -- FIFO configurations
                BRAM_EN_G           => false,
-               USE_BUILT_IN_G      => false,
                GEN_SYNC_FIFO_G     => false,
                CASCADE_SIZE_G      => 1,
                FIFO_ADDR_WIDTH_G   => 4,
@@ -221,7 +232,8 @@ begin
                sAxisClk      => pgpClk,
                sAxisRst      => pgpRxRst,
                mAxisClk      => pgpClk2x,
-               mAxisRst      => pgpRst2x);
+               -- mAxisRst      => pgpRst2x);
+               mAxisRst      => linkDown);
       end generate GEN_VC_RX_BUFFER;
 
       AxiStreamMux_Inst : entity work.AxiStreamMux
@@ -232,7 +244,8 @@ begin
          port map (
             -- Clock and reset
             axisClk      => pgpClk2x,
-            axisRst      => pgpRst2x,
+            -- axisRst      => pgpRst2x,
+            axisRst      => linkDown,
             -- Slave
             sAxisMasters => rxMasters,
             sAxisSlaves  => rxSlaves,

@@ -273,6 +273,8 @@ begin
       ----------------------------------------------------------------------
       end case;
 
+      rxSlave <= v.rxSlave;      
+      
       -- Reset
       if (pciRst = '1') then
          v := REG_INIT_C;
@@ -280,9 +282,6 @@ begin
 
       -- Register the variable for next clock cycle
       rin <= v;
-
-      -- Outputs
-      rxSlave <= v.rxSlave;
       
    end process comb;
 

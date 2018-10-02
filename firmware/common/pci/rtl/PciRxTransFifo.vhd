@@ -255,6 +255,8 @@ begin
       ----------------------------------------------------------------------
       end case;
 
+      sAxisSlave <= v.sAxisSlave;      
+      
       -- Reset
       if (sAxisRst = '1') then
          v := REG_INIT_C;
@@ -264,7 +266,6 @@ begin
       rin <= v;
 
       -- Outputs
-      sAxisSlave <= v.sAxisSlave;
       axisMaster <= reverseOrderPcie(r.axisMaster);
       
    end process comb;
