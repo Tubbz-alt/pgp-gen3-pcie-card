@@ -235,6 +235,7 @@ begin
             evrToPgp      => evrToPgp(i),
             --PGP Core interfaces
             pgpTxIn       => pgpTxIn(i),
+            pgpTxOut      => pgpTxOut(i),
             -- RX Virtual Channel Interface
             trigLutIn(0)  => trigLutIn(i, 0),
             trigLutIn(1)  => trigLutIn(i, 1),
