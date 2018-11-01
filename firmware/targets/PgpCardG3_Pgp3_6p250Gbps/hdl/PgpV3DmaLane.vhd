@@ -81,8 +81,8 @@ end PgpV3DmaLane;
 architecture rtl of PgpV3DmaLane is
 
    constant CASCADE_SIZE_C : PositiveArray(3 downto 0) := (
-      0 => 16,  -- VC0 - data path 1095232 bytes @ 120 Hz + commands on RX
-      1 => 1,                           -- VC1 - register access
+      0 => 1,   -- VC0 - register access      
+      1 => 16,  -- VC1 - data path 1095232 bytes @ 120 Hz + commands on RX
       2 => 4,   -- VC2 - debug data path 32768 bytes @ 120 Hz 
       3 => 1);  -- VC3 - monitoring data path less than 1 kbyte @ 1Hz
 
