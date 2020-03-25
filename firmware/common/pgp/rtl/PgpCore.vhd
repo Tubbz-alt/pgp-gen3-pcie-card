@@ -65,8 +65,8 @@ entity PgpCore is
       -- Global Signals
       pgpMmcmLocked : out sl;
       stableClk     : out sl;
-      pgpClk        : out sl;
-      pgpRst        : out sl;
+      pgpClk        : out slv(7 downto 0);
+      pgpRst        : out slv(7 downto 0);
       evrClk        : in  sl;
       evrRst        : in  sl;
       pciClk        : in  sl;
@@ -128,8 +128,8 @@ architecture mapping of PgpCore is
 begin
 
    stableClk <= stableClock;
-   pgpClk    <= locClk;
-   pgpRst    <= locRst;
+   pgpClk    <= (others => locClk);
+   pgpRst    <= (others => locRst);
 
    pllTxReady(0) <= westQPllLock(0);
    pllRxReady(0) <= westQPllLock(1);

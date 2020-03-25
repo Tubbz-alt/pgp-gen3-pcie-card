@@ -421,6 +421,9 @@ begin
       v.dmaDescToPci.doneStatus(4 downto 2)  := dmaChannel;
       v.dmaDescToPci.doneStatus(1 downto 0)  := r.tranSubId;
 
+      rxSlave      <= v.rxSlave;
+      tranRd       <= v.tranRd;      
+      
       -- Reset
       if (pciRst = '1') then
          v := REG_INIT_C;
@@ -430,8 +433,6 @@ begin
       rin <= v;
 
       -- Outputs
-      rxSlave      <= v.rxSlave;
-      tranRd       <= v.tranRd;
       dmaDescToPci <= r.dmaDescToPci;
       
    end process comb;

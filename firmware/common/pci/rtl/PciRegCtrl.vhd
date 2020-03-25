@@ -203,6 +203,8 @@ begin
       ----------------------------------------------------------------------
       end case;
 
+      regObSlave  <= v.regObSlave;      
+      
       -- Reset
       if (pciRst = '1') then
          v := REG_INIT_C;
@@ -212,7 +214,7 @@ begin
       rin <= v;
 
       -- Outputs
-      regObSlave  <= v.regObSlave;
+
       regIbMaster <= r.txMaster;
       regBar      <= r.hdr.bar;
       regAddr     <= r.hdr.addr;

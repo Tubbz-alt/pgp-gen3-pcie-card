@@ -123,7 +123,7 @@ begin
          pciClk         => pciClk,
          pciRst         => pciRst);   
 
-   FIFO_RX : entity work.AxiStreamFifo
+   FIFO_RX : entity work.AxiStreamFifoV2
       generic map (
          -- General Configurations
          TPD_G               => TPD_G,
@@ -273,6 +273,8 @@ begin
       ----------------------------------------------------------------------
       end case;
 
+      rxSlave <= v.rxSlave;      
+      
       -- Reset
       if (pciRst = '1') then
          v := REG_INIT_C;
@@ -280,9 +282,6 @@ begin
 
       -- Register the variable for next clock cycle
       rin <= v;
-
-      -- Outputs
-      rxSlave <= v.rxSlave;
       
    end process comb;
 
@@ -293,7 +292,7 @@ begin
       end if;
    end process seq;
 
-   FIFO_TX : entity work.AxiStreamFifo
+   FIFO_TX : entity work.AxiStreamFifoV2
       generic map (
          -- General Configurations
          TPD_G               => TPD_G,

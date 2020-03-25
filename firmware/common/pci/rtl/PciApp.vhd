@@ -74,8 +74,8 @@ entity PciApp is
       evrToPci         : in    EvrToPciType;
       pciToEvr         : out   PciToEvrType;
       --Global Signals
-      pgpClk           : in    sl;
-      pgpRst           : in    sl;
+      pgpClk           : in    slv(7 downto 0);
+      pgpRst           : in    slv(7 downto 0);
       evrClk           : in    sl;
       evrRst           : in    sl;
       pciClk           : in    sl;
@@ -280,7 +280,7 @@ begin
          generic map(
             DATA_WIDTH_G => 4)
          port map(
-            wr_clk => pgpClk,
+            wr_clk => pgpClk(lane),
             din    => pgpToPci.cellErrorCnt(lane),
             rd_clk => pciClk,
             dout   => cellErrorCnt(lane));
@@ -289,7 +289,7 @@ begin
          generic map(
             DATA_WIDTH_G => 4)
          port map(
-            wr_clk => pgpClk,
+            wr_clk => pgpClk(lane),
             din    => pgpToPci.linkDownCnt(lane),
             rd_clk => pciClk,
             dout   => linkDownCnt(lane));
@@ -298,7 +298,7 @@ begin
          generic map(
             DATA_WIDTH_G => 4)
          port map(
-            wr_clk => pgpClk,
+            wr_clk => pgpClk(lane),
             din    => pgpToPci.linkErrorCnt(lane),
             rd_clk => pciClk,
             dout   => linkErrorCnt(lane));             
@@ -307,7 +307,7 @@ begin
          generic map(
             DATA_WIDTH_G => 4)
          port map(
-            wr_clk => pgpClk,
+            wr_clk => pgpClk(lane),
             din    => pgpToPci.fifoErrorCnt(lane),
             rd_clk => pciClk,
             dout   => fifoErrorCnt(lane)); 
@@ -351,7 +351,7 @@ begin
             generic map(
                DATA_WIDTH_G => 4)
             port map(
-               wr_clk => pgpClk,
+               wr_clk => pgpClk(lane),
                din    => pgpToPci.rxCount(lane, vc),
                rd_clk => pciClk,
                dout   => rxCount(lane, vc));  
@@ -360,7 +360,7 @@ begin
             generic map(
                DATA_WIDTH_G => 8)
             port map(
-               wr_clk => pgpClk,
+               wr_clk => pgpClk(lane),
                din    => pgpToPci.lutDropCnt(lane, vc),
                rd_clk => pciClk,
                dout   => lutDropCnt(lane, vc));                 
@@ -386,7 +386,7 @@ begin
          generic map(
             DATA_WIDTH_G => 32)
          port map(
-            wr_clk => pgpClk,
+            wr_clk => pgpClk(lane),
             din    => pgpToPci.acceptCnt(lane),
             rd_clk => pciClk,
             dout   => acceptCnt(lane)); 
@@ -395,7 +395,7 @@ begin
          generic map(
             DATA_WIDTH_G => 8)
          port map(
-            wr_clk => pgpClk,
+            wr_clk => pgpClk(lane),
             din    => pgpToPci.pgpRemData(lane),
             rd_clk => pciClk,
             dout   => pgpRemData(lane));                

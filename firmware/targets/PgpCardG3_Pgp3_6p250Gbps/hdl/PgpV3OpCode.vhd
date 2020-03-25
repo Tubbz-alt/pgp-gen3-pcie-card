@@ -1,11 +1,11 @@
 -------------------------------------------------------------------------------
 -- Title      : 
 -------------------------------------------------------------------------------
--- File       : PgpOpCode.vhd
+-- File       : PgpV3OpCode.vhd
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2013-07-02
--- Last update: 2018-09-28
+-- Last update: 2018-10-08
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -26,10 +26,10 @@ use ieee.std_logic_unsigned.all;
 use ieee.std_logic_arith.all;
 
 use work.StdRtlPkg.all;
-use work.Pgp2bPkg.all;
+use work.Pgp3Pkg.all;
 use work.PgpCardG3Pkg.all;
 
-entity PgpOpCode is
+entity PgpV3OpCode is
    generic (
       TPD_G : time := 1 ns);
    port (
@@ -50,7 +50,8 @@ entity PgpOpCode is
       -- External Interfaces
       evrToPgp      : in  EvrToPgpType;
       -- PGP core interface
-      pgpTxIn       : out Pgp2bTxInType;
+      pgpTxIn       : out Pgp3TxInType;
+      pgpTxOut      : in  Pgp3TxOutType;
       -- RX Virtual Channel Interface
       trigLutIn     : in  TrigLutInArray(0 to 3);
       trigLutOut    : out TrigLutOutArray(0 to 3);
@@ -60,12 +61,12 @@ entity PgpOpCode is
       pgpTxClk      : in  sl;
       pgpTxRst      : in  sl;
       pgpRxClk      : in  sl;
-      pgpRxRst      : in  sl;      
+      pgpRxRst      : in  sl;
       evrClk        : in  sl;
       evrRst        : in  sl);
-end PgpOpCode;
+end PgpV3OpCode;
 
-architecture rtl of PgpOpCode is
+architecture rtl of PgpV3OpCode is
 
    type RegType is record
       evrSyncEn : sl;
@@ -93,11 +94,13 @@ architecture rtl of PgpOpCode is
    signal r   : RegType := REG_INIT_C;
    signal rin : RegType;
 
-   signal runTrig  : sl;
-   signal opCodeEn : sl;
-   signal locData  : slv(7 downto 0);
-   signal opCode   : slv(7 downto 0);
-   signal seconds  : slv(31 downto 0);
+   signal runTrig        : sl;
+   signal opCodeEn       : sl;
+   signal opCodeEnFifoWr : sl;
+   signal opCodeFifoDin  : slv(47 downto 0);
+   signal locData        : slv(7 downto 0);
+   signal opCode         : slv(7 downto 0);
+   signal seconds        : slv(31 downto 0);
 
    signal delay   : EvrToPgpType;
    signal fromEvr : EvrToPgpType;
@@ -134,12 +137,32 @@ begin
    -------------------------------
    -- Output Bus Mapping
    -------------------------------
-   runTrig             <= fromEvr.run and not(evrOpCodeMask);
-   pgpTxIn.opCodeEn    <= runTrig or opCodeEn;
-   pgpTxIn.opCode      <= r.trigAddr when(opCodeEn = '0') else opCode;
-   pgpTxIn.locData     <= locData;
-   pgpTxIn.flowCntlDis <= '0';          -- Ignore flow control 
-   pgpTxIn.flush       <= '0';          -- not used
+   runTrig                     <= fromEvr.run and not(evrOpCodeMask);
+   pgpTxIn.disable             <= '0';
+   pgpTxIn.flowCntlDis         <= '0';
+   pgpTxIn.skpInterval         <= (others => '0');
+   pgpTxIn.opCodeNumber        <= (others => '0');
+   opCodeEnFifoWr              <= runTrig or opCodeEn;
+   opCodeFifoDin(47 downto 16) <= (others => '0');
+   opCodeFifoDin(15 downto 8)  <= r.trigAddr when(opCodeEn = '0') else opCode;
+   opCodeFifoDin(7 downto 0)   <= locData;
+
+   U_OpCode_Fifo : entity work.FifoSync
+      generic map(
+         FWFT_EN_G   => true,
+         BRAM_EN_G   => false,
+         DATA_WIDTH_G => 48,
+         ADDR_WIDTH_G => 4)
+      port map(
+         rst    => pgpTxRst,
+         clk    => pgpTxClk,
+         -- Write Ports (wr_clk domain)
+         wr_en  => opCodeEnFifoWr,
+         din    => opCodeFifoDin,
+         -- Read Ports (rd_clk domain)
+         rd_en  => pgpTxOut.opCodeReady,
+         valid  => pgpTxIn.opCodeEn,
+         dout   => pgpTxIn.opCodeData);
 
    -------------------------------
    -- Synchronization

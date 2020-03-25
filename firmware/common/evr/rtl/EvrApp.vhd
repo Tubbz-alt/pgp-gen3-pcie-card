@@ -41,8 +41,6 @@ entity EvrApp is
       -- PLL Reset
       pllRst   : out sl;
       -- Global Signals
-      pgpClk   : in  sl;
-      pgpRst   : in  sl;
       evrClk   : in  sl;
       evrRst   : out sl;
       pciClk   : in  sl;

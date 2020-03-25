@@ -87,7 +87,7 @@ architecture rtl of CLinkRxBuffer is
    
 begin
    
-   FIFO_RX : entity work.AxiStreamFifo
+   FIFO_RX : entity work.AxiStreamFifoV2
       generic map (
          -- General Configurations
          TPD_G               => TPD_G,
@@ -122,7 +122,7 @@ begin
          mAxisMaster => rx32Master,
          mAxisSlave  => rx32Slave);  
 
-   FIFO_TX : entity work.AxiStreamFifo
+   FIFO_TX : entity work.AxiStreamFifoV2
       generic map (
          -- General Configurations
          TPD_G               => TPD_G,

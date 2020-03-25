@@ -100,6 +100,9 @@ begin
       ----------------------------------------------------------------------
       end case;
 
+      -- Outputs
+      dout <= v.dout;      
+      
       -- Reset
       if (evrRst = '1') then
          v := REG_INIT_C;
@@ -107,9 +110,6 @@ begin
 
       -- Register the variable for next clock cycle
       rin <= v;
-
-      -- Outputs
-      dout <= v.dout;
       
    end process comb;
 
