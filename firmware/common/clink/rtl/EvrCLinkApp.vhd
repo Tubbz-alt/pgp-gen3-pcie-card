@@ -20,7 +20,7 @@ use ieee.std_logic_unsigned.all;
 use ieee.std_logic_arith.all;
 
 use work.StdRtlPkg.all;
-use work.CLinkPkg.all;
+use work.CLinkFrameGrabberPkg.all;
 use work.PgpCardG3Pkg.all;
 
 entity EvrCLinkApp is
