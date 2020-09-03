@@ -1,7 +1,7 @@
 -------------------------------------------------------------------------------
 -- Title      : Camera link package
 -------------------------------------------------------------------------------
--- File       : CLinkPkg.vhd
+-- File       : CLinkFrameGrabberPkg.vhd
 -- Created    : 2017-08-22
 -- Platform   : 
 -- Standard   : VHDL'93/02
@@ -22,7 +22,7 @@ use work.StdRtlPkg.all;
 use work.PciPkg.all;
 use work.AxiStreamPkg.all;
 
-package CLinkPkg is
+package CLinkFrameGrabberPkg is
 
    type ClToPciType is record -- Cl Clock Domain
       dmaTxIbMaster     : AxiStreamMasterArray(0 to 7);
@@ -130,5 +130,5 @@ package CLinkPkg is
 
    constant idle_string : slv(495 downto 0) := X"45524242524120474D45524120464E4B4C4941204552414D20435259544F5241424F4C415220544F52414C45434541434C204E41494F4154204E4143534C";
 
-end package CLinkPkg;
+end package CLinkFrameGrabberPkg;
 

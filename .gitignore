@@ -32,3 +32,5 @@ build*
 *.bit
 *.mcs
 *.gz
+*.ltx
+*.xsa

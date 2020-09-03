@@ -23,7 +23,7 @@ use ieee.numeric_std.all;
 library UNISIM;
 use UNISIM.VCOMPONENTS.ALL;
 
-use work.CLinkPkg.all;
+use work.CLinkFrameGrabberPkg.all;
 
 --***********************************Entity Declaration*************************
 

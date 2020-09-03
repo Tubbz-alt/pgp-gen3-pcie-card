@@ -12,5 +12,6 @@ loadRuckusTcl "$::DIR_PATH/pci"
 loadRuckusTcl "$::DIR_PATH/pgp"
 loadRuckusTcl "$::DIR_PATH/evr"
 loadRuckusTcl "$::DIR_PATH/general"
+loadRuckusTcl "$::DIR_PATH/tpr"
 
 set_property strategy Performance_Explore [get_runs impl_1]
