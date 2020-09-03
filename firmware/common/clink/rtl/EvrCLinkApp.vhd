@@ -316,7 +316,9 @@ begin
 
             if (rxLinkUp = '1') then
                for i in 0 to 7 loop
+
                   if (got_code(i) = '1') then
+
                      if (cycles(i) >= fromPci.trgDelay(i)                      ) and
                         (cycles(i) <= fromPci.trgDelay(i)+fromPci.trgWidth(i)-1)     then
                         r.toCl(i).trigger <= enable(i);
@@ -329,31 +331,21 @@ begin
                         end if;
                      end if;
 
-                     if (prescale(i) = fromPci.preScale(i)-1) then
-                        cycles  (i) <= cycles  (i) + 1;
-                        prescale(i) <= (others => '0');
-                     else
-                        prescale(i) <= prescale(i) + 1;
-                     end if;
-                  elsif (rxDataK(0) = '1') then
-                     if (prescale(i) = fromPci.preScale(i)-1) then
-                        cycles  (i) <= cycles  (i) + 1;
-                        prescale(i) <= (others => '0');
-                     else
-                        prescale(i) <= prescale(i) + 1;
-                     end if;
+                  end if;
+
+                  if (prescale(i) = fromPci.preScale(i)-1) then
+                     cycles  (i) <= cycles  (i) + 1;
+                     prescale(i) <= (others => '0');
                   else
+                     prescale(i) <= prescale(i) + 1;
+                  end if;
+
+                  if (rxDataK(0) = '0') then
+
                      if ((rxData(7 downto 0) =  40) and (fromPci.trgCode(i) < 100)) or
                         ((rxData(7 downto 0) = 140) and (fromPci.trgCode(i) >  99))    then
                         cycles  (i) <= (others => '0');
                         prescale(i) <= (others => '0');
-                     else
-                        if (prescale(i) = fromPci.preScale(i)-1) then
-                           cycles  (i) <= cycles  (i) + 1;
-                           prescale(i) <= (others => '0');
-                        else
-                           prescale(i) <= prescale(i) + 1;
-                        end if;
                      end if;
 
                      if (rxData(7 downto 0) = fromPci.trgCode(i)) then
@@ -367,7 +359,9 @@ begin
                         enable  (i)         <= fromPci.enable(i);
                         got_code(i)         <= '1';
                      end if;
+
                   end if;
+
                end loop;
             end if;
          end if;
