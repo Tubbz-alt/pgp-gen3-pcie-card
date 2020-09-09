@@ -325,7 +325,7 @@ begin
                      else
                         r.toCl(i).trigger <= '0';
 
-                        if (cycles(i) >= fromPci.trgDelay(i)+fromPci.trgWidth(i)) then
+                        if (cycles(i) = fromPci.trgDelay(i)+fromPci.trgWidth(i)) then
                            enable  (i) <= '0';
                            got_code(i) <= '0';
                         end if;
