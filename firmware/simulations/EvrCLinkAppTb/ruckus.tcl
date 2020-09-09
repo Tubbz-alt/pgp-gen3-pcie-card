@@ -12,7 +12,7 @@ loadRuckusTcl $::env(TOP_DIR)/targets/PgpCardG3_CLinkBase
 loadSource -sim_only -dir "$::DIR_PATH/tb"
 
 # Set the top level synth_1 and sim_1
-set_property top {PgpCardG3_CLinkBase} [get_filesets sources_1]
+set_property top {EvrCLinkApp} [get_filesets sources_1]
 set_property top {EvrCLinkAppTb} [get_filesets sim_1]
 
 # Remove the .DCP and use the .XCI IP core instead

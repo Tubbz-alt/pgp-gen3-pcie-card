@@ -1,3 +1,5 @@
+export OVERRIDE_SUBMODULE_LOCKS = 1
+
 # Define Firmware Version Number
 export PRJ_VERSION = 0xDEAD0006
 

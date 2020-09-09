@@ -15,16 +15,16 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.std_logic_arith.all;
 
-library surf;
 use work.StdRtlPkg.all;
 use work.AxiLitePkg.all;
 use work.PgpCardG3Pkg.all;
+use work.CLinkFrameGrabberPkg.all;
 
 entity EvrCLinkAppTb is end EvrCLinkAppTb;
 
 architecture testbed of EvrCLinkAppTb is
 
-   constant CLK_PERIOD_C : time := 10 ns;
+   constant CLK_PERIOD_C : time := 8.402 ns;
    constant TPD_G        : time := CLK_PERIOD_C/4;
 
    signal clk : sl := '0';
@@ -33,11 +33,23 @@ architecture testbed of EvrCLinkAppTb is
    signal rxData  : slv(15 downto 0) := (others => '0');
    signal rxDataK : slv(1 downto 0)  := (others => '0');
 
-   signal pciToEvr : PciToEvrType          := PCI_TO_EVR_INIT_C;
-   signal evrToPci : EvrToPciType          := EVR_TO_PCI_INIT_C;
-   signal evrToPgp : EvrToPgpArray(0 to 7) := (others => EVR_TO_PGP_INIT_C);
+   signal tmpData  : slv(15 downto 0) := (others => '0');
+   signal tmpDataK : slv(1 downto 0)  := (others => '0');
+
+   signal pciToEvr : PciToEvrType         := PCI_TO_EVR_INIT_C;
+   signal evrToPci : EvrToPciType         := EVR_TO_PCI_INIT_C;
+   signal evrToCl  : EvrToClArray(0 to 7) := (others => EVR_TO_CL_INIT_C);
 
 begin
+
+   GEN_VEC :
+   for i in 0 to 7 generate
+      pciToEvr.enable(i)   <= '1';
+      pciToEvr.trgCode(i)  <= toSlv(9, 8);
+      pciToEvr.preScale(i) <= toSlv(119, 8);
+      pciToEvr.trgDelay(i) <= toSlv(910, 32);
+      pciToEvr.trgWidth(i) <= toSlv(100, 32);
+   end generate GEN_VEC;
 
    U_ClkRst : entity work.ClkRst
       generic map (
@@ -57,9 +69,9 @@ begin
          txRst          => rst,
          txRdy          => '1',
          txData(0)      => rxData,
-         txData(1)      => open,
+         txData(1)      => tmpData,
          txDataK(0)     => rxDataK,
-         txDataK(1)     => open,
+         txDataK(1)     => tmpDataK,
          axiClk         => clk,
          axiRst         => rst,
          axiReadMaster  => AXI_LITE_READ_MASTER_INIT_C,
@@ -67,19 +79,22 @@ begin
          axiWriteMaster => AXI_LITE_WRITE_MASTER_INIT_C,
          axiWriteSlave  => open);
 
-   U_EvrApp : entity work.EvrApp
+   U_EvrCLinkApp : entity work.EvrCLinkApp
       port map (
          -- External Interfaces
          pciToEvr => pciToEvr,
          evrToPci => evrToPci,
-         evrToPgp => evrToPgp,
+         evrToCl  => evrToCl,
          -- MGT physical channel
          rxLinkUp => '1',
          rxError  => '0',
          rxData   => rxData,
+         rxDataK  => rxDataK,
          -- PLL Reset
          pllRst   => open,
          -- Global Signals
+         clClk    => clk,
+         clRst    => rst,
          evrClk   => clk,
          evrRst   => rst,
          pciClk   => clk,
