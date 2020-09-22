@@ -85,6 +85,7 @@ architecture rtl of EvrCLinkApp is
 
    signal r       : RegType      := REG_INIT_C;
    signal fromPci : PciToEvrType := PCI_TO_EVR_INIT_C;
+   signal delay   : PciToEvrType := PCI_TO_EVR_INIT_C;
 
    signal count_to_3    : slv(28 downto 0)      := (others => '0');
    signal evt140        : sl                    := '0';
@@ -368,6 +369,23 @@ begin
                         got_code(i)         <= '1';
                      end if;
                   end if;
+
+                  -- Check for change in configuration
+                  if (fromPci.enable(i)   /= delay.enable(i)
+                  or (fromPci.preScale(i) /= delay.preScale(i)
+                  or (fromPci.trgCode(i)  /= delay.trgCode(i)
+                  or (fromPci.trgDelay(i) /= delay.trgDelay(i)
+                  or (fromPci.trgWidth(i) /= delay.trgWidth(i) then
+                     enable  (i)       <= '0';
+                     got_code(i)       <= '0';
+                     r.toCl(i).trigger <= '0';
+                     cycles  (i)       <= (others => '0');
+                     prescale(i)       <= (others => '0');
+                  end if;
+
+                  -- Keep a delayed copy
+                  delay <= fromPci;
+
                end loop;
             end if;
          end if;
