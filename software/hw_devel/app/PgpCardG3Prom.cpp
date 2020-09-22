@@ -63,6 +63,8 @@ PgpCardG3Prom::~PgpCardG3Prom ( ) {
 
 //! Check for a valid firmware version  (true=valid firmware version)
 bool PgpCardG3Prom::checkFirmwareVersion ( ) {
+   // Bypassing check because CLINK doesn't not use this firmware version convention
+   /*
    uint32_t firmwareVersion = *((uint32_t*)memVersion);
    uint32_t PgpCardGen = firmwareVersion >> 12;
 
@@ -76,6 +78,8 @@ bool PgpCardG3Prom::checkFirmwareVersion ( ) {
    } else {
       return true;
    }
+   */
+   return true;
 }
 
 //! Check if file exist (true=exists)
