@@ -371,11 +371,11 @@ begin
                   end if;
 
                   -- Check for change in configuration
-                  if (fromPci.enable(i)   /= delay.enable(i)
-                  or (fromPci.preScale(i) /= delay.preScale(i)
-                  or (fromPci.trgCode(i)  /= delay.trgCode(i)
-                  or (fromPci.trgDelay(i) /= delay.trgDelay(i)
-                  or (fromPci.trgWidth(i) /= delay.trgWidth(i) then
+                  if (fromPci.enable(i)   /= delay.enable(i))
+                  or (fromPci.preScale(i) /= delay.preScale(i))
+                  or (fromPci.trgCode(i)  /= delay.trgCode(i))
+                  or (fromPci.trgDelay(i) /= delay.trgDelay(i))
+                  or (fromPci.trgWidth(i) /= delay.trgWidth(i)) then
                      enable  (i)       <= '0';
                      got_code(i)       <= '0';
                      r.toCl(i).trigger <= '0';
@@ -383,10 +383,11 @@ begin
                      prescale(i)       <= (others => '0');
                   end if;
 
-                  -- Keep a delayed copy
-                  delay <= fromPci;
-
                end loop;
+
+               -- Keep a delayed copy
+               delay <= fromPci;
+
             end if;
          end if;
       end if;
